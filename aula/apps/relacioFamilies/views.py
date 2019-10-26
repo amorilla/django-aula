@@ -4,9 +4,7 @@ from itertools import groupby
 from django.conf import settings
 
 #templates
-from django.forms import FileInput
 from django.template import RequestContext
-from django.templatetags.static import static
 
 #workflow
 from django.shortcuts import render, get_object_or_404
@@ -18,7 +16,6 @@ from django.contrib.auth.decorators import login_required
 from aula.apps.avaluacioQualitativa.models import RespostaAvaluacioQualitativa
 from aula.apps.incidencies.models import Incidencia, Sancio, Expulsio
 from aula.apps.presencia.models import ControlAssistencia, EstatControlAssistencia
-from aula.apps.relacioFamilies.forms import AlumneModelForm
 from aula.apps.sortides.models import Sortida, NotificaSortida
 from aula.utils import tools
 from aula.utils.tools import unicode
@@ -178,9 +175,7 @@ def configuraConnexio( request , pk ):
         edatAlumne = alumne.edat()
     except:
         pass
-
-    imageUrl = alumne.get_foto_or_default
-
+        
     infoForm = [
           ('Alumne',unicode( alumne) ),
           #( 'Telèfon Alumne', alumne.telefons),
@@ -193,13 +188,12 @@ def configuraConnexio( request , pk ):
                 ]
     
     AlumneFormSet = modelform_factory(Alumne,
-                                      form=AlumneModelForm,
-                                      widgets={
-                                          'foto': FileInput,}
-                                         )
-
+                                      fields = ( 'correu_relacio_familia_pare', 'correu_relacio_familia_mare' ,
+                                                    'periodicitat_faltes', 'periodicitat_incidencies'), 
+                                         )    
+    
     if request.method == 'POST':
-        form = AlumneFormSet(  request.POST , request.FILES, instance=alumne )
+        form = AlumneFormSet(  request.POST , instance=alumne )
         if form.is_valid(  ):
             form.save()
             url_next = '/open/dadesRelacioFamilies#{0}'.format(alumne.pk  ) 
@@ -210,9 +204,8 @@ def configuraConnexio( request , pk ):
         
     return render(
                 request,
-                'configuraConnexio.html',
+                'form.html',
                     {'form': form,
-                     'image': imageUrl,
                      'infoForm': infoForm,
                      'head': u'Gestió relació familia amb empreses' ,
                      'formSetDelimited':True},

@@ -22,4 +22,3 @@ typing
 selenium
 pisa
 xmltodict
-django-private-storage
