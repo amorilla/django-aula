@@ -237,6 +237,7 @@ def sortidesGestioList( request ):
     filtre = []
     socEquipDirectiu = User.objects.filter( pk=user.pk, groups__name = 'direcció').exists()
     socCoordinador = User.objects.filter( pk=user.pk, groups__name__in = [ 'sortides'] ).exists()
+    socSecretari = User.objects.filter(pk=user.pk, groups__name__in=['secretaria']).exists()
 
     #si sóc equip directiu només les que tinguin estat 'R' (Revisada pel coordinador)
     if socEquipDirectiu:
@@ -244,14 +245,18 @@ def sortidesGestioList( request ):
     #si sóc coordinador de sortides només les que tinguin estat 'P' (Proposada)
     if socCoordinador:
         filtre.append('P')
-    
+
     sortides = ( Sortida
                    .objects
                    .exclude( estat = 'E' )
                    .filter( estat__in = filtre )
                    .distinct()
-                  )    
-    
+                  )
+
+    # si sóc secretari i es pot pagar online, només les que tinguin tipus de pagament 'ON' (ONline)
+    if socSecretari and settings.CUSTOM_SORTIDES_PAGAMENT_ONLINE:
+        sortides = sortides.filter(tipus_de_pagament = 'ON')
+
     table = Table2_Sortides( data=list( sortides ), origen="Gestio" ) 
     table.order_by = '-calendari_desde' 
     
@@ -333,6 +338,7 @@ def sortidaEdit(request, pk=None, clonar=False, origen=False):
         form = formIncidenciaF(post_mutable, instance=instance)
 
         if form.is_valid():
+            if form.cleaned_data['tipus_de_pagament']=='NO': instance.preu_per_alumne=0
             # Omplir camps de classes afectades
             if settings.CUSTOM_FORMULARI_SORTIDES_REDUIT:
 
@@ -466,6 +472,7 @@ def sortidaEdit(request, pk=None, clonar=False, origen=False):
         if not settings.CUSTOM_FORMULARI_SORTIDES_REDUIT:
             form.fields["codi_de_barres"].widget.attrs['disabled'] = u"disabled"
         form.fields["informacio_pagament"].widget.attrs['disabled'] = u"disabled"
+        form.fields["preu_per_alumne"].widget.attrs['disabled'] = u"disabled"
 
     # si no és propietari tot a disabled
     deshabilitat = (instance.id and
@@ -1073,6 +1080,7 @@ def pagoOnline(request, pk):
     sortida = pagament.sortida
     preu = sortida.preu_per_alumne
     descripcio_sortida = sortida.programa_de_la_sortida
+    data_limit_pagament = sortida.termini_pagament
     alumne = pagament.alumne
     fEsDireccioOrGrupSortides = request.user.groups.filter(name__in=[u"direcció", u"sortides"]).exists()
 
@@ -1092,8 +1100,8 @@ def pagoOnline(request, pk):
         'DS_MERCHANT_TERMINAL': '1',
         'DS_MERCHANT_MERCHANTURL': URL_DJANGO_AULA.replace('/','\/') + reverse('sortides__sortides__retorn_transaccio'),
         'Ds_Merchant_ProductDescription': sortida.titol_de_la_sortida,
-        'DS_MERCHANT_URLOK': URL_DJANGO_AULA.replace('/','\/') + reverse('relacio_families__informe__el_meu_informe'),
-        'DS_MERCHANT_URLKO': URL_DJANGO_AULA.replace('/','\/') + reverse('relacio_families__informe__el_meu_informe'),
+        'DS_MERCHANT_URLOK': URL_DJANGO_AULA.replace('/','\/') + reverse('sortides__sortides__pago_on_line', kwargs={'pk':pk}),
+        'DS_MERCHANT_URLKO': URL_DJANGO_AULA.replace('/','\/') + reverse('sortides__sortides__pago_on_line', kwargs={'pk':pk}),
         #'Ds_Merchant_Paymethods': 'T',
     }
     data = json.dumps(values)
@@ -1142,7 +1150,7 @@ def pagoOnline(request, pk):
         })
 
     entorn_real = CUSTOM_REDSYS_ENTORN_REAL
-    return render(request, 'formPagamentOnline.html', {'form': form,'alumne':alumne, 'sortida':sortida, 'descripcio':descripcio_sortida, 'preu':preu, 'pagat':pagament.pagament_realitzat, 'entorn_real': entorn_real})
+    return render(request, 'formPagamentOnline.html', {'form': form,'alumne':alumne, 'sortida':sortida, 'descripcio':descripcio_sortida, 'preu':preu, 'limit':data_limit_pagament,'pagat':pagament.pagament_realitzat, 'entorn_real': entorn_real})
 
 @csrf_exempt
 def retornTransaccio(request):
