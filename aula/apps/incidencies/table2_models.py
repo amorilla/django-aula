@@ -239,10 +239,8 @@ class Table2_ExpulsionsIIncidenciesPerAlumne(tables.Table):
                                             {{ record.franja_incidencia }}
                                             {{ record.control_assistencia.impartir.horari.assignatura}} <br>
                                             {{ record.get_gestionada_pel_tutor_motiu_display }}
-                                            {% if record.gestionada_pel_tutor %}
                                             <br>
                                             Sancionat per: {{record.professional}}{{record.professor}}
-                                            {% endif %}
                                             """,
         orderable=False,
     )

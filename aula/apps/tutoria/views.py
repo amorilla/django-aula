@@ -96,13 +96,13 @@ def incidenciesGestionadesPelTutor(request):
     incidencies_gestionades_pel_tutor = ( Incidencia
                                           .objects
                                           .filter(alumne__in=alumnes_tutoritzats)
-                                          .filter(gestionada_pel_tutor=True)
+                                          #.filter(gestionada_pel_tutor=True)
                                           .filter(tipus__es_informativa=False)
                                           .all())
     for incidencia in incidencies_gestionades_pel_tutor:
         alumne_str = unicode(incidencia.alumne)
         incidenciesAlumne = incidencia.alumne.incidencia_set.filter(
-            gestionada_pel_tutor=True,
+            #gestionada_pel_tutor=True,
             es_vigent=True,
             tipus__es_informativa=False,
         )
