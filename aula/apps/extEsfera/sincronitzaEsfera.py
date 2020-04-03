@@ -29,6 +29,10 @@ def sincronitza(f, user = None):
         return msgs
     errors = []
 
+    # amorilla@xtec.cat
+    manteCorreus, _ = ParametreSaga.objects.get_or_create( nom_parametre = 'mantenirCorreus' )
+    manteCorreus = manteCorreus.valor_parametre=='True'
+
     #Exclou els alumnes AMB esborrat i amb estat MAN (creats manualment)
     Alumne.objects.exclude( estat_sincronitzacio__exact = 'DEL' ).exclude( estat_sincronitzacio__exact = 'MAN') \
         .update( estat_sincronitzacio = 'PRC')
@@ -93,7 +97,7 @@ def sincronitza(f, user = None):
                     except:
                         return { 'errors': [ u"error carregant {0}".format( unicode(cell.value) ), ], 'warnings': [], 'infos': [] }
                     trobatGrupClasse = True
-                if col_indexs[index].endswith(u"Correu electrònic"):
+                if col_indexs[index].endswith(u"Correu electrònic") and not manteCorreus:
                     a.correu = unicode(cell.value) if cell.value else ""
                 if col_indexs[index].endswith(u"Data naixement"):
                     dia = time.strptime(unicode(cell.value), '%d/%m/%Y')
@@ -111,12 +115,12 @@ def sincronitza(f, user = None):
                     dades_tutor1 = dades_responsable(unicode(cell.value) if cell.value else "")
                     a.rp1_telefon = ', '.join(dades_tutor1["fixes"]);
                     a.rp1_mobil = ', '.join(dades_tutor1["mobils"]);
-                    a.rp1_correu = ', '.join(dades_tutor1["mails"]);
+                    if not manteCorreus: a.rp1_correu = ', '.join(dades_tutor1["mails"]);
                 if col_indexs[index].endswith(u"Contacte 2on tutor alumne - Valor"):
                     dades_tutor2 = dades_responsable(unicode(cell.value) if cell.value else "")
                     a.rp2_telefon = ', '.join(dades_tutor2["fixes"]);
                     a.rp2_mobil = ', '.join(dades_tutor2["mobils"]);
-                    a.rp2_correu = ', '.join(dades_tutor2["mails"]);
+                    if not manteCorreus: a.rp2_correu = ', '.join(dades_tutor2["mails"]);
                 if col_indexs[index].endswith(u"Contacte altres alumne - Valor"):
                     a.altres_telefons = unicode(cell.value)
                 if col_indexs[index].endswith(u"Tutor 1 - 1r cognom "):

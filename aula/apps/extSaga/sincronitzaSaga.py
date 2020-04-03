@@ -31,6 +31,10 @@ def sincronitza(f, user = None):
 
     errors = []
 
+    # amorilla@xtec.cat
+    manteCorreus, _ = ParametreSaga.objects.get_or_create( nom_parametre = 'mantenirCorreus' )
+    manteCorreus = manteCorreus.valor_parametre=='True'
+
     #Exclou els alumnes AMB esborrat i amb estat MAN (creats manualment)
     Alumne.objects.exclude( estat_sincronitzacio__exact = 'DEL' ).exclude( estat_sincronitzacio__exact = 'MAN') \
         .update( estat_sincronitzacio = 'PRC')
@@ -87,7 +91,7 @@ def sincronitza(f, user = None):
                 trobatGrupClasse = True
             #if columnName.endswith( u"_CORREU ELECTRÒNIC")  or columnName.find( u"_ADREÇA ELECTR. RESP.")>=0 :
             #    a.correu_tutors += unicode(value,'iso-8859-1') + u', '
-            if columnName.endswith( u"_CORREU ELECTRÒNIC"):
+            if columnName.endswith( u"_CORREU ELECTRÒNIC") and not manteCorreus:
                 a.correu = unicode(value,'iso-8859-1')
             if columnName.endswith( u"_DATA NAIXEMENT"):
                 dia=time.strptime( unicode(value,'iso-8859-1'),'%d/%m/%Y')
@@ -109,9 +113,9 @@ def sincronitza(f, user = None):
                 a.rp1_mobil = unicode(value,'iso-8859-1')
             if columnName.endswith(u"_MÒBIL RESP. 2" ):
                 a.rp2_mobil = unicode(value,'iso-8859-1')
-            if columnName.endswith(u"_ADREÇA ELECTR. RESP. 1" ):
+            if columnName.endswith(u"_ADREÇA ELECTR. RESP. 1" ) and not manteCorreus:
                 a.rp1_correu = unicode(value,'iso-8859-1')
-            if columnName.endswith(u"_ADREÇA ELECTR. RESP. 2" ):
+            if columnName.endswith(u"_ADREÇA ELECTR. RESP. 2" ) and not manteCorreus:
                 a.rp2_correu = unicode(value,'iso-8859-1')
             if columnName.endswith(u"_ALTRES TELÈFONS"):
                 a.altres_telefons = unicode(value, 'iso-8859-1')
