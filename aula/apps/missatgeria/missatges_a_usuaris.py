@@ -81,6 +81,8 @@ ERROR_FALTEN_DADES_REPORT_PAGAMENT_ONLINE = u"Redsys: Falta nombre d'ordre ({0})
 
 ERROR_IP_NO_PERMESA_REPORT_PAGAMENT_ONLINE =u"Redsys: Intent de reportar transacció online desde IP no permesa {0}"
 
+MAIL_REBUTJAT=u"Mail rebutjat d'usuari: \"{0}\"  adreça: \"{1}\".\nData: {2}\nMotiu: {3}"
+
 MISSATGES = {'ADMINISTRACIO' : {'warning': {PASSAR_LLISTA_GRUP_NO_MEU,
                                 FI_PROCES_AFEGIR_ALUMNES,
                                 FI_PROCES_AFEGIR_ALUMNES_AMB_ERRORS,
@@ -102,6 +104,7 @@ MISSATGES = {'ADMINISTRACIO' : {'warning': {PASSAR_LLISTA_GRUP_NO_MEU,
                                 ERROR_SIGNATURES_REPORT_PAGAMENT_ONLINE,
                                 ERROR_FALTEN_DADES_REPORT_PAGAMENT_ONLINE,
                                 ERROR_IP_NO_PERMESA_REPORT_PAGAMENT_ONLINE,
+                                MAIL_REBUTJAT,
                                 }},
              'DISCIPLINA': {'danger': {EXPULSIO_PER_ACUMULACIO_INCIDENCIES,
                                        EXPULSIO_PER_ACUMULACIO_INCIDENCIES_FORA_AULA,
