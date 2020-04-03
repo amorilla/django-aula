@@ -25,7 +25,7 @@ def connectIMAP():
     
     '''
     
-    mail = imaplib.IMAP4_SSL(settings.EMAIL_HOST_IMAP)
+    mail = imaplib.IMAP4_SSL("imap.gmail.com")
     if mail:
         mail.login(settings.EMAIL_HOST_USER, settings.EMAIL_HOST_PASSWORD)
         mail.select()
@@ -181,29 +181,36 @@ def getMailsList(mail, data=None):
         id_list = mail_ids.split()
     return id_list
 
-def informaDSN2(destinataris,usuari,emailRetornat,motiu,data):
+def informaDSN(destinataris,usuari,emailRetornat,motiu,data):
     al=Alumne.objects.filter(user_associat=usuari)
     if al.exists():
         al=al[0]
-        if al.correu_relacio_familia_pare==emailRetornat or al.correu_relacio_familia_mare==emailRetornat or (
-            al.correu_relacio_familia_pare=='' and al.correu_relacio_familia_mare==''):
-            print(str(usuari)+","+emailRetornat+","+str(data))
-            if al.correu_relacio_familia_pare!=emailRetornat and al.correu_relacio_familia_pare!='':
-                print("correu_relfam_pare: "+al.correu_relacio_familia_pare)
-            if al.correu_relacio_familia_mare!=emailRetornat and al.correu_relacio_familia_mare!='':
-                print("correu_relfam_mare: "+al.correu_relacio_familia_mare)
-            if al.rp1_correu!=emailRetornat and al.rp1_correu!='':
-                print("rp1_correu        : "+al.rp1_correu)
-            if al.rp2_correu!=emailRetornat and al.rp2_correu!='':
-                print("rp2_correu        : "+al.rp2_correu)
-            if al.correu_tutors!=emailRetornat and al.correu_tutors!='':
-                print("correu_tutors     : "+al.correu_tutors)
-            if al.correu!=emailRetornat and al.correu!='':
-                print("correu            : "+al.correu)
-            print("--------------------------------------")
+        mostra=False
+        '''
+        if (al.correu_relacio_familia_pare==emailRetornat):
+            mostra=True
+            al.correu_relacio_familia_pare=''
+        if (al.correu_relacio_familia_mare==emailRetornat):
+            mostra=True
+            al.correu_relacio_familia_mare=''
+        '''
+        if (al.rp1_correu==emailRetornat):
+            mostra=True
+            al.rp1_correu=''
+        if (al.rp2_correu==emailRetornat):
+            mostra=True
+            al.rp2_correu=''
+        if (al.correu_tutors==emailRetornat):
+            mostra=True
+            al.correu_tutors=''
+        if (al.correu==emailRetornat):
+            mostra=True
+            al.correu=''
+        if mostra:
+            #al.save()
+            print(str(al)+";"+emailRetornat+";"+str(data))
 
-
-def informaDSN(destinataris,usuari,emailRetornat,motiu,data):
+def informaDSN2(destinataris,usuari,emailRetornat,motiu,data):
     '''
     Envia missatges Djau per cada destinatari
     Informa de l'error de l'adreça email de l'usuari
@@ -343,11 +350,14 @@ def controlDSN(ultimaVegada=None):
     '''
     mail=connectIMAP()
     if mail is None: return False
+    '''
     usuari_notificacions, new = User.objects.get_or_create( username = 'TP')
     if new:
         usuari_notificacions.is_active = False
         usuari_notificacions.first_name = u"Usuari Tasques Programades"
         usuari_notificacions.save()
+    '''
+    actual=datetime.now()
     id_list=getMailsList(mail, ultimaVegada)
     if id_list is None: return False
     '''
@@ -360,9 +370,8 @@ def controlDSN(ultimaVegada=None):
     )       
     actual=accio.moment
     '''
-    actual=datetime.now()
     if ultimaVegada is None: ultimaVegada=actual - timedelta(days=15)
-    ultimaVegada=actual - timedelta(days=3)
+    ultimaVegada=actual - timedelta(days=4)
     i=len(id_list)-1
     while actual>ultimaVegada and i>=0:
         num=id_list[i]
