@@ -24,10 +24,20 @@ from aula.utils.tools import unicode
 
 def sincronitza(f, user = None):
 
+    errors = []
+
+    try:
+        wb2 = load_workbook(f)
+        if len(wb2.worksheets)!=1:
+            errors.append('Fitxer incorrecte')
+            return {'errors': errors, 'warnings': [], 'infos': []}
+    except:
+        errors.append('Fitxer incorrecte')
+        return {'errors': errors, 'warnings': [], 'infos': []}
+    
     msgs = comprovar_grups( f )
     if msgs["errors"]:
         return msgs
-    errors = []
 
     #Exclou els alumnes AMB esborrat i amb estat MAN (creats manualment)
     Alumne.objects.exclude( estat_sincronitzacio__exact = 'DEL' ).exclude( estat_sincronitzacio__exact = 'MAN') \
@@ -51,7 +61,7 @@ def sincronitza(f, user = None):
     trobatRalc = False
 
     # Carregar full de càlcul
-    wb2 = load_workbook(f)
+    #wb2 = load_workbook(f)
     full = wb2.active
     max_row = full.max_row
 
@@ -373,7 +383,7 @@ def comprovar_grups( f ):
 
     if col_index is None:
         errors.append(u"No trobat el grup classe al fitxer d'importació")
-        return False, { 'errors': errors, 'warnings': warnings, 'infos': infos }
+        return { 'errors': errors, 'warnings': warnings, 'infos': infos }
 
     for row in rows[6:max_row - 1]:  # la darrera fila també és brossa
         for index, cell in enumerate(row):
