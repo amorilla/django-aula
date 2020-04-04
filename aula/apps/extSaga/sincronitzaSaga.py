@@ -31,10 +31,6 @@ def sincronitza(f, user = None):
 
     errors = []
 
-    # amorilla@xtec.cat
-    manteCorreus, _ = ParametreSaga.objects.get_or_create( nom_parametre = 'mantenirCorreus' )
-    manteCorreus = manteCorreus.valor_parametre=='True'
-
     #Exclou els alumnes AMB esborrat i amb estat MAN (creats manualment)
     Alumne.objects.exclude( estat_sincronitzacio__exact = 'DEL' ).exclude( estat_sincronitzacio__exact = 'MAN') \
         .update( estat_sincronitzacio = 'PRC')
@@ -90,7 +86,7 @@ def sincronitza(f, user = None):
                 trobatGrupClasse = True
             #if columnName.endswith( u"_CORREU ELECTRÒNIC")  or columnName.find( u"_ADREÇA ELECTR. RESP.")>=0 :
             #    a.correu_tutors += unicode(value,'iso-8859-1') + u', '
-            if columnName.endswith( u"_CORREU ELECTRÒNIC") and not manteCorreus:
+            if columnName.endswith( u"_CORREU ELECTRÒNIC"):
                 a.correu = unicode(value,'iso-8859-1')
             if columnName.endswith( u"_DATA NAIXEMENT"):
                 dia=time.strptime( unicode(value,'iso-8859-1'),'%d/%m/%Y')
@@ -112,9 +108,9 @@ def sincronitza(f, user = None):
                 a.rp1_mobil = unicode(value,'iso-8859-1')
             if columnName.endswith(u"_MÒBIL RESP. 2" ):
                 a.rp2_mobil = unicode(value,'iso-8859-1')
-            if columnName.endswith(u"_ADREÇA ELECTR. RESP. 1" ) and not manteCorreus:
+            if columnName.endswith(u"_ADREÇA ELECTR. RESP. 1" ):
                 a.rp1_correu = unicode(value,'iso-8859-1')
-            if columnName.endswith(u"_ADREÇA ELECTR. RESP. 2" ) and not manteCorreus:
+            if columnName.endswith(u"_ADREÇA ELECTR. RESP. 2" ):
                 a.rp2_correu = unicode(value,'iso-8859-1')
             if columnName.endswith(u"_ALTRES TELÈFONS"):
                 a.altres_telefons = unicode(value, 'iso-8859-1')
@@ -221,9 +217,18 @@ def sincronitza(f, user = None):
 
             # amorilla@xtec.cat
             manteNom, _ = ParametreSaga.objects.get_or_create( nom_parametre = 'mantenirNom' )
+            manteCorreus, _ = ParametreSaga.objects.get_or_create( nom_parametre = 'mantenirCorreus' )
             
             if manteNom.valor_parametre=='True':
                 a.nom=alumneDadesAnteriors.nom
+            
+            if manteCorreus.valor_parametre=='True':
+                a.correu_relacio_familia_pare=alumneDadesAnteriors.correu_relacio_familia_pare
+                a.correu_relacio_familia_mare=alumneDadesAnteriors.correu_relacio_familia_mare
+                a.rp1_correu=alumneDadesAnteriors.rp1_correu
+                a.rp2_correu=alumneDadesAnteriors.rp2_correu
+                a.correu=alumneDadesAnteriors.correu
+                a.correu_tutors=alumneDadesAnteriors.correu_tutors
 
         a.save()
         nivells.add(a.grup.curs.nivell)
