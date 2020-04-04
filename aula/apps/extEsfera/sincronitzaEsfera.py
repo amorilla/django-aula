@@ -31,13 +31,12 @@ def sincronitza(f, user = None):
         if len(wb2.worksheets)!=1:
             errors.append('Fitxer incorrecte')
             return {'errors': errors, 'warnings': [], 'infos': []}
+        msgs = comprovar_grups( f )
+        if msgs["errors"]:
+            return msgs    
     except:
         errors.append('Fitxer incorrecte')
         return {'errors': errors, 'warnings': [], 'infos': []}
-    
-    msgs = comprovar_grups( f )
-    if msgs["errors"]:
-        return msgs
 
     #Exclou els alumnes AMB esborrat i amb estat MAN (creats manualment)
     Alumne.objects.exclude( estat_sincronitzacio__exact = 'DEL' ).exclude( estat_sincronitzacio__exact = 'MAN') \
