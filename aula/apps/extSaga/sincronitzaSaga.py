@@ -27,21 +27,20 @@ def sincronitza(f, user = None):
     errors = []
 
     try:
-        reader = csv.DictReader(f)
+        msgs = comprovar_grups( f )
+    
+        if msgs["errors"]:
+            return msgs
     except:
         errors.append('Fitxer incorrecte')
         return {'errors': errors, 'warnings': [], 'infos': []}
 
-    msgs = comprovar_grups( f )
-
-    if msgs["errors"]:
-        return msgs
 
     #Exclou els alumnes AMB esborrat i amb estat MAN (creats manualment)
     Alumne.objects.exclude( estat_sincronitzacio__exact = 'DEL' ).exclude( estat_sincronitzacio__exact = 'MAN') \
         .update( estat_sincronitzacio = 'PRC')
         #,"00_IDENTIFICADOR DE L'ALUMNE/A","01_NOM","02_ADRE�A","03_CP","04_CENTRE PROCED�NCIA","05_CODI LOCALITAT","06_CORREU ELECTR�NIC","07_DATA NAIXEMENT","08_DOC. IDENTITAT","09_GRUPSCLASSE","10_NOM LOCALITAT","11_TEL�FONS","12_TUTOR(S)"
-    #reader = csv.DictReader(f)
+    reader = csv.DictReader(f)
     errors_nAlumnesSenseGrup=0
     info_nAlumnesLlegits=0
     info_nAlumnesInsertats=0
