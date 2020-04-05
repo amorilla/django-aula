@@ -1,11 +1,411 @@
 # This Python file uses the following encoding: utf-8
 import random
-from aula.apps.usuaris.models import OneTimePasswd, Professor
+from aula.apps.usuaris.models import OneTimePasswd, Professor, Accio
 from django.utils.datetime_safe import datetime
 from datetime import timedelta
 from django.db.models import Q
 from django.conf import settings
 from aula.apps.alumnes.models import Alumne
+import re
+import dns.resolver
+import smtplib
+import imaplib
+import email
+from django.contrib.auth.models import User, Group
+from aula.apps.missatgeria.models import Missatge
+from aula.apps.missatgeria.missatges_a_usuaris import tipusMissatge, MAIL_REBUTJAT
+
+def connectIMAP():
+    '''
+    Realitza connexió al servidor de correu segons les dades 
+    dels settings EMAIL_HOST_IMAP EMAIL_HOST_USER EMAIL_HOST_PASSWORD
+    
+    Retorna objecte IMAP4_SSL per accedir al correu o None si falla
+    
+    '''
+    
+    mail = imaplib.IMAP4_SSL(settings.EMAIL_HOST_IMAP)
+    if mail:
+        mail.login(settings.EMAIL_HOST_USER, settings.EMAIL_HOST_PASSWORD)
+        mail.select()
+    return mail
+
+def disconnectIMAP(mail):
+    '''
+    Desconnecta el servidor de correu IMAP mail
+    
+    '''
+    
+    if mail:
+        try:
+            mail.close()
+            mail.logout()
+        except:
+            pass
+
+def extractEmail(address):
+    '''
+    Comprova o recupera una adreça email de l'string address
+    Només fa la comprovació sintàctica, si l'string és format per varies 
+    adreces potencials retorna la primera correcta
+    
+    Retorna True, adreçaOK si és vàlid
+            False, address original si no correspon a email 
+            
+    '''
+    
+    addressToVerify=address.strip().lower()
+    splitAddress = addressToVerify.split(' ')
+    for a in splitAddress:
+        # General Email Regex (RFC 5322 Official Standard)
+        regex= '(?:[a-z0-9!#$%&\'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&\'*+/=?^_`{|}'\
+               '~-]+)*|"(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21\x23-\x5b\x5d-\x7f]|\\['\
+               '\x01-\x09\x0b\x0c\x0e-\x7f])*")@(?:(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])'\
+               '?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?|\[(?:(?:25[0-5]|2[0-4][0-9]|[01]'\
+               '?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?|[a-z0-9-]'\
+               '*[a-z0-9]:(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21-\x5a\x53-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])+)\])'
+        match = re.match(regex, a)
+        if match:
+            return True, a
+    #Email Syntax Error      
+    return False, address
+
+def testEmail(addressToVerify, testMailbox=False):
+    '''
+    Verifica si una adreça de correu és correcta
+    Comprova sintaxis i domini vàlid.
+    Si testMailbox és True també consulta al servidor corresponent, només 
+    té en compte el cas 550 Non-existent email address. Altres casos no es consideren error.
+    
+    Retorna  0, adreçaOK  si s'ha obtingut una adreça vàlida
+            -1, addressToVerify  si l'adreça és '' o None
+            -2, addressToVerify  si sintaxis incorrecte
+            -3, addressToVerify  si domini incorrecte
+            -4, addressToVerify  si mailbox inexistent (codi 550)
+    
+    '''
+    
+    if not addressToVerify: return -1, addressToVerify
+    
+    valida, addressToVerify=extractEmail(addressToVerify)
+    if not valida:
+        return -2, addressToVerify
+    
+    splitAddress = addressToVerify.split('@')
+    domain = str(splitAddress[1])
+    try:
+        records = dns.resolver.query(domain, 'MX')
+        mxRecord = records[0].exchange
+        mxRecord = str(mxRecord)
+    except:
+        #print('Domain Error',addressToVerify)
+        return -3, addressToVerify
+    
+    if not testMailbox:
+        return 0, addressToVerify
+    
+    # SMTP Conversation
+    try:
+        server = smtplib.SMTP(timeout=10)
+        server.set_debuglevel(0)
+        server.connect(mxRecord)
+        server.helo(server.local_hostname)
+        fromEmail=settings.DEFAULT_FROM_EMAIL.split(" ")
+        fromEmail=fromEmail[len(fromEmail)-1]
+        fromEmail=fromEmail[1:len(fromEmail)-1]
+        
+        code, _ = server.docmd("MAIL", "FROM:<%s>" % fromEmail)
+        code, _ = server.docmd("RCPT", "TO:<%s>" % str(addressToVerify))
+        
+        server.quit()
+        server.close()
+    except:
+        #print('Mailbox Error', addressToVerify);
+        #No es pot identificar el problema, es considera vàlida
+        return 0, addressToVerify
+    
+    if code == 550:
+        # 550 Non-existent email address
+        #print('Mailbox Error', addressToVerify, code);
+        return -4, addressToVerify
+    
+    return 0, addressToVerify
+
+
+def datemailTodatetime(dateEmail):
+    '''
+    Retorna objecte datetime a partir d'un string IMAP4 INTERNALDATE
+    '''
+    
+    date=None
+    if dateEmail:
+        date_tuple=email.utils.parsedate_tz(dateEmail)
+        if date_tuple:
+            date=datetime.fromtimestamp(email.utils.mktime_tz(date_tuple))
+    return(date)
+
+def getEmailText(msg):
+    '''
+    Retorna el text del missatge dins de l'objecte email.message.Message msg
+    
+    for part in message.walk():
+        if part.get('content-disposition', '').startswith('attachment;'):
+            continue
+        if part.get_content_maintype() == maintype and \
+                part.get_content_subtype() == subtype:
+            charset = part.get_content_charset()
+            this_part = part.get_payload(decode=True)
+            if charset:
+                try:
+                    this_part = this_part.decode(charset, 'replace')
+                except LookupError:
+                    this_part = this_part.decode('ascii', 'replace')
+    
+    '''
+    
+    if msg is None or not msg.is_multipart():
+        return ''
+    else: 
+        for m in msg.get_payload():
+            if m.is_multipart():
+                return getEmailText(m)
+            if m.get_content_maintype() == 'text':
+                    text=m.get_payload(None,True)
+                    subject=m.get('subject')
+                    try:
+                        return str(subject)+":\n"+text.decode("utf-8")
+                    except:
+                        return str(subject)+":\n"+text
+        return ''
+
+def getMailsList(mail, data=None):
+    '''
+    Retorna la llista dels identificadors de
+    correus rebuts al servidor mail. 
+    Es farà servir per al fetch de cada correu.
+    
+    '''
+    months=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"]
+    if data:
+        data=data-timedelta(days=1)
+    else:
+        data=datetime.now()-timedelta(days=10)
+    data=str(data.day)+"-"+months[data.month-1]+"-"+str(data.year)
+    id_list=None
+    if mail:
+        #_ , dades = mail.search(None, 'ALL')
+        #print(data)
+        _ , dades = mail.search(None, '(SENTSINCE "'+data+'")' )
+        mail_ids = dades[0]
+        id_list = mail_ids.split()
+    return id_list
+
+def informaDSN2(destinataris,usuari,emailRetornat,motiu,data):
+    al=Alumne.objects.filter(user_associat=usuari)
+    if al.exists():
+        al=al[0]
+        mostra=False
+        
+        if (al.correu_relacio_familia_pare==emailRetornat):
+            mostra=True
+            al.correu_relacio_familia_pare=''
+        if (al.correu_relacio_familia_mare==emailRetornat):
+            mostra=True
+            al.correu_relacio_familia_mare=''
+        '''
+        if (al.rp1_correu==emailRetornat):
+            mostra=True
+            al.rp1_correu=''
+        if (al.rp2_correu==emailRetornat):
+            mostra=True
+            al.rp2_correu=''
+        if (al.correu_tutors==emailRetornat):
+            mostra=True
+            al.correu_tutors=''
+        if (al.correu==emailRetornat):
+            mostra=True
+            al.correu=''
+        '''
+        if mostra:
+            #al.save()
+            print(str(al.ralc)+";"+str(al.grup)+";"+str(al)+";"+emailRetornat+";"+str(data))
+
+def informaDSN(destinataris,usuari,emailRetornat,motiu,data):
+    '''
+    Envia missatges Djau per cada destinatari
+    Informa de l'error de l'adreça email de l'usuari
+    Si l'usuari s'ha connectat des de la data aleshores també rep el missatge
+    
+    '''
+    
+    #print(str(usuari)+";"+emailRetornat+";"+str(data))
+    
+    enviaUsuari=False
+    if not destinataris or not usuari:
+        destinataris= Group.objects.get_or_create( name = 'administradors' )[0].user_set.all()
+    if usuari:
+        #  Si usuari u s'ha connectat des de la data aleshores també se li comunica
+        connexions = usuari.LoginUsuari.filter(exitos=True).order_by( '-moment' )
+        if connexions.exists():
+            dataDarreraConnexio = connexions[0].moment
+            if dataDarreraConnexio>data:
+                enviaUsuari=True
+    
+    missatge = MAIL_REBUTJAT.format(str(usuari) if usuari else "desconegut", emailRetornat, str(data), motiu)
+    tipus_de_missatge = tipusMissatge(missatge)
+    usuari_notificacions, new = User.objects.get_or_create( username = 'TP')
+    if new:
+        usuari_notificacions.is_active = False
+        usuari_notificacions.first_name = u"Usuari Tasques Programades"
+        usuari_notificacions.save()
+    msg = Missatge( remitent = usuari_notificacions, text_missatge = missatge, tipus_de_missatge = tipus_de_missatge  )
+    for d in destinataris:
+        msg.envia_a_usuari( d , 'VI')
+    if enviaUsuari:
+        pass
+        #msg.envia_a_usuari( usuari , 'VI')
+
+def informa(emailRetornat, status, action, data, diagnostic, text):
+    '''
+    Si el email retornat correspon a un alumne --> notifica al tutor
+    Si correspon a un altre --> notifica als administradors
+    motiu <-- status + action + diagnostic
+
+    '''
+    
+    motiu=status+" "+ action +" "+ diagnostic
+    # Fa recerca de l'usuari al text del missatge rebutjat
+    pos=text.find("recoverPasswd")
+    if pos!=-1:
+        usuari=text[pos:].split("/")[1].strip()
+    else:
+        pos=text.find("nom d'usuari és")
+        if pos!=-1:
+            pos1=pos+len("nom d'usuari és")
+            pos2=text.find("Per qualsevol dubte que")
+            usuari=text[pos1:pos2].split(":")[1].strip()
+        else:
+            usuari=None
+    
+    altre=None
+    administradors = Group.objects.get_or_create( name = 'administradors' )[0].user_set.all()
+    if usuari is None:
+        #és usuari desconegut
+        correus = (Q( correu_relacio_familia_pare = emailRetornat ) |
+            Q( correu_relacio_familia_mare = emailRetornat ) | Q(correu_tutors = emailRetornat) |
+            Q(rp1_correu = emailRetornat) | Q(rp2_correu = emailRetornat) | Q(correu = emailRetornat))
+        alumnes=Alumne.objects.filter(correus).filter(data_baixa__isnull = True).distinct()
+        if alumnes.exists():
+            #Cada alumne amb el seu tutor
+            #envia a tots els tutors que corresponguin --> notifica usuaris, email, motiu
+            for almn in alumnes:
+                if almn.correu_relacio_familia_pare == emailRetornat or almn.correu_relacio_familia_mare == emailRetornat:
+                    tutors=almn.tutorsDelGrupDeLAlumne()
+                    informaDSN(tutors,almn.get_user_associat(),emailRetornat,motiu,data)
+                else:
+                    informaDSN(administradors,almn.get_user_associat(),emailRetornat,motiu,data)
+            return
+        else:
+            altre=User.objects.filter(email = emailRetornat)
+            altre=altre[0] if altre.exists() else None
+    else:
+        altre=User.objects.filter(username = usuari)
+        if altre.exists():
+            altre=altre[0]
+            try:
+                almn=Alumne.objects.get(user_associat=altre, data_baixa__isnull = True)
+            except:
+                almn=None
+            if almn:
+                #és un alumne
+                #determina tutor, notifica al tutor usuari, email, motiu
+                if almn.correu_relacio_familia_pare == emailRetornat or almn.correu_relacio_familia_mare == emailRetornat:
+                    tutors=almn.tutorsDelGrupDeLAlumne()
+                    informaDSN(tutors,almn.get_user_associat(),emailRetornat,motiu,data)
+                else:
+                    informaDSN(administradors,almn.get_user_associat(),emailRetornat,motiu,data)
+                return
+        else: 
+            altre=None
+            motiu="Desconegut "+usuari+"\n"+motiu
+    #no és un alumne envia notificació a administradors
+    #notificació usuari, email, motiu
+    informaDSN(administradors,altre,emailRetornat,motiu,data)
+
+def controlDSN(dies=15):
+    '''
+    Verifica si s'han rebut correus d'error delivery status notification (DSN) a partir
+    de l'ultima vegada. Si és el primer control aleshores comprova els últims 15 dies.
+    Per cada correu identifica destinatari erroni i informa al tutor o a l'administrador de Django.
+    
+    Retorna True si ok o False si no pot accedir al correu
+    '''
+    
+    ultimControl=Accio.objects.filter(tipus='DS').order_by( '-moment' )
+    if ultimControl.exists():
+        ultimaVegada=ultimControl[0].moment
+        ultimFetch=ultimControl[0].text.split(";")[1].encode()
+    else:
+        ultimaVegada=datetime.now() - timedelta(days=dies)
+        ultimFetch=b'0';
+    mail=connectIMAP()
+    if mail is None: return False
+    id_list=getMailsList(mail, ultimaVegada)
+    if id_list is None: return False
+    i=len(id_list)-1
+    num=id_list[i]
+    #print(str(id_list))
+    while num!=ultimFetch and i>=0:
+        status, data = mail.fetch(num, '(RFC822)' )
+        # the content data at the '(RFC822)' format comes on
+        # a list with a tuple with header, content, and the closing
+        # byte b')'
+        for response_part in data:
+            # so if its a tuple...
+            if isinstance(response_part, tuple):
+                # we go for the content at its second element
+                # skipping the header at the first and the closing
+                # at the third
+                msg = email.message_from_bytes(response_part[1])
+                if (msg.is_multipart() and len(msg.get_payload()) > 1 and 
+                    msg.get_payload(1).get_content_type() == 'message/delivery-status'):
+                    # email is DSN
+                    for m in msg.get_payload():
+                        if m.get_content_type() == 'message/rfc822':
+                            text=getEmailText(m)
+                            break
+                    for dsn in msg.get_payload(1).get_payload():
+                        if dsn.get_content_type() == 'text/plain':
+                            fr=dsn.get('Final-Recipient')
+                            if fr: emailRetornat=fr.split(';')[1].strip()
+                            st=dsn.get('status')
+                            if st: status=st
+                            act=dsn.get('action')
+                            if act: action=act
+                            ad=dsn.get('Arrival-Date')
+                            if ad: data=datemailTodatetime(ad)
+                            dc=dsn.get('diagnostic-code')
+                            if dc: diagnostic=dc.split(';')[1]
+                    informa(emailRetornat, status, action, data, diagnostic, text)
+        i=i-1
+        if i>=0: num=id_list[i]
+    
+    usuari_notificacions, new = User.objects.get_or_create( username = 'TP')
+    if new:
+        usuari_notificacions.is_active = False
+        usuari_notificacions.first_name = u"Usuari Tasques Programades"
+        usuari_notificacions.save()
+    Accio.objects.create( 
+            tipus = 'DS',
+            usuari = usuari_notificacions,
+            l4 = False,
+            impersonated_from = None,
+            text = u"Comprovació emails rebutjats. ;"+str(id_list[len(id_list)-1].decode())
+            )   
+    
+    disconnectIMAP(mail)
+    return True
+
 
 def enviaOneTimePasswd( email ):
     q_correu_pare = Q( correu_relacio_familia_pare = email )
