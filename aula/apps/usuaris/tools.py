@@ -241,7 +241,7 @@ def informaDSN(destinataris,usuari,emailRetornat,motiu,data):
     '''
     Envia missatges Djau per cada destinatari
     Informa de l'error de l'adreça email de l'usuari
-    Si l'usuari s'ha connectat des de la data aleshores també rep el missatge
+    (TODO Encara no **** Si l'usuari s'ha connectat des de la data aleshores també rep el missatge ****)
     
     '''
     
@@ -270,7 +270,7 @@ def informaDSN(destinataris,usuari,emailRetornat,motiu,data):
         msg.envia_a_usuari( d , 'VI')
     if enviaUsuari:
         pass
-        #msg.envia_a_usuari( usuari , 'VI')
+        #TODO msg.envia_a_usuari( usuari , 'VI')
 
 def informa(emailRetornat, status, action, data, diagnostic, text):
     '''
