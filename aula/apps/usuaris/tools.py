@@ -24,11 +24,14 @@ def connectIMAP():
     
     '''
     
-    mail = imaplib.IMAP4_SSL(settings.EMAIL_HOST_IMAP)
-    if mail:
-        mail.login(settings.EMAIL_HOST_USER, settings.EMAIL_HOST_PASSWORD)
-        mail.select()
-    return mail
+    try:
+        mail = imaplib.IMAP4_SSL(settings.EMAIL_HOST_IMAP)
+        if mail:
+            mail.login(settings.EMAIL_HOST_USER, settings.EMAIL_HOST_PASSWORD)
+            mail.select()
+        return mail
+    except:
+        return None
 
 def disconnectIMAP(mail):
     '''
@@ -178,27 +181,31 @@ def getEmailText(msg):
                         return str(subject)+":\n"+text
         return ''
 
-def getMailsList(mail, data=None):
+def getMailsList(mail, num=None, dies=15):
     '''
-    Retorna la llista dels identificadors de
-    correus rebuts al servidor mail. 
+    Retorna la llista dels identificadors de correus rebuts al 
+    servidor mail des del número num (no inclós) o els últims dies indicats.
     Es farà servir per al fetch de cada correu.
     
     '''
-    months=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"]
-    if data:
-        data=data-timedelta(days=1)
+    
+    if num:
+        cmd=str(int(num)+1)+':*'
     else:
-        data=datetime.now()-timedelta(days=10)
-    data=str(data.day)+"-"+months[data.month-1]+"-"+str(data.year)
-    id_list=None
+        months=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"]
+        data=datetime.now()-timedelta(days=dies)
+        data=str(data.day)+"-"+months[data.month-1]+"-"+str(data.year)
+        cmd='(SENTSINCE "'+data+'")'
+    #print(cmd)
     if mail:
-        #_ , dades = mail.search(None, 'ALL')
-        #print(data)
-        _ , dades = mail.search(None, '(SENTSINCE "'+data+'")' )
-        mail_ids = dades[0]
-        id_list = mail_ids.split()
-    return id_list
+        try:
+            _ , dades = mail.search(None, cmd )
+            mail_ids = dades[0]
+            id_list = mail_ids.split()
+            return id_list
+        except:
+            return None
+    return None
 
 def informaDSN2(destinataris,usuari,emailRetornat,motiu,data):
     al=Alumne.objects.filter(user_associat=usuari)
@@ -234,7 +241,7 @@ def informaDSN(destinataris,usuari,emailRetornat,motiu,data):
     '''
     Envia missatges Djau per cada destinatari
     Informa de l'error de l'adreça email de l'usuari
-    Si l'usuari s'ha connectat des de la data aleshores també rep el missatge
+    (TODO Encara no **** Si l'usuari s'ha connectat des de la data aleshores també rep el missatge ****)
     
     '''
     
@@ -263,7 +270,7 @@ def informaDSN(destinataris,usuari,emailRetornat,motiu,data):
         msg.envia_a_usuari( d , 'VI')
     if enviaUsuari:
         pass
-        #msg.envia_a_usuari( usuari , 'VI')
+        #TODO msg.envia_a_usuari( usuari , 'VI')
 
 def informa(emailRetornat, status, action, data, diagnostic, text):
     '''
@@ -332,31 +339,48 @@ def informa(emailRetornat, status, action, data, diagnostic, text):
     #notificació usuari, email, motiu
     informaDSN(administradors,altre,emailRetornat,motiu,data)
 
+def ultimControl(num):
+    usuari_notificacions, new = User.objects.get_or_create( username = 'TP')
+    if new:
+        usuari_notificacions.is_active = False
+        usuari_notificacions.first_name = u"Usuari Tasques Programades"
+        usuari_notificacions.save()
+    Accio.objects.create( 
+            tipus = 'DS',
+            usuari = usuari_notificacions,
+            l4 = False,
+            impersonated_from = None,
+            text = u"Comprovació emails rebutjats. ;"+num.decode()
+            )   
+
 def controlDSN(dies=15):
     '''
     Verifica si s'han rebut correus d'error delivery status notification (DSN) a partir
-    de l'ultima vegada. Si és el primer control aleshores comprova els últims 15 dies.
+    de l'ultima vegada. Si és el primer control aleshores comprova els últims dies passats per paràmetre.
     Per cada correu identifica destinatari erroni i informa al tutor o a l'administrador de Django.
     
     Retorna True si ok o False si no pot accedir al correu
     '''
     
-    ultimControl=Accio.objects.filter(tipus='DS').order_by( '-moment' )
-    if ultimControl.exists():
-        ultimaVegada=ultimControl[0].moment
-        ultimFetch=ultimControl[0].text.split(";")[1].encode()
+    control=Accio.objects.filter(tipus='DS').order_by( '-moment' )
+    if control.exists():
+        ultimFetch=control[0].text.split(";")[1].encode()
     else:
-        ultimaVegada=datetime.now() - timedelta(days=dies)
-        ultimFetch=b'0';
+        ultimFetch=None;
     mail=connectIMAP()
     if mail is None: return False
-    id_list=getMailsList(mail, ultimaVegada)
+    id_list=getMailsList(mail, ultimFetch, dies)
     if id_list is None: return False
-    i=len(id_list)-1
-    num=id_list[i]
     #print(str(id_list))
-    while num!=ultimFetch and i>=0:
-        status, data = mail.fetch(num, '(RFC822)' )
+    i=0
+    while i<len(id_list):
+        try:
+            num=id_list[i]
+            status, data = mail.fetch(num, '(RFC822)' )
+        except:
+            if i>0: ultimControl(id_list[i-1])
+            return False
+        i=i+1
         # the content data at the '(RFC822)' format comes on
         # a list with a tuple with header, content, and the closing
         # byte b')'
@@ -387,21 +411,8 @@ def controlDSN(dies=15):
                             dc=dsn.get('diagnostic-code')
                             if dc: diagnostic=dc.split(';')[1]
                     informa(emailRetornat, status, action, data, diagnostic, text)
-        i=i-1
-        if i>=0: num=id_list[i]
     
-    usuari_notificacions, new = User.objects.get_or_create( username = 'TP')
-    if new:
-        usuari_notificacions.is_active = False
-        usuari_notificacions.first_name = u"Usuari Tasques Programades"
-        usuari_notificacions.save()
-    Accio.objects.create( 
-            tipus = 'DS',
-            usuari = usuari_notificacions,
-            l4 = False,
-            impersonated_from = None,
-            text = u"Comprovació emails rebutjats. ;"+str(id_list[len(id_list)-1].decode())
-            )   
+    ultimControl(id_list[len(id_list)-1])
     
     disconnectIMAP(mail)
     return True
