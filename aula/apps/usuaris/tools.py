@@ -181,25 +181,25 @@ def getEmailText(msg):
                         return str(subject)+":\n"+text
         return ''
 
-def getMailsList(mail, data=None):
+def getMailsList(mail, num=None, dies=15):
     '''
-    Retorna la llista dels identificadors de
-    correus rebuts al servidor mail. 
+    Retorna la llista dels identificadors de correus rebuts al 
+    servidor mail des del número num (no inclós) o els últims dies indicats.
     Es farà servir per al fetch de cada correu.
     
     '''
-    months=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"]
-    if data:
-        data=data-timedelta(days=1)
+    
+    if num:
+        cmd=str(int(num)+1)+':*'
     else:
-        data=datetime.now()-timedelta(days=10)
-    data=str(data.day)+"-"+months[data.month-1]+"-"+str(data.year)
+        months=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"]
+        data=datetime.now()-timedelta(days=dies)
+        data=str(data.day)+"-"+months[data.month-1]+"-"+str(data.year)
+        cmd='(SENTSINCE "'+data+'")'
+    #print(cmd)
     if mail:
         try:
-            #_ , dades = mail.search(None, 'ALL')
-            #TODO empezar por el primero
-            #_ , dades = mail.search(None, 'numi:numf')
-            _ , dades = mail.search(None, '(SENTSINCE "'+data+'")' )
+            _ , dades = mail.search(None, cmd )
             mail_ids = dades[0]
             id_list = mail_ids.split()
             return id_list
@@ -350,38 +350,37 @@ def ultimControl(num):
             usuari = usuari_notificacions,
             l4 = False,
             impersonated_from = None,
-            text = u"Comprovació emails rebutjats. ;"+str(num.decode())
+            text = u"Comprovació emails rebutjats. ;"+num.decode()
             )   
 
 def controlDSN(dies=15):
     '''
     Verifica si s'han rebut correus d'error delivery status notification (DSN) a partir
-    de l'ultima vegada. Si és el primer control aleshores comprova els últims 15 dies.
+    de l'ultima vegada. Si és el primer control aleshores comprova els últims dies passats per paràmetre.
     Per cada correu identifica destinatari erroni i informa al tutor o a l'administrador de Django.
     
     Retorna True si ok o False si no pot accedir al correu
     '''
     
-    ultimControl=Accio.objects.filter(tipus='DS').order_by( '-moment' )
-    if ultimControl.exists():
-        ultimaVegada=ultimControl[0].moment
-        ultimFetch=ultimControl[0].text.split(";")[1].encode()
+    control=Accio.objects.filter(tipus='DS').order_by( '-moment' )
+    if control.exists():
+        ultimFetch=control[0].text.split(";")[1].encode()
     else:
-        ultimaVegada=datetime.now() - timedelta(days=dies)
-        ultimFetch=b'0';
+        ultimFetch=None;
     mail=connectIMAP()
     if mail is None: return False
-    id_list=getMailsList(mail, ultimaVegada)
+    id_list=getMailsList(mail, ultimFetch, dies)
     if id_list is None: return False
-    #TODO empezar por el primero
-    i=len(id_list)-1
-    num=id_list[i]
     #print(str(id_list))
-    while num!=ultimFetch and i>=0:
+    i=0
+    while i<len(id_list):
         try:
+            num=id_list[i]
             status, data = mail.fetch(num, '(RFC822)' )
         except:
+            if i>0: ultimControl(id_list[i-1])
             return False
+        i=i+1
         # the content data at the '(RFC822)' format comes on
         # a list with a tuple with header, content, and the closing
         # byte b')'
@@ -412,8 +411,6 @@ def controlDSN(dies=15):
                             dc=dsn.get('diagnostic-code')
                             if dc: diagnostic=dc.split(';')[1]
                     informa(emailRetornat, status, action, data, diagnostic, text)
-        i=i-1
-        if i>=0: num=id_list[i]
     
     ultimControl(id_list[len(id_list)-1])
     
