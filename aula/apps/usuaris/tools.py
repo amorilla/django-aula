@@ -24,11 +24,14 @@ def connectIMAP():
     
     '''
     
-    mail = imaplib.IMAP4_SSL(settings.EMAIL_HOST_IMAP)
-    if mail:
-        mail.login(settings.EMAIL_HOST_USER, settings.EMAIL_HOST_PASSWORD)
-        mail.select()
-    return mail
+    try:
+        mail = imaplib.IMAP4_SSL(settings.EMAIL_HOST_IMAP)
+        if mail:
+            mail.login(settings.EMAIL_HOST_USER, settings.EMAIL_HOST_PASSWORD)
+            mail.select()
+        return mail
+    except:
+        return None
 
 def disconnectIMAP(mail):
     '''
@@ -191,14 +194,18 @@ def getMailsList(mail, data=None):
     else:
         data=datetime.now()-timedelta(days=10)
     data=str(data.day)+"-"+months[data.month-1]+"-"+str(data.year)
-    id_list=None
     if mail:
-        #_ , dades = mail.search(None, 'ALL')
-        #print(data)
-        _ , dades = mail.search(None, '(SENTSINCE "'+data+'")' )
-        mail_ids = dades[0]
-        id_list = mail_ids.split()
-    return id_list
+        try:
+            #_ , dades = mail.search(None, 'ALL')
+            #TODO empezar por el primero
+            #_ , dades = mail.search(None, 'numi:numf')
+            _ , dades = mail.search(None, '(SENTSINCE "'+data+'")' )
+            mail_ids = dades[0]
+            id_list = mail_ids.split()
+            return id_list
+        except:
+            return None
+    return None
 
 def informaDSN2(destinataris,usuari,emailRetornat,motiu,data):
     al=Alumne.objects.filter(user_associat=usuari)
@@ -332,6 +339,20 @@ def informa(emailRetornat, status, action, data, diagnostic, text):
     #notificació usuari, email, motiu
     informaDSN(administradors,altre,emailRetornat,motiu,data)
 
+def ultimControl(num):
+    usuari_notificacions, new = User.objects.get_or_create( username = 'TP')
+    if new:
+        usuari_notificacions.is_active = False
+        usuari_notificacions.first_name = u"Usuari Tasques Programades"
+        usuari_notificacions.save()
+    Accio.objects.create( 
+            tipus = 'DS',
+            usuari = usuari_notificacions,
+            l4 = False,
+            impersonated_from = None,
+            text = u"Comprovació emails rebutjats. ;"+str(num.decode())
+            )   
+
 def controlDSN(dies=15):
     '''
     Verifica si s'han rebut correus d'error delivery status notification (DSN) a partir
@@ -352,11 +373,15 @@ def controlDSN(dies=15):
     if mail is None: return False
     id_list=getMailsList(mail, ultimaVegada)
     if id_list is None: return False
+    #TODO empezar por el primero
     i=len(id_list)-1
     num=id_list[i]
     #print(str(id_list))
     while num!=ultimFetch and i>=0:
-        status, data = mail.fetch(num, '(RFC822)' )
+        try:
+            status, data = mail.fetch(num, '(RFC822)' )
+        except:
+            return False
         # the content data at the '(RFC822)' format comes on
         # a list with a tuple with header, content, and the closing
         # byte b')'
@@ -390,18 +415,7 @@ def controlDSN(dies=15):
         i=i-1
         if i>=0: num=id_list[i]
     
-    usuari_notificacions, new = User.objects.get_or_create( username = 'TP')
-    if new:
-        usuari_notificacions.is_active = False
-        usuari_notificacions.first_name = u"Usuari Tasques Programades"
-        usuari_notificacions.save()
-    Accio.objects.create( 
-            tipus = 'DS',
-            usuari = usuari_notificacions,
-            l4 = False,
-            impersonated_from = None,
-            text = u"Comprovació emails rebutjats. ;"+str(id_list[len(id_list)-1].decode())
-            )   
+    ultimControl(id_list[len(id_list)-1])
     
     disconnectIMAP(mail)
     return True
