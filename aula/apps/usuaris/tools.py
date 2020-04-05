@@ -1,6 +1,6 @@
 # This Python file uses the following encoding: utf-8
 import random
-from aula.apps.usuaris.models import OneTimePasswd, Professor, User2Professional, User2ProfessorConserge, Accio
+from aula.apps.usuaris.models import OneTimePasswd, Professor, Accio
 from django.utils.datetime_safe import datetime
 from datetime import timedelta
 from django.db.models import Q
@@ -14,7 +14,6 @@ import email
 from django.contrib.auth.models import User, Group
 from aula.apps.missatgeria.models import Missatge
 from aula.apps.missatgeria.missatges_a_usuaris import tipusMissatge, MAIL_REBUTJAT
-from _ast import Or
 
 def connectIMAP():
     '''
@@ -25,7 +24,7 @@ def connectIMAP():
     
     '''
     
-    mail = imaplib.IMAP4_SSL("imap.gmail.com")
+    mail = imaplib.IMAP4_SSL(settings.EMAIL_HOST_IMAP)
     if mail:
         mail.login(settings.EMAIL_HOST_USER, settings.EMAIL_HOST_PASSWORD)
         mail.select()
@@ -114,8 +113,8 @@ def testEmail(addressToVerify, testMailbox=False):
         fromEmail=settings.DEFAULT_FROM_EMAIL.split(" ")
         fromEmail=fromEmail[len(fromEmail)-1]
         fromEmail=fromEmail[1:len(fromEmail)-1]
-        code, _ = server.docmd("MAIL", "FROM:<%s>" % fromEmail)
         
+        code, _ = server.docmd("MAIL", "FROM:<%s>" % fromEmail)
         code, _ = server.docmd("RCPT", "TO:<%s>" % str(addressToVerify))
         
         server.quit()
@@ -149,6 +148,19 @@ def getEmailText(msg):
     '''
     Retorna el text del missatge dins de l'objecte email.message.Message msg
     
+    for part in message.walk():
+        if part.get('content-disposition', '').startswith('attachment;'):
+            continue
+        if part.get_content_maintype() == maintype and \
+                part.get_content_subtype() == subtype:
+            charset = part.get_content_charset()
+            this_part = part.get_payload(decode=True)
+            if charset:
+                try:
+                    this_part = this_part.decode(charset, 'replace')
+                except LookupError:
+                    this_part = this_part.decode('ascii', 'replace')
+    
     '''
     
     if msg is None or not msg.is_multipart():
@@ -173,20 +185,27 @@ def getMailsList(mail, data=None):
     Es farà servir per al fetch de cada correu.
     
     '''
-    
+    months=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"]
+    if data:
+        data=data-timedelta(days=1)
+    else:
+        data=datetime.now()-timedelta(days=10)
+    data=str(data.day)+"-"+months[data.month-1]+"-"+str(data.year)
     id_list=None
     if mail:
-        _ , dades = mail.search(None, 'ALL')
+        #_ , dades = mail.search(None, 'ALL')
+        #print(data)
+        _ , dades = mail.search(None, '(SENTSINCE "'+data+'")' )
         mail_ids = dades[0]
         id_list = mail_ids.split()
     return id_list
 
-def informaDSN(destinataris,usuari,emailRetornat,motiu,data):
+def informaDSN2(destinataris,usuari,emailRetornat,motiu,data):
     al=Alumne.objects.filter(user_associat=usuari)
     if al.exists():
         al=al[0]
         mostra=False
-        '''
+        
         if (al.correu_relacio_familia_pare==emailRetornat):
             mostra=True
             al.correu_relacio_familia_pare=''
@@ -206,11 +225,12 @@ def informaDSN(destinataris,usuari,emailRetornat,motiu,data):
         if (al.correu==emailRetornat):
             mostra=True
             al.correu=''
+        '''
         if mostra:
             #al.save()
-            print(str(al)+";"+emailRetornat+";"+str(data))
+            print(str(al.ralc)+";"+str(al.grup)+";"+str(al)+";"+emailRetornat+";"+str(data))
 
-def informaDSN2(destinataris,usuari,emailRetornat,motiu,data):
+def informaDSN(destinataris,usuari,emailRetornat,motiu,data):
     '''
     Envia missatges Djau per cada destinatari
     Informa de l'error de l'adreça email de l'usuari
@@ -218,15 +238,8 @@ def informaDSN2(destinataris,usuari,emailRetornat,motiu,data):
     
     '''
     
-    #print(destinataris)
-    print(str(usuari)+";"+emailRetornat+";"+str(data))
-    '''
-    if usuari:
-        grup=usuari.alumne.grup
-    else:
-        grup=None
-    print(str(usuari)+","+str(grup)+","+emailRetornat+","+str(data))
-    '''
+    #print(str(usuari)+";"+emailRetornat+";"+str(data))
+    
     enviaUsuari=False
     if not destinataris or not usuari:
         destinataris= Group.objects.get_or_create( name = 'administradors' )[0].user_set.all()
@@ -237,30 +250,8 @@ def informaDSN2(destinataris,usuari,emailRetornat,motiu,data):
             dataDarreraConnexio = connexions[0].moment
             if dataDarreraConnexio>data:
                 enviaUsuari=True
-        
-        # És alumne ?
-        try:
-            user=usuari.alumne
-        except:
-            user=None
-        #print("alumne:"+str(user))
-        if not user:
-            # És usuari ?
-            user=User2ProfessorConserge(usuari)
-            #print("prof:"+str(user))
-            if not user:
-                user=User2Professional(usuari)
-                #print("profess:"+str(user))
-                if not user:
-                    user=usuari
-                    #print("?????:"+str(user))
-        nomusuari=str(user)
-        #print("nomusuari:"+nomusuari)
     
-    else:
-        nomusuari="desconegut"
-    '''
-    missatge = MAIL_REBUTJAT.format(nomusuari, emailRetornat, str(data), motiu)
+    missatge = MAIL_REBUTJAT.format(str(usuari) if usuari else "desconegut", emailRetornat, str(data), motiu)
     tipus_de_missatge = tipusMissatge(missatge)
     usuari_notificacions, new = User.objects.get_or_create( username = 'TP')
     if new:
@@ -271,8 +262,8 @@ def informaDSN2(destinataris,usuari,emailRetornat,motiu,data):
     for d in destinataris:
         msg.envia_a_usuari( d , 'VI')
     if enviaUsuari:
-        msg.envia_a_usuari( usuari , 'VI')
-    '''
+        pass
+        #msg.envia_a_usuari( usuari , 'VI')
 
 def informa(emailRetornat, status, action, data, diagnostic, text):
     '''
@@ -297,6 +288,7 @@ def informa(emailRetornat, status, action, data, diagnostic, text):
             usuari=None
     
     altre=None
+    administradors = Group.objects.get_or_create( name = 'administradors' )[0].user_set.all()
     if usuari is None:
         #és usuari desconegut
         correus = (Q( correu_relacio_familia_pare = emailRetornat ) |
@@ -305,11 +297,17 @@ def informa(emailRetornat, status, action, data, diagnostic, text):
         alumnes=Alumne.objects.filter(correus).filter(data_baixa__isnull = True).distinct()
         if alumnes.exists():
             #Cada alumne amb el seu tutor
-            #envia a tots els tutors que corresponguin a l'email --> notifica usuaris, email, motiu
+            #envia a tots els tutors que corresponguin --> notifica usuaris, email, motiu
             for almn in alumnes:
-                tutors=almn.tutorsDelGrupDeLAlumne()
-                informaDSN(tutors,almn.get_user_associat(),emailRetornat,motiu,data)
+                if almn.correu_relacio_familia_pare == emailRetornat or almn.correu_relacio_familia_mare == emailRetornat:
+                    tutors=almn.tutorsDelGrupDeLAlumne()
+                    informaDSN(tutors,almn.get_user_associat(),emailRetornat,motiu,data)
+                else:
+                    informaDSN(administradors,almn.get_user_associat(),emailRetornat,motiu,data)
             return
+        else:
+            altre=User.objects.filter(email = emailRetornat)
+            altre=altre[0] if altre.exists() else None
     else:
         altre=User.objects.filter(username = usuari)
         if altre.exists():
@@ -321,61 +319,43 @@ def informa(emailRetornat, status, action, data, diagnostic, text):
             if almn:
                 #és un alumne
                 #determina tutor, notifica al tutor usuari, email, motiu
-                tutors=almn.tutorsDelGrupDeLAlumne()
-                informaDSN(tutors,almn.get_user_associat(),emailRetornat,motiu,data)
+                if almn.correu_relacio_familia_pare == emailRetornat or almn.correu_relacio_familia_mare == emailRetornat:
+                    tutors=almn.tutorsDelGrupDeLAlumne()
+                    informaDSN(tutors,almn.get_user_associat(),emailRetornat,motiu,data)
+                else:
+                    informaDSN(administradors,almn.get_user_associat(),emailRetornat,motiu,data)
                 return
         else: 
             altre=None
+            motiu="Desconegut "+usuari+"\n"+motiu
     #no és un alumne envia notificació a administradors
     #notificació usuari, email, motiu
-    administradors = Group.objects.get_or_create( name = 'administradors' )[0].user_set.all()
     informaDSN(administradors,altre,emailRetornat,motiu,data)
 
-def controlDSN(ultimaVegada=None):
+def controlDSN(dies=15):
     '''
     Verifica si s'han rebut correus d'error delivery status notification (DSN) a partir
-    de la data indicada a ultimaVegada. Si ultimaVegada es None aleshores comprova els
-    últims 15 dies.
-    Per cada correu identifica destinatari erroni i informa
-    al tutor o a l'administrador de Django.
+    de l'ultima vegada. Si és el primer control aleshores comprova els últims 15 dies.
+    Per cada correu identifica destinatari erroni i informa al tutor o a l'administrador de Django.
     
-    Retorna la data per a la següent verificació o None si no pot accedir al correu
+    Retorna True si ok o False si no pot accedir al correu
     '''
-    '''
-    ultimaVegada=Accio.objects.filter(tipus='DS').order_by( '-moment' )
-    if ultimaVegada.exists():
-        ultimaVegada=ultimaVegada[0].moment
+    
+    ultimControl=Accio.objects.filter(tipus='DS').order_by( '-moment' )
+    if ultimControl.exists():
+        ultimaVegada=ultimControl[0].moment
+        ultimFetch=ultimControl[0].text.split(";")[1].encode()
     else:
-        ultimaVegada=None
-    '''
+        ultimaVegada=datetime.now() - timedelta(days=dies)
+        ultimFetch=b'0';
     mail=connectIMAP()
     if mail is None: return False
-    '''
-    usuari_notificacions, new = User.objects.get_or_create( username = 'TP')
-    if new:
-        usuari_notificacions.is_active = False
-        usuari_notificacions.first_name = u"Usuari Tasques Programades"
-        usuari_notificacions.save()
-    '''
-    actual=datetime.now()
     id_list=getMailsList(mail, ultimaVegada)
     if id_list is None: return False
-    '''
-    accio=Accio.objects.create( 
-            tipus = 'DS',
-            usuari = usuari_notificacions,
-            l4 = False,
-            impersonated_from = None,
-            text = u"Comprovació emails rebutjats."
-    )       
-    actual=accio.moment
-    '''
-    if ultimaVegada is None: ultimaVegada=actual - timedelta(days=15)
-    ultimaVegada=actual - timedelta(days=4)
     i=len(id_list)-1
-    while actual>ultimaVegada and i>=0:
-        num=id_list[i]
-        i=i-1
+    num=id_list[i]
+    #print(str(id_list))
+    while num!=ultimFetch and i>=0:
         status, data = mail.fetch(num, '(RFC822)' )
         # the content data at the '(RFC822)' format comes on
         # a list with a tuple with header, content, and the closing
@@ -387,8 +367,7 @@ def controlDSN(ultimaVegada=None):
                 # skipping the header at the first and the closing
                 # at the third
                 msg = email.message_from_bytes(response_part[1])
-                actual=datemailTodatetime(msg.get('date'))
-                if (actual>ultimaVegada and msg.is_multipart() and len(msg.get_payload()) > 1 and 
+                if (msg.is_multipart() and len(msg.get_payload()) > 1 and 
                     msg.get_payload(1).get_content_type() == 'message/delivery-status'):
                     # email is DSN
                     for m in msg.get_payload():
@@ -408,6 +387,22 @@ def controlDSN(ultimaVegada=None):
                             dc=dsn.get('diagnostic-code')
                             if dc: diagnostic=dc.split(';')[1]
                     informa(emailRetornat, status, action, data, diagnostic, text)
+        i=i-1
+        if i>=0: num=id_list[i]
+    
+    usuari_notificacions, new = User.objects.get_or_create( username = 'TP')
+    if new:
+        usuari_notificacions.is_active = False
+        usuari_notificacions.first_name = u"Usuari Tasques Programades"
+        usuari_notificacions.save()
+    Accio.objects.create( 
+            tipus = 'DS',
+            usuari = usuari_notificacions,
+            l4 = False,
+            impersonated_from = None,
+            text = u"Comprovació emails rebutjats. ;"+str(id_list[len(id_list)-1].decode())
+            )   
+    
     disconnectIMAP(mail)
     return True
 

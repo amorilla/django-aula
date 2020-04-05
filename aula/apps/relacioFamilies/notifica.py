@@ -19,9 +19,6 @@ def notifica():
     from aula.apps.presencia.models import ControlAssistencia
     from django.core.mail import send_mail
     from aula.apps.usuaris.models import Accio
-    from aula.apps.usuaris.tools import controlDSN
-    
-    controlDSN()
     
     urlDjangoAula = settings.URL_DJANGO_AULA
     textTutorial = settings.CUSTOM_PORTAL_FAMILIES_TUTORIAL
