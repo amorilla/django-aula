@@ -189,20 +189,25 @@ def getMailsList(mail, num=None, dies=15):
     
     '''
     
-    if num:
-        cmd=str(int(num)+1)+':*'
-    else:
-        months=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"]
-        data=datetime.now()-timedelta(days=dies)
-        data=str(data.day)+"-"+months[data.month-1]+"-"+str(data.year)
-        cmd='(SENTSINCE "'+data+'")'
-    #print(cmd)
     if mail:
+        if num:
+            cmd=str(int(num)+1)+':*'
+        else:
+            months=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"]
+            data=datetime.now()-timedelta(days=dies)
+            data=str(data.day)+"-"+months[data.month-1]+"-"+str(data.year)
+            cmd='(SENTSINCE "'+data+'")'
+        #print(cmd)        
         try:
             _ , dades = mail.search(None, cmd )
             mail_ids = dades[0]
             id_list = mail_ids.split()
-            return id_list
+            if num and id_list and len(id_list)>0:
+                ultim=id_list[len(id_list)-1]
+                if ultim>num:
+                    return id_list
+            else:
+                return id_list
         except:
             return None
     return None
@@ -258,8 +263,9 @@ def informaDSN(destinataris,usuari,emailRetornat,motiu,data):
             if dataDarreraConnexio>data:
                 enviaUsuari=True
     
-    missatge = MAIL_REBUTJAT.format(str(usuari) if usuari else "desconegut", emailRetornat, str(data), motiu)
+    missatge = MAIL_REBUTJAT
     tipus_de_missatge = tipusMissatge(missatge)
+    missatge = missatge.format(str(usuari) if usuari else "desconegut", emailRetornat, str(data), motiu)
     usuari_notificacions, new = User.objects.get_or_create( username = 'TP')
     if new:
         usuari_notificacions.is_active = False
@@ -412,8 +418,7 @@ def controlDSN(dies=15):
                             if dc: diagnostic=dc.split(';')[1]
                     informa(emailRetornat, status, action, data, diagnostic, text)
     
-    ultimControl(id_list[len(id_list)-1])
-    
+    if len(id_list)>0: ultimControl(id_list[len(id_list)-1])
     disconnectIMAP(mail)
     return True
 
