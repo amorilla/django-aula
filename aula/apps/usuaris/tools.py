@@ -150,22 +150,23 @@ def datemailTodatetime(dateEmail):
 def getEmailText(msg):
     '''
     Retorna el text del missatge dins de l'objecte email.message.Message msg
-    
-    for part in message.walk():
-        if part.get('content-disposition', '').startswith('attachment;'):
-            continue
-        if part.get_content_maintype() == maintype and \
-                part.get_content_subtype() == subtype:
-            charset = part.get_content_charset()
-            this_part = part.get_payload(decode=True)
-            if charset:
-                try:
-                    this_part = this_part.decode(charset, 'replace')
-                except LookupError:
-                    this_part = this_part.decode('ascii', 'replace')
-    
     '''
     
+    for part in msg.walk():
+        if part.get('content-disposition', '').startswith('attachment;'):
+            continue
+        if part.get_content_maintype() == 'text':
+            charset = part.get_content_charset()
+            text = part.get_payload(decode=True)
+            subject=part.get('subject')
+            if charset:
+                try:
+                    return str(subject)+":\n"+text.decode(charset, 'replace')
+                except LookupError:
+                    return str(subject)+":\n"+text.decode('ascii', 'replace')
+            return str(subject)+":\n"+text.decode(errors='ignore')
+    return ''
+    '''   
     if msg is None or not msg.is_multipart():
         return ''
     else: 
@@ -178,8 +179,9 @@ def getEmailText(msg):
                     try:
                         return str(subject)+":\n"+text.decode("utf-8")
                     except:
-                        return str(subject)+":\n"+text
+                        return str(subject)+":\n"+str(text)
         return ''
+    '''
 
 def getMailsList(mail, num=None, dies=15):
     '''
@@ -242,7 +244,7 @@ def informaDSN2(destinataris,usuari,emailRetornat,motiu,data):
             #al.save()
             print(str(al.ralc)+";"+str(al.grup)+";"+str(al)+";"+emailRetornat+";"+str(data))
 
-def informaDSN(destinataris,usuari,emailRetornat,motiu,data):
+def informaDSN(destinataris,usuari,emailRetornat,motiu,data,url):
     '''
     Envia missatges Djau per cada destinatari
     Informa de l'error de l'adreça email de l'usuari
@@ -253,8 +255,6 @@ def informaDSN(destinataris,usuari,emailRetornat,motiu,data):
     #print(str(usuari)+";"+emailRetornat+";"+str(data))
     
     enviaUsuari=False
-    if not destinataris or not usuari:
-        destinataris= Group.objects.get_or_create( name = 'administradors' )[0].user_set.all()
     if usuari:
         #  Si usuari u s'ha connectat des de la data aleshores també se li comunica
         connexions = usuari.LoginUsuari.filter(exitos=True).order_by( '-moment' )
@@ -271,12 +271,45 @@ def informaDSN(destinataris,usuari,emailRetornat,motiu,data):
         usuari_notificacions.is_active = False
         usuari_notificacions.first_name = u"Usuari Tasques Programades"
         usuari_notificacions.save()
-    msg = Missatge( remitent = usuari_notificacions, text_missatge = missatge, tipus_de_missatge = tipus_de_missatge  )
+    if not destinataris or not usuari:
+        destinataris= Group.objects.get_or_create( name = 'administradors' )[0].user_set.all()
+        url=geturlconf('ADM',usuari)
+    msg = Missatge( remitent = usuari_notificacions, text_missatge = missatge, 
+                tipus_de_missatge = tipus_de_missatge, enllac=url )
     for d in destinataris:
+        #TODO se debe crear un mensaje diferente para cada  ??
         msg.envia_a_usuari( d , 'VI')
+    # TODO conseguir siempre User
     if enviaUsuari:
-        pass
-        #TODO msg.envia_a_usuari( usuari , 'VI')
+        try:
+            grup=usuari.getUser().groups.first().name
+        except:
+            grup=usuari.groups.first().name if usuari else None
+        if grup!='alumne':
+            msg = Missatge( remitent = usuari_notificacions, text_missatge = missatge, 
+                        tipus_de_missatge = tipus_de_missatge, enllac=geturlconf('USU',usuari) )
+            msg.envia_a_usuari( usuari , 'VI')
+
+def geturlconf(tipus,usuari):
+    al=Alumne.objects.filter(user_associat=usuari)
+    if al.exists():
+        codi=al[0].pk
+    else:
+        codi=usuari.pk if usuari else None
+    if tipus=='ADM':
+        if al.exists():
+            url='/admin/alumnes/alumne/{0}/change/'.format(codi) # administrador per alumne pk
+        else:
+            url='/admin/auth/user/{0}/change/'.format(codi) if codi else ''     # administrador per no alumne pk
+    else:
+        if tipus=='TUT':
+            url='/open/configuraConnexio/{0}/'.format(codi) if al.exists() else '' # tutor per modificar alumne pk
+        else:
+            if al.exists():
+                url='' # '/open/canviParametres/'    # usuari alumne
+            else:
+                url='/usuaris/canviDadesUsuari/'   # usuari no alumne
+    return url
 
 def informa(emailRetornat, status, action, data, diagnostic, text):
     '''
@@ -314,9 +347,11 @@ def informa(emailRetornat, status, action, data, diagnostic, text):
             for almn in alumnes:
                 if almn.correu_relacio_familia_pare == emailRetornat or almn.correu_relacio_familia_mare == emailRetornat:
                     tutors=almn.tutorsDelGrupDeLAlumne()
-                    informaDSN(tutors,almn.get_user_associat(),emailRetornat,motiu,data)
+                    informaDSN(tutors,almn.get_user_associat(),emailRetornat,motiu,data,
+                            geturlconf('TUT',almn.get_user_associat()))
                 else:
-                    informaDSN(administradors,almn.get_user_associat(),emailRetornat,motiu,data)
+                    informaDSN(administradors,almn.get_user_associat(),emailRetornat,motiu,data,
+                            geturlconf('ADM',almn.get_user_associat()))
             return
         else:
             altre=User.objects.filter(email = emailRetornat)
@@ -334,16 +369,18 @@ def informa(emailRetornat, status, action, data, diagnostic, text):
                 #determina tutor, notifica al tutor usuari, email, motiu
                 if almn.correu_relacio_familia_pare == emailRetornat or almn.correu_relacio_familia_mare == emailRetornat:
                     tutors=almn.tutorsDelGrupDeLAlumne()
-                    informaDSN(tutors,almn.get_user_associat(),emailRetornat,motiu,data)
+                    informaDSN(tutors,almn.get_user_associat(),emailRetornat,motiu,data,
+                               geturlconf('TUT',almn.get_user_associat()))
                 else:
-                    informaDSN(administradors,almn.get_user_associat(),emailRetornat,motiu,data)
+                    informaDSN(administradors,almn.get_user_associat(),emailRetornat,motiu,data,
+                               geturlconf('ADM',almn.get_user_associat()))
                 return
         else: 
             altre=None
             motiu="Desconegut "+usuari+"\n"+motiu
     #no és un alumne envia notificació a administradors
     #notificació usuari, email, motiu
-    informaDSN(administradors,altre,emailRetornat,motiu,data)
+    informaDSN(administradors,altre,emailRetornat,motiu,data,geturlconf('ADM',altre))
 
 def ultimControl(num):
     usuari_notificacions, new = User.objects.get_or_create( username = 'TP')
@@ -397,12 +434,16 @@ def controlDSN(dies=15):
                 # skipping the header at the first and the closing
                 # at the third
                 msg = email.message_from_bytes(response_part[1])
+                #print("mensaje:"+num.decode())
                 if (msg.is_multipart() and len(msg.get_payload()) > 1 and 
                     msg.get_payload(1).get_content_type() == 'message/delivery-status'):
                     # email is DSN
+                    #print("DSN")
                     for m in msg.get_payload():
                         if m.get_content_type() == 'message/rfc822':
+                            #print("texto")
                             text=getEmailText(m)
+                            #print("texto ok")
                             break
                     for dsn in msg.get_payload(1).get_payload():
                         if dsn.get_content_type() == 'text/plain':
@@ -416,7 +457,9 @@ def controlDSN(dies=15):
                             if ad: data=datemailTodatetime(ad)
                             dc=dsn.get('diagnostic-code')
                             if dc: diagnostic=dc.split(';')[1]
+                    #print("informa")
                     informa(emailRetornat, status, action, data, diagnostic, text)
+                    #print("informa ok")
     
     if len(id_list)>0: ultimControl(id_list[len(id_list)-1])
     disconnectIMAP(mail)
