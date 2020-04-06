@@ -150,22 +150,23 @@ def datemailTodatetime(dateEmail):
 def getEmailText(msg):
     '''
     Retorna el text del missatge dins de l'objecte email.message.Message msg
-    
-    for part in message.walk():
-        if part.get('content-disposition', '').startswith('attachment;'):
-            continue
-        if part.get_content_maintype() == maintype and \
-                part.get_content_subtype() == subtype:
-            charset = part.get_content_charset()
-            this_part = part.get_payload(decode=True)
-            if charset:
-                try:
-                    this_part = this_part.decode(charset, 'replace')
-                except LookupError:
-                    this_part = this_part.decode('ascii', 'replace')
-    
     '''
     
+    for part in msg.walk():
+        if part.get('content-disposition', '').startswith('attachment;'):
+            continue
+        if part.get_content_maintype() == 'text':
+            charset = part.get_content_charset()
+            text = part.get_payload(decode=True)
+            subject=part.get('subject')
+            if charset:
+                try:
+                    return str(subject)+":\n"+text.decode(charset, 'replace')
+                except LookupError:
+                    return str(subject)+":\n"+text.decode('ascii', 'replace')
+            return str(subject)+":\n"+text.decode(errors='ignore')
+    return ''
+    '''   
     if msg is None or not msg.is_multipart():
         return ''
     else: 
@@ -180,6 +181,7 @@ def getEmailText(msg):
                     except:
                         return str(subject)+":\n"+str(text)
         return ''
+    '''
 
 def getMailsList(mail, num=None, dies=15):
     '''
@@ -197,7 +199,7 @@ def getMailsList(mail, num=None, dies=15):
             data=datetime.now()-timedelta(days=dies)
             data=str(data.day)+"-"+months[data.month-1]+"-"+str(data.year)
             cmd='(SENTSINCE "'+data+'")'
-        print(cmd)        
+        #print(cmd)        
         try:
             _ , dades = mail.search(None, cmd )
             mail_ids = dades[0]
@@ -277,11 +279,16 @@ def informaDSN(destinataris,usuari,emailRetornat,motiu,data,url):
     for d in destinataris:
         #TODO se debe crear un mensaje diferente para cada  ??
         msg.envia_a_usuari( d , 'VI')
-        # TODO conseguir siempre User
-    if enviaUsuari and usuari.getUser().groups.first().name!='alumne':
-        msg = Missatge( remitent = usuari_notificacions, text_missatge = missatge, 
-                    tipus_de_missatge = tipus_de_missatge, enllac=geturlconf('USU',usuari) )
-        msg.envia_a_usuari( usuari , 'VI')
+    # TODO conseguir siempre User
+    if enviaUsuari:
+        try:
+            grup=usuari.getUser().groups.first().name
+        except:
+            grup=usuari.groups.first().name if usuari else None
+        if grup!='alumne':
+            msg = Missatge( remitent = usuari_notificacions, text_missatge = missatge, 
+                        tipus_de_missatge = tipus_de_missatge, enllac=geturlconf('USU',usuari) )
+            msg.envia_a_usuari( usuari , 'VI')
 
 def geturlconf(tipus,usuari):
     al=Alumne.objects.filter(user_associat=usuari)
@@ -427,16 +434,16 @@ def controlDSN(dies=15):
                 # skipping the header at the first and the closing
                 # at the third
                 msg = email.message_from_bytes(response_part[1])
-                print("mensaje:"+num.decode())
+                #print("mensaje:"+num.decode())
                 if (msg.is_multipart() and len(msg.get_payload()) > 1 and 
                     msg.get_payload(1).get_content_type() == 'message/delivery-status'):
                     # email is DSN
-                    print("DSN")
+                    #print("DSN")
                     for m in msg.get_payload():
                         if m.get_content_type() == 'message/rfc822':
-                            print("texto")
+                            #print("texto")
                             text=getEmailText(m)
-                            print("texto ok")
+                            #print("texto ok")
                             break
                     for dsn in msg.get_payload(1).get_payload():
                         if dsn.get_content_type() == 'text/plain':
@@ -450,9 +457,9 @@ def controlDSN(dies=15):
                             if ad: data=datemailTodatetime(ad)
                             dc=dsn.get('diagnostic-code')
                             if dc: diagnostic=dc.split(';')[1]
-                    print("informa")
+                    #print("informa")
                     informa(emailRetornat, status, action, data, diagnostic, text)
-                    print("informa ok")
+                    #print("informa ok")
     
     if len(id_list)>0: ultimControl(id_list[len(id_list)-1])
     disconnectIMAP(mail)
