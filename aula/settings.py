@@ -88,6 +88,7 @@ CUSTOM_GRUPS_PODEN_VEURE_FOTOS = ['direcció', 'professors', 'professional', 'co
 CUSTOM_TIPUS_MIME_FOTOS = ['image/gif','image/jpeg','image/png']
 PRIVATE_STORAGE_ROOT ='/dades/fitxers_privats_djAu/'
 
+
 try:
     from .settings_local import *
 except ImportError:
