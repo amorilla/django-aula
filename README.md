@@ -20,7 +20,7 @@ sudo apt-get install python3 python3-venv python-dev git
 sudo apt-get install python3-lxml python3-libxml2 libxml2-dev libxslt-dev lib32z1-dev
 mkdir djau
 cd djau
-git clone --single-branch --branch master https://github.com/ctrl-alt-d/django-aula.git django-aula
+git clone --single-branch --branch thosicodina https://github.com/amorilla/django-aula.git django-aula
 cd django-aula
 python3 -m venv venv
 source venv/bin/activate
@@ -35,7 +35,7 @@ Open browser at http://127.0.0.1:8000 ( User M1, M2, ..., T1, T2, .. .All passwd
 Deployment Docs
 =============
 
-[Documentació pas a pas per a fer el desplegament.](https://github.com/ctrl-alt-d/django-aula/blob/master/docs/Wiki/README.md)
+[Documentació pas a pas per a fer el desplegament.](https://github.com/amorilla/django-aula/blob/master/docs/Wiki/README.md)
 
 Vols col·laborar-hi?
 =============

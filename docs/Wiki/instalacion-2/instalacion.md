@@ -17,7 +17,7 @@ Entre otras cosas se ha instalado el paquete **python-virtualenv** ya que la ins
 Nos colocamos en el directorio donde instalaremos la aplicación y clonamos el repositorio del proyecto.
 
 ```bash
-cd /opt && sudo git clone https://github.com/ctrl-alt-d/django-aula.git djau2019 
+cd /opt && sudo git clone https://github.com/amorilla/django-aula.git djau2019 
 sudo chown -R :www-data djau2019  #opcionalmente se puede cambiar el propietario para no utilizar root.
 cd djau2019
 ```
@@ -99,7 +99,7 @@ QUIT
 
 Django Aula tiene 3 archivos principales de configuración
 
-* **`settings.py` (Aquí se encuentra la parametrización Custom de la app, no hay que tocar este fichero, sobreescribir los settings que se desee en `settings_local.py`) más [info](https://github.com/ctrl-alt-d/django-aula/blob/master/docs/manuals/parametritzacions.txt)**.
+* **`settings.py` (Aquí se encuentra la parametrización Custom de la app, no hay que tocar este fichero, sobreescribir los settings que se desee en `settings_local.py`) más [info](https://github.com/amorilla/django-aula/blob/master/docs/manuals/parametritzacions.txt)**.
 * **`settings_local.py` (Aquí esta la configuración principal )**.
 * **`wsgi.py` (Es el script que se encargará de levantar la aplicación, Apache utilizará este archivo para servir la app a través de él)**.
 
