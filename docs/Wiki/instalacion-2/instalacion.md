@@ -99,7 +99,7 @@ QUIT
 
 Django Aula tiene 3 archivos principales de configuración
 
-* **`settings.py` (Aquí se encuentra la parametrización Custom de la app, no hay que tocar este fichero, sobreescribir los settings que se desee en `settings_local.py`) más [info](https://github.com/amorilla/django-aula/blob/master/docs/manuals/parametritzacions.txt)**.
+* **`settings.py` (Aquí se encuentra la parametrización Custom de la app, no hay que tocar este fichero, sobreescribir los settings que se desee en `settings_local.py`) más [info](https://github.com/amorilla/django-aula/blob/thosicodina/docs/manuals/parametritzacions.txt)**.
 * **`settings_local.py` (Aquí esta la configuración principal )**.
 * **`wsgi.py` (Es el script que se encargará de levantar la aplicación, Apache utilizará este archivo para servir la app a través de él)**.
 

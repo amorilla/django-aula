@@ -35,7 +35,7 @@ Open browser at http://127.0.0.1:8000 ( User M1, M2, ..., T1, T2, .. .All passwd
 Deployment Docs
 =============
 
-[Documentació pas a pas per a fer el desplegament.](https://github.com/amorilla/django-aula/blob/master/docs/Wiki/README.md)
+[Documentació pas a pas per a fer el desplegament.](https://github.com/amorilla/django-aula/blob/thosicodina/docs/Wiki/README.md)
 
 Vols col·laborar-hi?
 =============
