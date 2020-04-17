@@ -27,8 +27,10 @@ def sincronitza(f, user = None):
     errors = []
 
     try:
+        # Carregar full de càlcul
         wb2 = load_workbook(f)
         if len(wb2.worksheets)!=1:
+            # Si té més d'una pestanya --> error
             errors.append('Fitxer incorrecte')
             return {'errors': errors, 'warnings': [], 'infos': []}
         msgs = comprovar_grups( f )
@@ -60,7 +62,6 @@ def sincronitza(f, user = None):
     trobatRalc = False
 
     # Carregar full de càlcul
-    #wb2 = load_workbook(f)
     full = wb2.active
     max_row = full.max_row
 
@@ -84,6 +85,8 @@ def sincronitza(f, user = None):
         a.ralc = ''
         a.telefons = ''
         for index, cell in enumerate(row):
+            if bool(cell) and bool(cell.value):
+                cell.value=cell.value.strip()
             if index in col_indexs:
                 if col_indexs[index].endswith(u"Identificador de l’alumne/a"):
                     a.ralc=unicode(cell.value)
@@ -387,7 +390,7 @@ def comprovar_grups( f ):
     for row in rows[6:max_row - 1]:  # la darrera fila també és brossa
         for index, cell in enumerate(row):
             if index in col_index:
-                grup_classe = unicode(cell.value)
+                grup_classe = unicode(cell.value).strip()
                 _, new = Grup2Aula.objects.get_or_create(grup_esfera=grup_classe)
                 if new:
                     errors.append(
