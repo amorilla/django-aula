@@ -34,7 +34,7 @@ from django.db.models import Q
 from django.contrib.auth import authenticate, login
 from django.forms.forms import NON_FIELD_ERRORS
 from django.contrib.auth.models import User, Group
-from aula.apps.usuaris.tools import enviaOneTimePasswd
+from aula.apps.usuaris.tools import enviaOneTimePasswd, testEmail
 from aula.apps.usuaris.models import User2Professor, GetDadesAddicionalsProfessor, DadesAddicionalsProfessor
 from aula.utils.tools import getClientAdress
 
@@ -60,8 +60,17 @@ def canviDadesUsuari( request):
         form.fields['first_name'].label = 'Nom'
         form.fields['last_name'].label = 'Cognoms'
         if form.is_valid():
-            form.save()
-            return HttpResponseRedirect( '/' )
+            errors = {}
+            email=form.cleaned_data['email']
+            res, email = testEmail(email, True)
+            if res!=0 and res!=-1:
+                errors.setdefault('email', []).append(u'''Adreça no vàlida''')
+
+            if len(errors)>0:
+                form._errors.update(errors)
+            else:
+                form.save()
+                return HttpResponseRedirect( '/' )
     else:
         form=CanviDadesUsuari(instance=user)
         form.fields['first_name'].label = 'Nom'

@@ -40,7 +40,7 @@ from django.db.models import Q
 from django.forms.models import modelform_factory, modelformset_factory
 from django.utils.datetime_safe import datetime
 
-from aula.apps.usuaris.tools import enviaBenvingudaAlumne, bloqueja, desbloqueja
+from aula.apps.usuaris.tools import enviaBenvingudaAlumne, bloqueja, desbloqueja, testEmail
 
 import random
 from django.contrib.humanize.templatetags.humanize import naturalday
@@ -201,9 +201,22 @@ def configuraConnexio( request , pk ):
     if request.method == 'POST':
         form = AlumneFormSet(  request.POST , request.FILES, instance=alumne )
         if form.is_valid(  ):
-            form.save()
-            url_next = '/open/dadesRelacioFamilies#{0}'.format(alumne.pk  ) 
-            return HttpResponseRedirect( url_next )            
+            errors = {}
+            email=form.cleaned_data['correu_relacio_familia_pare']
+            res, email = testEmail(email, True)
+            if res!=0 and res!=-1:
+                errors.setdefault('correu_relacio_familia_pare', []).append(u'''Adreça no vàlida''')
+            email=form.cleaned_data['correu_relacio_familia_mare']
+            res, email = testEmail(email, True)
+            if res!=0 and res!=-1:
+                errors.setdefault('correu_relacio_familia_mare', []).append(u'''Adreça no vàlida''')
+
+            if len(errors)>0:
+                form._errors.update(errors)
+            else:
+                form.save()
+                url_next = '/open/dadesRelacioFamilies#{0}'.format(alumne.pk  ) 
+                return HttpResponseRedirect( url_next )
 
     else:
         form = AlumneFormSet(instance=alumne)                
@@ -381,9 +394,22 @@ def canviParametres( request ):
     if request.method == 'POST':
         form = AlumneFormSet(  request.POST , instance=alumne )
         if form.is_valid(  ):
-            form.save()
-            url_next = '/open/elMeuInforme/'
-            return HttpResponseRedirect( url_next )
+            errors = {}
+            email=form.cleaned_data['correu_relacio_familia_pare']
+            res, email = testEmail(email, True)
+            if res!=0 and res!=-1:
+                errors.setdefault('correu_relacio_familia_pare', []).append(u'''Adreça no vàlida''')
+            email=form.cleaned_data['correu_relacio_familia_mare']
+            res, email = testEmail(email, True)
+            if res!=0 and res!=-1:
+                errors.setdefault('correu_relacio_familia_mare', []).append(u'''Adreça no vàlida''')
+
+            if len(errors)>0:
+                form._errors.update(errors)
+            else:
+                form.save()
+                url_next = '/open/elMeuInforme/'
+                return HttpResponseRedirect( url_next )
 
     else:
         form = AlumneFormSet(instance=alumne)
