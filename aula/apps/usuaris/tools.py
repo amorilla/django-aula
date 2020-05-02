@@ -120,14 +120,17 @@ def testEmail(addressToVerify, testMailbox=False):
         fromEmail=settings.DEFAULT_FROM_EMAIL.split(" ")
         fromEmail=fromEmail[len(fromEmail)-1]
         fromEmail=fromEmail[1:len(fromEmail)-1]
-        
+        print("FROM:<%s>" % fromEmail)
         code, _ = server.docmd("MAIL", "FROM:<%s>" % fromEmail)
+        print(code)
+        print("TO:<%s>" % str(addressToVerify))
         code, _ = server.docmd("RCPT", "TO:<%s>" % str(addressToVerify))
-        
+        print(code)
         server.quit()
         server.close()
-    except:
-        #print('Mailbox Error', addressToVerify);
+    except Exception as e:
+        print('Mailbox Error', addressToVerify);
+        print(str(e));
         #No es pot identificar el problema, es considera vàlida
         return 0, addressToVerify
     
