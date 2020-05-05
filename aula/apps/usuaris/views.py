@@ -62,7 +62,7 @@ def canviDadesUsuari( request):
         if form.is_valid():
             errors = {}
             email=form.cleaned_data['email']
-            res, email = testEmail(email, True)
+            res, email = testEmail(email, False)
             if res<-1:
                 errors.setdefault('email', []).append(u'''Adreça no vàlida''')
 

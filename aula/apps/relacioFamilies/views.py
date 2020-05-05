@@ -203,11 +203,11 @@ def configuraConnexio( request , pk ):
         if form.is_valid(  ):
             errors = {}
             email=form.cleaned_data['correu_relacio_familia_pare']
-            res, email = testEmail(email, True)
+            res, email = testEmail(email, False)
             if res<-1:
                 errors.setdefault('correu_relacio_familia_pare', []).append(u'''Adreça no vàlida''')
             email=form.cleaned_data['correu_relacio_familia_mare']
-            res, email = testEmail(email, True)
+            res, email = testEmail(email, False)
             if res<-1:
                 errors.setdefault('correu_relacio_familia_mare', []).append(u'''Adreça no vàlida''')
 
@@ -396,11 +396,11 @@ def canviParametres( request ):
         if form.is_valid(  ):
             errors = {}
             email=form.cleaned_data['correu_relacio_familia_pare']
-            res, email = testEmail(email, True)
+            res, email = testEmail(email, False)
             if res<-1:
                 errors.setdefault('correu_relacio_familia_pare', []).append(u'''Adreça no vàlida''')
             email=form.cleaned_data['correu_relacio_familia_mare']
-            res, email = testEmail(email, True)
+            res, email = testEmail(email, False)
             if res<-1:
                 errors.setdefault('correu_relacio_familia_mare', []).append(u'''Adreça no vàlida''')
 
