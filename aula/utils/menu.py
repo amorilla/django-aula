@@ -79,7 +79,7 @@ def calcula_menu( user , path, sessioImpersonada ):
         alumneuser = AlumneUser.objects.get( id = user.id )
         alumne = alumneuser.getAlumne()
         if alumne:
-            menu["nomusuari"]= u"Família de {alumne}".format( alumne=alumne.nom )
+            menu["nomusuari"]= u"Família de {alumne}".format( alumne=alumne.nom if alumne.nom else alumne.ralc)
         else:
             menu["nomusuari"]= user.first_name or user.username 
     else:
@@ -180,6 +180,10 @@ def calcula_menu( user , path, sessioImpersonada ):
                       ("Cerca Alumne", 'gestio__usuari__cerca', co or pl, None, None),
                       ("Cerca Professor", 'gestio__professor__cerca', co or pl, None, None),  
                       ("iCal", 'gestio__calendari__integra', pl, None, None),  
+                      ("Peticions pendents", 'matricula:gestio__peticions__pendents', di, None, None),  
+                      ("Matrícules per confirmar", 'matricula:gestio__confirma__matricula', di, None, None),  
+                      ("Matrícules", 'matricula:gestio__llistat__matricula', di, None, None),  
+                      ("Quotes", 'matricula:gestio__assigna__quotes', di, None, None),
                    )
                ),
                             
@@ -247,6 +251,7 @@ def calcula_menu( user , path, sessioImpersonada ):
                         (
                           ("Alumnes ESO/BAT", 'administracio__sincronitza__esfera', di , None  ),
                           ("Alumnes Cicles", 'administracio__sincronitza__saga', di, None),
+                          ("Preinscripció", 'administracio__sincronitza__preinscripcio', di , None  ),
                           ("HorarisKronowin", 'administracio__sincronitza__kronowin', di , None  ),
                           ("HorarisUntis", 'administracio__sincronitza__Untis', di , None  ),
                           ("Aules", 'gestio__aula__assignacomentari', di, None),
@@ -268,6 +273,7 @@ def calcula_menu( user , path, sessioImpersonada ):
                   (
                       ("Informe", 'relacio_families__informe__el_meu_informe', al, None, None ),
                       ("Paràmetres", 'relacio_families__configuracio__canvi_parametres', al, None, None ),
+                      ("Matricula", 'matricula:relacio_families__matricula__dades', al, None, None ),
                    )
                ),
              )
@@ -418,6 +424,7 @@ administracio__sincronitza__Untis
 administracio__sincronitza__regenerar_horaris
 administracio__sincronitza__saga
 administracio__sincronitza__esfera
+administracio__sincronitza__preinscripcio
 
 coordinacio_pedagogica__qualitativa__avaluacions
 coordinacio_pedagogica__qualitativa__items
@@ -474,15 +481,19 @@ tutoria__relacio_families__bloqueja_desbloqueja
 tutoria__relacio_families___configura_connexio
 tutoria__relacio_families__dades_relacio_families
 tutoria__relacio_families__envia_benvinguda
- tutoria__seguiment_tutorial__formulari
-        
+tutoria__seguiment_tutorial__formulari
 
+matricula:gestio__peticions__pendents
+matricula:gestio__confirma__matricula
+matricula:gestio__llistat__matricula
+matricula:gestio__assigna__quotes
 
 nologin__usuari__login
 nologin__usuari__recover_password
 nologin__usuari__send_pass_by_email
 obsolet__tria_alumne
 psico__informes_alumne
+relacio_families__matricula__dades
 relacio_families__configuracio__canvi_parametres
 'relacio_families__informe__el_meu_informe'),
 relacio_families__informe__el_meu_informe
