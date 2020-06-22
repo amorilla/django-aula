@@ -7,6 +7,7 @@ from aula.apps.horaris.models import FranjaHoraria, DiaDeLaSetmana
 from aula.apps.incidencies.models import FrassesIncidenciaAula, TipusSancio, TipusIncidencia
 from aula.apps.presencia.models import EstatControlAssistencia
 from django.contrib.auth.models import Group
+from aula.apps.sortides.models import Comerç, Quota
 
 def exportJson(dades, app):
     f= open("./aula/apps/"+app+"/fixtures/dades.json","w+")
@@ -32,5 +33,9 @@ dades=serialize('json', EstatControlAssistencia.objects.all())
 exportJson(dades,'presencia')
 dades=serialize('json', Group.objects.all())
 exportJson(dades,'usuaris')
+dades=serialize('json', Comerç.objects.all())
+dades=dades[:len(dades)-1]+","+serialize('json', Quota.objects.all())[1:]
+exportJson(dades,'sortides')
+
 
 quit()
