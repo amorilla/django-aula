@@ -20,7 +20,8 @@ class Dades(models.Model):
     rp2_nom = models.CharField("Nom complet 2n responsable", max_length=250, null=True, blank=True) #responsable 2
     rp2_telefon1 = models.CharField("Telèfon 2n responsable", max_length=15, null=True, blank=True)
     rp2_correu = models.EmailField( "Correu 2n responsable", null=True, blank=True)
-    files = PrivateFileField("Fitxer amb documents", upload_to='matricula/%Y/', max_file_size=20000000, null=True)
+    files = PrivateFileField("Fitxer amb documents", upload_to='matricula/%Y/', max_file_size=20000000, null=True, 
+                             help_text='Documentació obligatòria')
     uploaded_at = models.DateTimeField(auto_now_add=True, null=True)
     acceptar_condicions=models.BooleanField("Accepto condicions de matrícula")
     
@@ -34,7 +35,7 @@ class Dades(models.Model):
     @property
     def pagamentFet(self):
         p=Pagament.objects.filter(alumne=self.peticio.alumne, quota=self.peticio.quota)
-        return p and p[0].pagament_realitzat
+        return p and p[0].pagamentFet
         
     
 class UFS(models.Model):
@@ -67,9 +68,9 @@ class Peticio(models.Model):
     any=models.IntegerField(default=django.utils.timezone.now().year)
     estat=models.CharField( max_length=1, choices=ESTAT_CHOICES, default='P')
     curs = models.ForeignKey(Curs, verbose_name="Curs on matricular-se", on_delete=models.PROTECT)
-    quota=models.ForeignKey(Quota, on_delete=models.PROTECT, null=True)
-    alumne=models.ForeignKey(Alumne, on_delete=models.PROTECT, null=True)
-    dades=models.OneToOneField(Dades, on_delete=models.PROTECT, null=True)
+    quota=models.ForeignKey(Quota, on_delete=models.PROTECT, null=True, blank=True)
+    alumne=models.ForeignKey(Alumne, on_delete=models.PROTECT, null=True, blank=True)
+    dades=models.OneToOneField(Dades, on_delete=models.PROTECT, null=True, blank=True)
     
     class Meta:
         #unique_together = ('any','idAlumne')
