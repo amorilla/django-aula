@@ -356,9 +356,16 @@ def blanc( request ):
     
     
 def allow_foto(private_file):
+    from aula.apps.alumnes.models import Alumne
+
     request = private_file.request
     credentials = tools.getImpersonateUser(request)
     (user, l4) = credentials
+    
+    prop=Alumne.objects.filter(user_associat=user, foto=private_file.relative_name)
+    if prop:
+        return request.user.is_authenticated
+    
     pertany_al_grup_permes = (user
                               .groups
                               .filter(name__in=CUSTOM_GRUPS_PODEN_VEURE_FOTOS)
