@@ -389,12 +389,13 @@ def canviParametres( request ):
     ]
     
     AlumneFormSet = modelform_factory(Alumne,
-                                         fields = ( 'correu_relacio_familia_pare', 'correu_relacio_familia_mare' ,
-                                                    'periodicitat_faltes', 'periodicitat_incidencies'), 
-                                         )    
+                                      form=AlumneModelForm,
+                                      widgets={
+                                          'foto': FileInput,}
+                                         )
     
     if request.method == 'POST':
-        form = AlumneFormSet(  request.POST , instance=alumne )
+        form = AlumneFormSet(  request.POST , request.FILES, instance=alumne )
         if form.is_valid(  ):
             errors = {}
             email=form.cleaned_data['correu_relacio_familia_pare']
@@ -418,13 +419,13 @@ def canviParametres( request ):
 
     return render(
                 request,
-                'form.html',
+                'configuraConnexio.html',
                     {'form': form,
+                     'image': alumne.get_foto_or_default,
                      'infoForm': infoForm,
                      'head': u'Canvi de paràmetres' ,
                      'formSetDelimited':True},
                 )
-
 
 @login_required
 def elMeuInforme( request, pk = None ):
