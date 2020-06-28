@@ -1114,7 +1114,8 @@ def pagoOnline(request, pk):
 
     values = {
         'DS_MERCHANT_AMOUNT': str(int(round(preu * 100))),
-        'DS_MERCHANT_ORDER': str(random.randint(100000000000, 999999999999)),
+        #'DS_MERCHANT_ORDER': str(random.randint(100000000000, 999999999999)),
+        'DS_MERCHANT_ORDER': str(int(alumne.pk)*10000000+int(pk))[-12:],
         'DS_MERCHANT_MERCHANTCODE': codiComerç,
         'DS_MERCHANT_CURRENCY': '978',
         'DS_MERCHANT_TRANSACTIONTYPE': '0',
@@ -1259,8 +1260,8 @@ def retornTransaccio(request,pk):
     ds_response = parameters_dic.get('Ds_Response')
     if int(ds_response) in range(0,100):
         pagament.pagament_realitzat = True
-        data = parameters_dic['Ds_Date']
-        hora = parameters_dic['Ds_Hour']
+        data = urllib.parse.unquote(parameters_dic['Ds_Date'])
+        hora = urllib.parse.unquote(parameters_dic['Ds_Hour'])
         pagament.data_hora_pagament = data + ' ' + hora
         pagament.ordre_pagament = reference
         pagament.save()

@@ -989,6 +989,12 @@ def elMeuInforme( request, pk = None ):
     pagquotes = QuotaPagament.objects.filter(alumne=alumne, quota__importQuota__gt=0)
     infQuota=detall in ['all', 'sortides'] and pagquotes
 
+    if settings.CUSTOM_MODUL_MATRICULA_ACTIU:
+        titol_sortides = 'Activitats/Pagaments'
+    else:
+        titol_sortides = 'Activitats/Sortides'
+    
+    
     #----Sortides -----------------------------------------------------------------------------   
     if infSortida:
         sortides = alumne.notificasortida_set.all()
@@ -998,7 +1004,7 @@ def elMeuInforme( request, pk = None ):
         
         taula = tools.classebuida()
         taula.codi = nTaula; nTaula+=1
-        taula.tabTitle = 'Activitats/Sortides {0}'.format( pintaNoves( sortidesNoves.count() ) )
+        taula.tabTitle = '{0} {1}'.format( titol_sortides, pintaNoves( sortidesNoves.count() ) )
     
         taula.titol = tools.classebuida()
         taula.titol.contingut = ''
@@ -1130,7 +1136,7 @@ def elMeuInforme( request, pk = None ):
         if not infSortida:
             taula = tools.classebuida()
             taula.codi = nTaula; nTaula+=1
-            taula.tabTitle = 'Activitats/Sortides'
+            taula.tabTitle = titol_sortides
         
             taula.titol = tools.classebuida()
             taula.titol.contingut = ''
