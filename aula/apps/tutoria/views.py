@@ -1378,7 +1378,7 @@ def detallTutoriaAlumne( request, pk , detall = 'all'):
 
         report.append(taula)
 
-        #----Resonsable 1 ---------------------------------------------
+        #----Resonsable 1 (Principal)---------------------------------------------
         taula = tools.classebuida()
 
         taula.titol = tools.classebuida()
@@ -1389,7 +1389,7 @@ def detallTutoriaAlumne( request, pk , detall = 'all'):
 
         capcelera = tools.classebuida()
         capcelera.amplade = 15
-        capcelera.contingut = u'Dades Responsable 1'
+        capcelera.contingut = u'Dades Responsable Preferent'
         capcelera.enllac = ""
         taula.capceleres.append(capcelera)
 
@@ -1411,7 +1411,7 @@ def detallTutoriaAlumne( request, pk , detall = 'all'):
 
         camp = tools.classebuida()
         camp.enllac = None
-        camp.contingut = u'{0}'.format(alumne.rp1_nom)
+        camp.contingut = u'{0}'.format(alumne.rp1_nom) if alumne.primer_responsable == 0 else u'{0}'.format(alumne.rp2_nom)
         filera.append(camp)
 
         taula.fileres.append(filera)
@@ -1425,8 +1425,10 @@ def detallTutoriaAlumne( request, pk , detall = 'all'):
 
         camp = tools.classebuida()
         camp.enllac = None
-        mobil = ('/ ' + alumne.rp1_mobil) if alumne.rp1_mobil != '' else ''
-        camp.contingut = u'{0} {1}'.format(alumne.rp1_telefon, mobil)
+        telefons = ', '.join(
+            filter(None, [alumne.rp1_telefon, alumne.rp1_mobil])) if alumne.primer_responsable == 0 else '/ '.join(
+            filter(None, [alumne.rp2_telefon, alumne.rp2_mobil]))
+        camp.contingut = u'{0}'.format(telefons)
         filera.append(camp)
 
         taula.fileres.append(filera)
@@ -1440,7 +1442,7 @@ def detallTutoriaAlumne( request, pk , detall = 'all'):
 
         camp = tools.classebuida()
         camp.enllac = None
-        camp.contingut = u'{0}'.format(alumne.rp1_correu)
+        camp.contingut = u'{0}'.format(alumne.rp1_correu) if alumne.primer_responsable == 0 else u'{0}'.format(alumne.rp2_correu)
         filera.append(camp)
 
         taula.fileres.append(filera)
@@ -1458,7 +1460,7 @@ def detallTutoriaAlumne( request, pk , detall = 'all'):
 
         capcelera = tools.classebuida()
         capcelera.amplade = 15
-        capcelera.contingut = u'Dades Responsable 2'
+        capcelera.contingut = u'Dades Responsable (altre)'
         capcelera.enllac = ""
         taula.capceleres.append(capcelera)
 
@@ -1478,7 +1480,7 @@ def detallTutoriaAlumne( request, pk , detall = 'all'):
 
         camp = tools.classebuida()
         camp.enllac = None
-        camp.contingut = u'{0}'.format(alumne.rp2_nom)
+        camp.contingut = u'{0}'.format(alumne.rp2_nom) if alumne.primer_responsable == 0 else u'{0}'.format(alumne.rp1_nom)
         filera.append(camp)
 
         taula.fileres.append(filera)
@@ -1492,8 +1494,10 @@ def detallTutoriaAlumne( request, pk , detall = 'all'):
 
         camp = tools.classebuida()
         camp.enllac = None
-        mobil = ('/ ' + alumne.rp2_mobil) if alumne.rp2_mobil != '' else ''
-        camp.contingut = u'{0} {1}'.format(alumne.rp2_telefon, mobil)
+        telefons = ', '.join(
+            filter(None, [alumne.rp2_telefon, alumne.rp2_mobil])) if alumne.primer_responsable == 0 else '/ '.join(
+            filter(None, [alumne.rp1_telefon, alumne.rp1_mobil]))
+        camp.contingut = u'{0}'.format(telefons)
         filera.append(camp)
 
         taula.fileres.append(filera)
@@ -1507,7 +1511,7 @@ def detallTutoriaAlumne( request, pk , detall = 'all'):
 
         camp = tools.classebuida()
         camp.enllac = None
-        camp.contingut = u'{0}'.format(alumne.rp2_correu)
+        camp.contingut = u'{0}'.format(alumne.rp2_correu) if alumne.primer_responsable == 0 else u'{0}'.format(alumne.rp1_correu)
         filera.append(camp)
 
         taula.fileres.append(filera)
