@@ -8,6 +8,17 @@ from aula.utils.widgets import DateTextImput
 from aula.django_select2.forms import ModelSelect2Widget
 from django.forms.models import ModelChoiceField
 
+def obteCurs(preinscripcio):
+    if not preinscripcio:
+        return Curs.objects.get(nivell__nom_nivell='ESO', nom_curs=1)
+    codiestudis=preinscripcio.codiestudis
+    curs=preinscripcio.curs
+    if codiestudis=='ESO LOE':
+        c=Curs.objects.filter(nivell__nom_nivell='ESO', nom_curs=curs)
+        if c:
+            return c[0]
+    return Curs.objects.get(nivell__nom_nivell='ESO', nom_curs=1)
+
 class peticioForm(forms.ModelForm):
     '''
     Formulari petició de Matrícula
@@ -18,11 +29,11 @@ class peticioForm(forms.ModelForm):
 
     class Meta:
         model = Peticio
-        fields = ['idAlumne','tipusIdent','email','curs']
+        fields = ['idAlumne','tipusIdent','email']#,'curs']
         
     def __init__(self, *args, **kwargs):
         super(peticioForm, self).__init__(*args, **kwargs)
-        self.fields['curs'].queryset = Curs.objects.filter(nivell__matricula_oberta=True).order_by('nom_curs_complert')
+        #self.fields['curs'].queryset = Curs.objects.filter(nivell__matricula_oberta=True).order_by('nom_curs_complert')
     
     def clean(self):
         cleaned_data = super(peticioForm, self).clean()
@@ -36,8 +47,10 @@ class peticioForm(forms.ModelForm):
             p=Preinscripcio.objects.filter(identificador=idAlumne)
         if not p:
             raise forms.ValidationError("Identificador erròni")
-        return cleaned_data  
-        
+        self.instance.curs = obteCurs(p[0])
+        cleaned_data['curs'] = self.instance.curs
+        return cleaned_data
+
 class DadesForm1(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
@@ -59,6 +72,7 @@ class DadesForm3(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super(DadesForm3, self).__init__(*args, **kwargs)
         self.fields['acceptar_condicions'].required=True
+        self.fields['files'].help_text="És necessari proporcionar el carnet de vacunacions o un certificat mèdic oficial."
     
     class Meta:
         model=Dades

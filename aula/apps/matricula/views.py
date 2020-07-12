@@ -5,7 +5,6 @@ from django.core.mail import send_mail
 from django.views.generic.edit import UpdateView
 from django.views.generic import ListView, DetailView
 from django.urls import reverse_lazy
-from django.core.exceptions import ValidationError
 import django.utils.timezone
 from dateutil.relativedelta import relativedelta
 import random
@@ -111,12 +110,13 @@ def mailPeticio(estat, idalum, email, alumne=None):
             [u"El motiu d'aquest correu és el de donar-vos les instruccions per a realitzar la matrícula al nostre centre.",
             u"El vostre usuari és {0} i el primer pas es obtenir la contrasenya:".format(username),
             u" * Entreu a {0} on podeu escollir la vostra contrasenya.".format(url),
-            u" * Una vegada accediu a l'aplicació podreu continuar la matrícula",
+            u" * Una vegada accediu a l'aplicació podreu continuar la matrícula.",
             u"",
             u"Sempre podreu accedir a l'aplicació {0} amb el vostre usuari {1} i la contrasenya escollida".format(settings.URL_DJANGO_AULA, username ),]
             ),
         'F': u"La matrícula de l'alumne {0} ha finalitzat correctament.\n".format(str(alumne)) + \
-            "Sempre podreu accedir a l'aplicació {0} amb el vostre usuari {1}".format(settings.URL_DJANGO_AULA, username),
+            "Sempre podreu accedir a l'aplicació {0} amb el vostre usuari {1}\n".format(settings.URL_DJANGO_AULA, username) + \
+            "Puja una fotografía tipus carnet des de l'opció de paràmetres.",
         }
     missatge = [u"Aquest missatge ha estat enviat per un sistema automàtic. No respongui a aquest e-mail, el missatge no serà llegit per ningú.",
                 u"",
