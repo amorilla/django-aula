@@ -182,7 +182,12 @@ def calcula_menu( user , path, sessioImpersonada ):
                       ("Peticions pendents", 'matricula:gestio__peticions__pendents', di, None, None),  
                       ("Matrícules per confirmar", 'matricula:gestio__confirma__matricula', di, None, None),  
                       ("Matrícules", 'matricula:gestio__llistat__matricula', di, None, None),  
-                      ("Quotes", 'matricula:gestio__assigna__quotes', di, None, None),
+                      ("Quotes", 'matricula:gestio__quotes__blanc', di, None,
+                          ( 
+                            ("Assigna Quotes", 'matricula:gestio__quotes__assigna', di, None),
+                            ("Descàrrega acumulats", 'matricula:gestio__quotes__descarrega', di, None )
+                          )
+                      ),         
                    )
                ),
                             
@@ -487,7 +492,8 @@ tutoria__seguiment_tutorial__formulari
 matricula:gestio__peticions__pendents
 matricula:gestio__confirma__matricula
 matricula:gestio__llistat__matricula
-matricula:gestio__assigna__quotes
+matricula:gestio__quotes__assigna
+matricula:gestio__quotes__descarrega
 
 nologin__usuari__login
 nologin__usuari__recover_password

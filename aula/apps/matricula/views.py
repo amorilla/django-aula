@@ -15,10 +15,10 @@ from django.http import HttpResponseRedirect
 from django.conf import settings
 from aula.utils.decorators import group_required
 from aula.apps.matricula.forms import peticioForm, DadesForm1, DadesForm2, DadesForm3, MatriculaForm, \
-                EscollirCursForm, PagQuotesForm
+                EscollirCursForm, PagQuotesForm, EscollirAny
 from aula.apps.matricula.models import Peticio, Dades
 from aula.apps.sortides.models import QuotaPagament, Quota
-from aula.apps.alumnes.models import Alumne, Curs
+from aula.apps.alumnes.models import Alumne, Curs, Nivell
 from aula.apps.extPreinscripcio.models import Preinscripcio
 from aula.apps.extSaga.models import ParametreSaga
 from aula.apps.extUntis.sincronitzaUntis import creaGrup
@@ -184,6 +184,15 @@ def peticio(request):
     Crea Peticio pendent (tipus 'P') amb les dades i envia email de confirmació de recepció.
     Si es una petició repetida, acceptada prèviament, la marca com duplicada 'D'.
     '''
+    
+    if not Nivell.objects.filter(matricula_oberta=True):
+        infos=[]
+        infos.append('El procés de matrícula online ha finalitzat.')
+        return render(
+                    request,
+                    'resultat.html', 
+                    {'msgs': {'errors': [], 'warnings': [], 'infos': infos} },
+                 )
     
     if request.method == 'POST':
         form = peticioForm(request.POST)
@@ -593,7 +602,7 @@ def assignaQuotes(request):
         if form.is_valid():
             curs=form.cleaned_data['curs_list']
             tipus=form.cleaned_data['tipus_quota']
-            return HttpResponseRedirect(reverse_lazy("matricula:gestio__assigna__quotes", 
+            return HttpResponseRedirect(reverse_lazy("matricula:gestio__quotes__assigna", 
                                                      kwargs={"curs": curs.id, "tipus": tipus.id}))
     else:
         form = EscollirCursForm()
@@ -777,4 +786,149 @@ def quotesCurs( request, curs, tipus ):
                     "head": "Assignació quotes",
                     }
                 )
+
+def acumulatsQuotes(tpv, nany=None):
+    '''
+    Retorna un diccionari amb tots els acumulats per quotes i mesos i quantitat pendent
+    {{quota1: {'pendent':nnnnn, 1:nnnnn, 2:nnnnn, ... 12:nnnnn},
+     {quota2: {'pendent':nnnnn, 1:nnnnn, 2:nnnnn, ... 12:nnnnn},
+     ... }
+    '''
     
+    from django.db.models import Sum, Q
+    
+    if not nany:
+        nany=django.utils.timezone.now().year
+    
+    totfet=QuotaPagament.objects.filter(quota__comerç=tpv, pagament_realitzat=True, data_hora_pagament__year=nany)\
+                    .values_list('quota','data_hora_pagament__month')\
+                    .annotate(total=Sum('quota__importQuota', filter=Q(fracciona=False)))\
+                    .annotate(totalf=Sum('importParcial', filter=Q(fracciona=True)))
+    
+    totpendent=QuotaPagament.objects.filter(quota__comerç=tpv, pagament_realitzat=False)\
+                    .values_list('quota')\
+                    .annotate(total=Sum('quota__importQuota', filter=Q(fracciona=False)))\
+                    .annotate(totalf=Sum('importParcial', filter=Q(fracciona=True)))
+    
+    calcul={}
+    
+    for p in list(totfet):
+        q, m, t1, t2 = p
+        tot=t1 if t1 else 0 + t2 if t2 else 0
+        if not q in calcul:
+            calcul[q]={}
+        calcul[q][m]=tot
+    
+    for p in list(totpendent):
+        q, t1, t2 = p
+        tot=t1 if t1 else 0 + t2 if t2 else 0
+        if not q in calcul:
+            calcul[q]={}
+        calcul[q]['pendent']=tot
+    
+    return calcul
+
+def fullcalculQuotes(tpv, nany=None):
+    '''
+    Retorna un full de càlcul xlsx amb els acumulats i pagaments pendents
+    '''
+    
+    import xlsxwriter
+    import io
+
+    output = io.BytesIO()
+    workbook = xlsxwriter.Workbook(output)
+    
+    if not nany:
+        nany=django.utils.timezone.now().year
+    
+    acumulats=acumulatsQuotes(tpv, nany)
+    totes=Quota.objects.filter(importQuota__gt=0).values_list('id').order_by('curs__nom_complert_curs', 'descripcio')
+    
+    worksheet = workbook.add_worksheet('Acumulats')
+    cap=['Concepte','Pendent']
+    date=django.utils.timezone.now()
+    for i in range(1,13):
+        cap.append(date.replace(month=i).strftime('%B')[2:].strip())
+    cap.append('Total Pagat')
+    worksheet.set_column(0, 0, 30)
+    worksheet.write_string(0,0,tpv.descripcio+'-'+str(nany)+'. Dades a '+date.strftime('%d/%m/%Y %H:%M'))
+    worksheet.write_row(1,0,cap)
+    fila=2
+    for q in totes:
+        if q[0] in acumulats:
+            quota=Quota.objects.get(id=q[0])
+            worksheet.write(fila, 0, quota.descripcio)
+            for m, v in iter(acumulats[q[0]].items()):
+                if m=='pendent':
+                    col=1
+                else:
+                    col=m+1 
+                worksheet.write_number(fila, col, v)
+            worksheet.write_formula(fila, 14, '=SUM(C{0}:N{0})'.format(fila+1))
+            fila=fila+1
+    if fila>2:
+        for t in range(ord('B'),ord('P')):
+            worksheet.write_formula(fila, t-ord('A'), '=SUM({0}3:{0}{1})'.format(chr(t),fila))
+    
+    worksheet = workbook.add_worksheet('Pendents')
+    worksheet.set_column(0, 4, 30)
+    worksheet.write_string(0,0,'Pagaments pendents. Dades a '+date.strftime('%d/%m/%Y %H:%M'))
+    worksheet.write_row(1,0,('Concepte','Alumne','Import','Data límit','Fraccionat'))
+    fila=2
+    pag=QuotaPagament.objects.filter(quota__comerç=tpv, pagament_realitzat=False).order_by('quota__dataLimit','quota__descripcio','alumne__cognoms','alumne__nom')
+    money_format = workbook.add_format({'num_format': '#,##0'})
+    date_format = workbook.add_format({'num_format': 'dd/mm/yyyy'})
+    
+    for p in pag:
+        worksheet.write_string(fila, 0, p.quota.descripcio )
+        worksheet.write_string(fila, 1, str(p.alumne) )
+        worksheet.write_number(fila, 2, p.quota.importQuota if not p.fracciona else p.importParcial, money_format )
+        worksheet.write_datetime(fila, 3, p.quota.dataLimit if not p.fracciona else p.dataLimit, date_format )
+        worksheet.write_string(fila, 4, 'SI' if p.fracciona else 'NO' )
+        fila=fila+1
+    
+    if fila>2:
+        worksheet.write_formula(fila, 2, '=SUM(C3:C{0})'.format(fila))
+    
+    workbook.close()
+    return output
+
+@login_required
+@group_required(['direcció','administradors'])
+def totalsQuotes(request):
+    from django.http import HttpResponse
+    
+    if request.method == 'POST':
+        form = EscollirAny(request.POST)
+        if form.is_valid():
+            nany=form.cleaned_data['year']
+            tpv=form.cleaned_data['tpv']
+            output=fullcalculQuotes(tpv,nany)
+            output.seek(0)
+            filename = tpv.descripcio+'-'+str(nany)+'-quotes.xlsx'
+            response = HttpResponse(
+                output,
+                content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+            )
+            response['Content-Disposition'] = 'attachment; filename="%s"' % filename
+    
+            return response
+
+    else:
+        form = EscollirAny()
+    return render(
+                request,
+                'form.html', 
+                {'form': form, 
+                 },
+                )
+
+@login_required
+@group_required(['direcció','administradors'])
+def blanc( request ):
+    return render(
+                request,
+                'blanc.html',
+                    {},
+                )

@@ -130,7 +130,7 @@ def notifica():
 
             if enviatOK:                    
                 noves_sortides.update( relacio_familia_notificada = ara )
-                nous_pagaments.update( data_hora_pagament = "{0} {1}".format(ara.strftime('%d/%m/%Y'), ara.strftime('%H:%M')) )
+                nous_pagaments.update( data_hora_pagament = ara )
                 noves_incidencies.update( relacio_familia_notificada = ara )
                 noves_expulsions.update( relacio_familia_notificada = ara )
                 noves_sancions.update( relacio_familia_notificada = ara )
