@@ -246,7 +246,7 @@ class Quota(models.Model):
 class Pagament(models.Model):
     alumne = models.ForeignKey(Alumne, on_delete=models.PROTECT, null=True)
     sortida = models.ForeignKey(Sortida, on_delete=models.PROTECT, null=True)
-    data_hora_pagament = models.CharField(max_length=50, null=True)
+    data_hora_pagament = models.DateTimeField(null=True)
     pagament_realitzat = models.BooleanField(null=True, default=False )
     ordre_pagament = models.CharField(max_length=12, unique=True, null=True)
     quota = models.ForeignKey(Quota, on_delete=models.PROTECT, null=True)
@@ -256,7 +256,7 @@ class Pagament(models.Model):
     estat = models.CharField(max_length=1, blank=True, null=True, default='')
     
     def __str__(self):
-        return u"Pagament de la sortida {}, realitzat per l'alumne {}: {}".format( self.sortida, self.alumne, self.pagament_realitzat if self.pagament_realitzat else 'No indicat' )
+        return u"Pagament realitzat per l'alumne {}: {}".format( self.alumne, self.pagament_realitzat if self.pagament_realitzat else 'No indicat' )
 
     @property
     def pagamentFet(self):
@@ -275,7 +275,8 @@ class Pagament(models.Model):
     
 class QuotaPagamentManager(models.Manager):
     def get_queryset(self):
-        return super(QuotaPagamentManager, self).get_queryset().filter( quota__isnull=False )
+        #  Pagaments referents a una quota. Els pagaments en estat 'E' són pagaments cancel·lats.
+        return super(QuotaPagamentManager, self).get_queryset().filter( quota__isnull=False ).exclude(estat='E')
 
 class QuotaPagament(Pagament):
     objects = QuotaPagamentManager()
@@ -290,7 +291,8 @@ class QuotaPagament(Pagament):
 
 class SortidaPagamentManager(models.Manager):
     def get_queryset(self):
-        return super(SortidaPagamentManager, self).get_queryset().filter( sortida__isnull=False )
+        #  Pagaments referents a una sortida. Els pagaments en estat 'E' són pagaments cancel·lats.
+        return super(SortidaPagamentManager, self).get_queryset().filter( sortida__isnull=False ).exclude(estat='E')
 
 class SortidaPagament(Pagament):
     objects = SortidaPagamentManager()

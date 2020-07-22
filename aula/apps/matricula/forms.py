@@ -1,7 +1,7 @@
 from django import forms
 from captcha.fields import CaptchaField
 from aula.apps.matricula.models import Peticio, Dades
-from aula.apps.sortides.models import Quota, TipusQuota, QuotaPagament
+from aula.apps.sortides.models import Quota, TipusQuota, QuotaPagament, Comerç
 from aula.apps.alumnes.models import Curs, Alumne
 from aula.apps.extPreinscripcio.models import Preinscripcio
 from aula.utils.widgets import DateTextImput
@@ -122,4 +122,23 @@ class PagQuotesForm(forms.Form):
         tipus = kwargs.pop('tipus')
         super(PagQuotesForm, self).__init__(*args, **kwargs)
         self.fields['quota'].widget.queryset=Quota.objects.filter(tipus=tipus).distinct()
+
+
+import datetime
+
+def year_choices():
+    primer=QuotaPagament.objects.filter(pagament_realitzat=True).order_by('data_hora_pagament').first().data_hora_pagament.year
+    return [(r,r) for r in range(primer, datetime.date.today().year+1)]
+
+def current_year():
+    return datetime.date.today().year
+
+class EscollirAny(forms.Form):
+    defecte = Comerç.objects.all().order_by('id').first()
+    tpv = forms.ModelChoiceField(label='TPV', queryset=None, initial=defecte, required = True,)
+    year = forms.TypedChoiceField(label='Any', coerce=int, choices=year_choices, initial=current_year, required = True)
+    
+    def __init__(self, *args, **kwargs):
+        super(EscollirAny, self).__init__(*args, **kwargs)
+        self.fields['tpv'].queryset = Comerç.objects.all().order_by('id')
         

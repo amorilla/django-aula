@@ -1006,7 +1006,7 @@ def sortidaExcel( request, pk ):
             pagament = SortidaPagament.objects.get(alumne=alumne, sortida=sortida)
             pagament_realitzat = pagament.pagament_realitzat
             row.extend([u"Si" if pagament_realitzat else u"No",
-                        pagament.data_hora_pagament if pagament_realitzat else u"",
+                        pagament.data_hora_pagament.strftime('%d/%m/%Y %H:%M') if pagament_realitzat else u"",
                         pagament.ordre_pagament if pagament_realitzat else u""])
         alumnes += [ row ]
 
@@ -1115,15 +1115,14 @@ def generaOrdre(pagament):
 
 def esRecent(datahora, minuts=10):
     '''
-    Retorna True si la datahora (en format 'dd/mm/aaaa hh:mm')
+    Retorna True si la datahora
     és anterior en menys de minuts de l'hora actual.
     '''
     
     from dateutil.relativedelta import relativedelta
     
-    actual=datetime.strptime(datahora, '%d/%m/%Y %H:%M')
     ara=datetime.now()
-    return actual + relativedelta(minutes=minuts) > ara
+    return datahora + relativedelta(minutes=minuts) > ara
 
 def logPagaments(txt):
     tipus_de_missatge = "ADMINISTRACIO"
@@ -1181,7 +1180,7 @@ def pagoOnline(request, pk):
                     pagament.ordre_pagament=generaOrdre(pagament)
                 # marca com erroni
                 pagament.alumne=None
-                pagament.data_hora_pagament=datetime.now().strftime('%d/%m/%Y %H:%M')
+                pagament.data_hora_pagament=datetime.now()
                 pagament.save()
                 pagament=noup
                 pk=pagament.pk
@@ -1264,7 +1263,7 @@ def passarella(request, pk):
             
     # Marca el pagament com Transmés a la passarella
     pagament.estat='T'
-    pagament.data_hora_pagament=datetime.now().strftime('%d/%m/%Y %H:%M')
+    pagament.data_hora_pagament=datetime.now()
     pagament.save()
     
     if pagament.sortida:
@@ -1427,9 +1426,12 @@ def retornTransaccio(request,pk):
         if int(ds_response) in range(0,100):
             # Pagament OK
             pagament.pagament_realitzat = True
-            data = urllib.parse.unquote(parameters_dic['Ds_Date'])
-            hora = urllib.parse.unquote(parameters_dic['Ds_Hour'])
-            pagament.data_hora_pagament = data + ' ' + hora
+            try:
+                data = urllib.parse.unquote(parameters_dic['Ds_Date'])
+                hora = urllib.parse.unquote(parameters_dic['Ds_Hour'])
+                pagament.data_hora_pagament = datetime.strptime(data + ' ' + hora, '%d/%m/%Y %H:%M')
+            except Exception as e:
+                pagament.data_hora_pagament = datetime.now()
             pagament.ordre_pagament = reference
             pagament.estat='F'
             if not pagament.alumne:
@@ -1445,9 +1447,12 @@ def retornTransaccio(request,pk):
             '''
             noup=clonePagament(pagament)
             pagament.pagament_realitzat = False
-            data = urllib.parse.unquote(parameters_dic['Ds_Date'])
-            hora = urllib.parse.unquote(parameters_dic['Ds_Hour'])
-            pagament.data_hora_pagament = data + ' ' + hora
+            try:
+                data = urllib.parse.unquote(parameters_dic['Ds_Date'])
+                hora = urllib.parse.unquote(parameters_dic['Ds_Hour'])
+                pagament.data_hora_pagament = datetime.strptime(data + ' ' + hora, '%d/%m/%Y %H:%M')
+            except Exception as e:
+                pagament.data_hora_pagament = datetime.now()
             pagament.ordre_pagament = reference
             pagament.alumne=None
             pagament.save()
@@ -1514,7 +1519,7 @@ def detallPagament(request, pk):
         # -Pagat--------------------------------------------
         camp = tools.classebuida()
         camp.enllac = None
-        camp.contingut = pagament.data_hora_pagament if pagament.data_hora_pagament else 'No'
+        camp.contingut = pagament.data_hora_pagament.strftime('%d/%m/%Y %H:%M') if pagament.data_hora_pagament else 'No'
         filera.append(camp)
 
         # -Codi--------------------------------------------

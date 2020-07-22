@@ -1224,13 +1224,13 @@ def elMeuInforme( request, pk = None ):
             # ----------------------------------------------
             camp = tools.classebuida()
             camp.enllac = None
-            camp.contingut = u'{0}'.format(pagquota.data_hora_pagament) if pagquota.data_hora_pagament and not pagquota.pagamentFet else ''
+            camp.contingut = pagquota.data_hora_pagament.strftime('%d/%m/%Y %H:%M') if pagquota.data_hora_pagament and not pagquota.pagamentFet else ''
             camp.negreta = not bool( pagquota.pagamentFet )
             filera.append(camp)
             # ----------------------------------------------
             camp = tools.classebuida()
             camp.enllac = None
-            camp.contingut = u'{0}'.format(pagquota.data_hora_pagament) if pagquota.data_hora_pagament and pagquota.pagamentFet else ''
+            camp.contingut = pagquota.data_hora_pagament.strftime('%d/%m/%Y %H:%M') if pagquota.data_hora_pagament and pagquota.pagamentFet else ''
             camp.negreta = not bool( pagquota.pagamentFet )
             filera.append(camp)
             
