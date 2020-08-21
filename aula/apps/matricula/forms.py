@@ -17,7 +17,7 @@ def obteCurs(preinscripcio):
         c=Curs.objects.filter(nivell__nom_nivell='ESO', nom_curs=curs)
         if c:
             return c[0]
-    return Curs.objects.get(nivell__nom_nivell='ESO', nom_curs=1)
+    return Curs.objects.get(nivell__nom_nivell=codiestudis, nom_curs=curs)
 
 class peticioForm(forms.ModelForm):
     '''
@@ -102,7 +102,7 @@ class DadesForm3(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super(DadesForm3, self).__init__(*args, **kwargs)
         self.fields['acceptar_condicions'].required=True
-        self.fields['files'].help_text="És necessari proporcionar el carnet de vacunacions o un certificat mèdic oficial."
+        self.fields['files'].help_text="És necessari el document de requisits d'accés i/o compliment de bonificacions. Envia tot en un zip."
 
     class Meta:
         model=Dades
