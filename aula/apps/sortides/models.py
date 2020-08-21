@@ -227,12 +227,12 @@ class Quota(models.Model):
     from aula.apps.alumnes.models import Curs
     
     importQuota=models.DecimalField(max_digits=7, decimal_places=2, default=0)
-    dataLimit=models.DateField(null=True)
+    dataLimit=models.DateField(null=True, blank=True)
     any=models.IntegerField(default=django.utils.timezone.now().year)
     descripcio=models.CharField(max_length=200, blank=True)
-    curs=models.ForeignKey(Curs, on_delete=models.PROTECT)
-    comerç = models.ForeignKey(Comerç, on_delete=models.PROTECT)
-    tipus = models.ForeignKey(TipusQuota, on_delete=models.PROTECT, null=True, default=None)
+    curs=models.ForeignKey(Curs, on_delete=models.PROTECT, null=True, blank=True)
+    comerç = models.ForeignKey(Comerç, on_delete=models.PROTECT, null=True, blank=True)
+    tipus = models.ForeignKey(TipusQuota, on_delete=models.PROTECT, default=None)
     
     class Meta:
         ordering = ['any','curs__nom_curs_complert']
