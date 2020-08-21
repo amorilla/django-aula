@@ -187,7 +187,7 @@ def peticio(request):
     
     if not Nivell.objects.filter(matricula_oberta=True):
         infos=[]
-        infos.append('El procés de matrícula online ha finalitzat.')
+        infos.append('El procés de matrícula online per l\'ESO ha finalitzat.')
         return render(
                     request,
                     'resultat.html', 
@@ -246,9 +246,9 @@ def peticio(request):
             if estat=='A':
                 # Canvia les peticions pendents o rebutjades a duplicades
                 if ralc:
-                    Peticio.objects.filter(idAlumne=ralc, tipusIdent='R', email=toaddress, any=novaPeticio.any, estat__in=('P','R',)).exclude(pk=novaPeticio.pk).update(estat='D')
+                    Peticio.objects.filter(idAlumne=ralc, tipusIdent='R', any=novaPeticio.any, estat__in=('P','R',)).exclude(pk=novaPeticio.pk).update(estat='D')
                 if dni:
-                    Peticio.objects.filter(idAlumne=dni, tipusIdent='D', email=toaddress, any=novaPeticio.any, estat__in=('P','R',)).exclude(pk=novaPeticio.pk).update(estat='D')
+                    Peticio.objects.filter(idAlumne=dni, tipusIdent='D', any=novaPeticio.any, estat__in=('P','R',)).exclude(pk=novaPeticio.pk).update(estat='D')
                 
                 alumne=creaAlumne(ralc, 'R', novaPeticio.curs, toaddress)
                 quotacurs=Quota.objects.filter(curs=novaPeticio.curs, any=novaPeticio.any, tipus__nom=settings.CUSTOM_TIPUS_QUOTA_MATRICULA)

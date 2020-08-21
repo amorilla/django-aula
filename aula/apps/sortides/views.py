@@ -1113,7 +1113,7 @@ def generaOrdre(pagament):
     
     return (str(pagament.alumne.pk) + ('0000000'+str(pagament.pk))[-7:])[-12:]
 
-def esRecent(datahora, minuts=10):
+def esRecent(datahora, minuts=7):
     '''
     Retorna True si la datahora
     és anterior en menys de minuts de l'hora actual.
@@ -1164,17 +1164,17 @@ def pagoOnline(request, pk):
             Si l'hora és recent --> podria ser vàlid en un altre login, ha d'esperar-se.
             en altre cas s'elimina i es crea un nou
             '''
-            if esRecent(pagament.data_hora_pagament, 10):
+            if esRecent(pagament.data_hora_pagament):
                 return render(
                             request,
                             'resultat.html', 
-                            {'msgs': {'errors': [], 'warnings': [], 'infos': ['PAGAMENT JA OBERT EN UN ALTRE CONNEXIÓ. FINALITZA\'L. Prova més tard.']} },
+                            {'msgs': {'errors': [], 'warnings': [], 'infos': ['PAGAMENT JA OBERT EN UN ALTRE CONNEXIÓ. CANCEL·LA O ESPERA UNS MINUTS.']} },
                          )
             else:
                 # es considera que ha caducat
                 #  Crea nou pagament
                 noup=clonePagament(pagament)
-                logPagaments('Pagament caducat: '+str(pagament.pk)+' alumne: '+str(pagament.alumne.id))
+                #logPagaments('Pagament caducat: '+str(pagament.pk)+' alumne: '+str(pagament.alumne.id))
                 if not pagament.ordre_pagament and pagament.alumne:
                     # es genera ordre_pagament si fa falta
                     pagament.ordre_pagament=generaOrdre(pagament)
@@ -1223,11 +1223,11 @@ def pagoOnlineKO(request, pk):
         Pagament que no ha finalitzat d'una transacció anterior o simultània en cas
         d'usuari amb varis logins actius.
         '''
-        if esRecent(pagament.data_hora_pagament, 10):
+        if esRecent(pagament.data_hora_pagament):
             return render(
                         request,
                         'resultat.html', 
-                        {'msgs': {'errors': [], 'warnings': [], 'infos': ['PAGAMENT JA OBERT EN UN ALTRE CONNEXIÓ. FINALITZA\'L O TANCA\'L.']} },
+                        {'msgs': {'errors': [], 'warnings': [], 'infos': ['PAGAMENT JA OBERT EN UN ALTRE CONNEXIÓ. CANCEL·LA O ESPERA UNS MINUTS.']} },
                      )
 
     return render(
@@ -1258,7 +1258,7 @@ def passarella(request, pk):
         return render(
                     request,
                     'resultat.html', 
-                    {'msgs': {'errors': [], 'warnings': [], 'infos': ['PAGAMENT JA OBERT EN UN ALTRE CONNEXIÓ. FINALITZA\'L O TANCA\'L.']} },
+                    {'msgs': {'errors': [], 'warnings': [], 'infos': ['PAGAMENT JA OBERT EN UN ALTRE CONNEXIÓ. CANCEL·LA O ESPERA UNS MINUTS.']} },
                  )
             
     # Marca el pagament com Transmés a la passarella
@@ -1441,9 +1441,9 @@ def retornTransaccio(request,pk):
             pagament.save()
         else:
             '''
-             Error en pagament, no es pot fer servir un altre cop el mateix ordre_pagament.
+             Error en pagament o cancel·lat, no es pot fer servir un altre cop el mateix ordre_pagament.
              Crea un pagament clone, com és un pagament diferent tindrà un ordre_pagament nou.
-             El pagament erroni es guarda amb alumne NULL
+             El pagament cancel·lat es guarda amb alumne NULL
             '''
             noup=clonePagament(pagament)
             pagament.pagament_realitzat = False
