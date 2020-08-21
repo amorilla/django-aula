@@ -69,16 +69,44 @@ class DadesForm2(forms.ModelForm):
         model=Dades
         fields = ['rp1_nom','rp1_telefon1','rp1_correu','rp2_nom','rp2_telefon1','rp2_correu',]
 
+class DadesForm2b(forms.ModelForm):
+    
+    llistaufs = forms.CharField(widget=forms.Textarea, required=False)
+    
+    class Meta:
+        model=Dades
+        fields = ['curs_complet', 'quantitat_ufs', 'llistaufs', 'bonificacio', ]
+    '''
+    def __init__(self, *args, **kwargs):
+        super(DadesForm2b, self).__init__(*args, **kwargs)
+        self.fields['llistaufs'].widget=forms.Textarea
+    '''
+    def clean(self):
+        cleaned_data = super(DadesForm2b, self).clean()
+        complet = cleaned_data.get('curs_complet')
+        ufs = cleaned_data.get('quantitat_ufs')
+        llista = cleaned_data.get('llistaufs')
+        if not complet and ufs<=0:
+            raise forms.ValidationError("Si no és curs complet, la quantitat de UFs és obligatòria")
+        if complet and ufs!=0:
+            raise forms.ValidationError("Si curs complet no s'ha d'introduir quantitat de UFs")
+        if ufs>0 and not llista:
+            raise forms.ValidationError("Indica les UFs a on vols matricular-te")
+        return cleaned_data
+
 class DadesForm3(forms.ModelForm):
+    
+    quotaMat=forms.CharField(label="Quota Matrícula:", widget = forms.TextInput( attrs={'readonly': True} ), required=False, )
+    importTaxes=forms.CharField(label="Import de les taxes:", widget = forms.TextInput( attrs={'readonly': True} ), required=False, )
 
     def __init__(self, *args, **kwargs):
         super(DadesForm3, self).__init__(*args, **kwargs)
         self.fields['acceptar_condicions'].required=True
         self.fields['files'].help_text="És necessari proporcionar el carnet de vacunacions o un certificat mèdic oficial."
-    
+
     class Meta:
         model=Dades
-        fields = ['files','acceptar_condicions',]
+        fields = ['quotaMat', 'importTaxes', 'fracciona_taxes', 'files', 'acceptar_condicions',]
 
 class MatriculaForm(forms.ModelForm):
     

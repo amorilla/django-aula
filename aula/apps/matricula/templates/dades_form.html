@@ -22,7 +22,7 @@
 	</table>
 	{% if wizard.steps.step1 == wizard.steps.count %}
 		He llegit i accepto les <a target = _blank href="{% url  'matricula:varis__condicions__matricula' %}">condicions de matrícula</a>
-		{% if pagament and pagament.quota.importQuota != 0 %}
+	<!--	{% if pagament and pagament.quota.importQuota != 0 %}
 			<br><br>
 			<b>Pagament online: </b>
 			{% if pagament.pagamentFet  %}
@@ -30,7 +30,7 @@
 			{% else %}
 			        <input class="btn btn-primary" type="submit" value="Quota" name="quota"/>
 			{% endif %}
-		{% endif %}
+		{% endif %} -->
 		<br><br>
 	{% endif %}
 	{% if wizard.steps.prev %}

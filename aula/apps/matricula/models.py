@@ -6,6 +6,11 @@ import django.utils.timezone
 from private_storage.fields import PrivateFileField
 
 class Dades(models.Model):
+    BONIF_CHOICES=[
+        ('0','Cap'),
+        ('5','50%'),
+        ('1','100%'),
+        ]    
     nom = models.CharField("Nom alumne",max_length=50)
     cognoms = models.CharField("Cognoms alumne",max_length=100)
     centre_de_procedencia = models.CharField("Centre de procedència", max_length=50, null=True, blank=True)
@@ -24,6 +29,11 @@ class Dades(models.Model):
                              help_text='Documentació obligatòria')
     uploaded_at = models.DateTimeField(auto_now_add=True, null=True)
     acceptar_condicions=models.BooleanField("Accepto condicions de matrícula")
+    curs_complet=models.BooleanField("Matrícula del curs complet", help_text = 'Matrícula típica de totes les UFs', default=False)
+    quantitat_ufs=models.IntegerField("UFs soltes, curs no complet", null=True, blank=True, default=0)
+    bonificacio=models.CharField("Tipus de bonificació taxes", max_length=1, choices=BONIF_CHOICES, default='0')
+    llistaufs = models.CharField("Mòduls i ufs de la matrícula", help_text = 'En cas de UFs soltes', max_length=250, null=True, blank=True)
+    fracciona_taxes=models.BooleanField("Fracciona pagament taxes", default=False)
     
     class Meta:
         verbose_name = u'Dades'
