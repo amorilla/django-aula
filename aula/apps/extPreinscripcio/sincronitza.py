@@ -8,6 +8,7 @@ from aula.apps.missatgeria.models import Missatge
 from openpyxl import load_workbook
 from django.contrib.auth.models import Group
 import json
+import numbers
 
 def assignaDades(preinscripcio, index, value, colnames, col_indexs):
     if index in col_indexs and value:
@@ -109,8 +110,12 @@ def sincronitza(f, user = None):
         preinscripcio={}
         estat=None
         for index, cell in enumerate(row):
-            if bool(cell) and bool(cell.value) and isinstance(cell.value, str):
-                cell.value=cell.value.strip()
+            if bool(cell) and bool(cell.value):
+                if isinstance(cell.value, str):
+                    cell.value=cell.value.strip()
+                else:
+                    if isinstance(cell.value, numbers.Number):
+                        cell.value=str(cell.value)
             preinscripcio=assignaDades(preinscripcio, index, cell.value, colnames, col_indexs)
             if index in col_indexs and col_indexs[index]=='estat sol·licitud':
                 estat=cell.value
