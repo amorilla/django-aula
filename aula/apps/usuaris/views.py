@@ -417,8 +417,8 @@ def alumneRecoverPasswd( request , username, oneTimePasswd ):
                     dataOK = data_neixement == dataN
                 else:
                     dataOK = True
-                    #  Per fer la matrícula es permet una setmana
-                a_temps = datetime.now() - timedelta( minutes = 30 if dataN else 60*24*7)
+                    #  Per fer la matrícula es permeten 15 díes
+                a_temps = datetime.now() - timedelta( minutes = 30 if dataN else 60*24*15)
                 if alumneOK:
                     codiOK = OneTimePasswd.objects.filter( usuari = alumneUser.getUser(), 
                                                                   clau = oneTimePasswd, 
