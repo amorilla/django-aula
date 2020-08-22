@@ -102,7 +102,7 @@ class DadesForm3(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super(DadesForm3, self).__init__(*args, **kwargs)
         self.fields['acceptar_condicions'].required=True
-        self.fields['files'].help_text="És necessari el document de requisits d'accés i/o compliment de bonificacions. Envia tot en un zip."
+        self.fields['files'].help_text="És necessari el document de la titulació aportada (ESO, BAT, ...) i/o compliment de les bonificacions.\nEnvia tot en un zip."
 
     class Meta:
         model=Dades

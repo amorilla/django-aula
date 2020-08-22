@@ -54,7 +54,7 @@ def autoRalc(ident):
         ralc= autoRalc.valor_parametre + ident[-9:]
         return ralc
     return ident
-    
+
 def alumneExisteix(idalum):
     '''
     Retorna objecte Alumne que correspon a ralc=idalum
@@ -78,7 +78,7 @@ def mailPeticio(estat, idalum, email, alumne=None):
     email  adreça email destinataria
     alumne objecte Alumne si matrícula completada o None
     '''
-
+    
     if estat=='A':
         #preparo el codi a la bd:
         clau = str( random.randint( 100000, 999999) ) + str( random.randint( 100000, 999999) )
@@ -91,15 +91,15 @@ def mailPeticio(estat, idalum, email, alumne=None):
     else:
         username=''
         url=''
-        
+    
     if estat=='F':
         username=alumne.get_user_associat().username
-
+    
     assumpte = {
         'P': u"Petició de matrícula rebuda - {0}".format(settings.NOM_CENTRE ),
         'R': u"Petició de matrícula incorrecte - {0}".format(settings.NOM_CENTRE ),
         'D': u"Petició de matrícula duplicada - {0}".format(settings.NOM_CENTRE ),
-        'A': u"Petició de matrícula vàlida - {0}".format(settings.NOM_CENTRE ),
+        'A': u"Tràmits de matrícula - {0}".format(settings.NOM_CENTRE ),
         'F': u"Matrícula completada - {0}".format(settings.NOM_CENTRE ),
         }
     cosmissatge={
@@ -190,10 +190,12 @@ def creaPagament(alumne, quota, fracciona=False):
 def gestionaPag(peticio, importTaxes):
     taxes=peticio.curs.nivell.taxes
     quotamat=peticio.quota
-    if taxes:
+    if taxes and importTaxes>0:
         quotatax=Quota.objects.filter(importQuota=importTaxes, any=peticio.any, tipus=taxes)
         if quotatax:
             quotatax=quotatax[0]
+        else:
+            quotatax=None
     else:
         quotatax=None
     fracciona=peticio.dades.fracciona_taxes
@@ -228,7 +230,7 @@ def peticio(request):
     Si es una petició repetida, acceptada prèviament, la marca com duplicada 'D'.
     '''
     
-    if not Nivell.objects.filter(matricula_oberta=True):
+    if not Nivell.objects.filter(nom_nivell='ESO', matricula_oberta=True):
         infos=[]
         infos.append('El procés de matrícula online per l\'ESO ha finalitzat.')
         return render(
@@ -481,9 +483,13 @@ class DadesView(LoginRequiredMixin, SessionWizardView):
                                         kwargs={'pk': pagament.id})+'?next=/')) #'?next='+str(self.request.get_full_path())))
         else:
             gestionaPag(p, importTaxes)
+            from django.utils.html import format_html
             
-            infos.append('Dades completades, una vegada siguin revisades per secretaria rebrà un missatge.'\
-                         'Gestioni els pagaments des d\'Activitats/Pagaments')
+            url=format_html("<a href='{}'>{}</a>",
+                      reverse_lazy('relacio_families__informe__el_meu_informe'),
+                      'Activitats/Pagaments')            
+            infos.append('Dades completades, una vegada siguin revisades per secretaria rebrà un missatge. '\
+                         'Gestioni els pagaments des de l\'apartat '+url)
             
             '''
             pagament=QuotaPagament.objects.filter(alumne=p.alumne, quota=p.quota).order_by('dataLimit')
@@ -1019,6 +1025,18 @@ def blanc( request ):
 
 def creaQuotes():
     from aula.apps.sortides.models import TipusQuota, Comerç
+    
+    com=Comerç.objects.get(id=1)
+    tip=TipusQuota.objects.get(nom='taxcurs')
+    q=Quota(importQuota=360, any=django.utils.timezone.now().year, 
+            descripcio='Taxes cicles FP', curs=None, comerç=com, tipus=tip)
+    q.save()
+    
+    tip=TipusQuota.objects.get(nom='uf')
+    q=Quota(importQuota=25, any=django.utils.timezone.now().year, 
+            descripcio='Preu UF', curs=None, comerç=com, tipus=tip)
+    q.save()
+    
     com=Comerç.objects.get(id=1)
     tcomplet=Quota.objects.get(any=django.utils.timezone.now().year, tipus__nom='taxcurs')
     tuf=Quota.objects.get(any=django.utils.timezone.now().year, tipus__nom='uf')
@@ -1043,3 +1061,45 @@ def creaQuotes():
     q=Quota(importQuota=tot, dataLimit='2020-09-07', any=django.utils.timezone.now().year, 
             descripcio='taxes curs complet', curs=None, comerç=com, tipus=tip)
     q.save()
+
+def enviaIniciMat():
+    for m in Preinscripcio.objects.all():
+        if Nivell.objects.filter(nom_nivell=m.codiestudis, matricula_oberta=True):
+            act=Peticio.objects.filter(idAlumne=m.ralc, tipusIdent='R', any=django.utils.timezone.now().year, 
+                                   estat__in=('A','F',))
+            if not act:
+                curs=Curs.objects.get(nivell__nom_nivell=m.codiestudis, nom_curs=m.curs)
+                novaPeticio=Peticio(idAlumne=m.ralc, tipusIdent='R', email=m.correu, estat='A', curs=curs)
+                novaPeticio.save()
+                alumne=creaAlumne(m.ralc, 'R', curs, m.correu)
+                quotacurs=Quota.objects.filter(curs=novaPeticio.curs, any=novaPeticio.any, tipus__nom=settings.CUSTOM_TIPUS_QUOTA_MATRICULA)
+                if quotacurs:
+                    quotacurs=quotacurs[0]
+                    novaPeticio.quota=quotacurs
+                novaPeticio.alumne=alumne
+                novaPeticio.save()
+                mailPeticio(novaPeticio.estat, m.ralc, m.correu, alumne)
+
+def gestQuotes():
+    from aula.apps.sortides.models import TipusQuota, Comerç
+    
+    n=Nivell(nom_nivell='ACM', descripcio_nivell='ACM')
+    n.save()
+    c1=Curs(nom_curs='1', nom_curs_complert='ACM-1', nivell=n)
+    c1.save()
+    c2=Curs(nom_curs='2', nom_curs_complert='ACM-2', nivell=n)
+    c2.save()
+    com=Comerç.objects.get(id=1)
+    tip=TipusQuota.objects.get(nom=settings.CUSTOM_TIPUS_QUOTA_MATRICULA)
+    q=Quota(importQuota=111, dataLimit='2020-09-07', any=django.utils.timezone.now().year, 
+            descripcio='Material,ASS.ESC. 1-ACM', curs=c1, comerç=com, tipus=tip)
+    q.save()
+    q=Quota(importQuota=110, dataLimit='2020-09-07', any=django.utils.timezone.now().year, 
+            descripcio='Material,ASS.ESC. 2-ACM', curs=c2, comerç=com, tipus=tip)
+    q.save()
+    Nivell.objects.all().update(matricula_oberta=False)
+    Nivell.objects.filter(nom_nivell__in=('SMX', 'ACO', 'ACM', 'GAD', 'DAW', 'ASX', 'ADF', 'GVE',)).update(matricula_oberta=True)
+    Nivell.objects.all().update(taxes=None)
+    tip=TipusQuota.objects.get(nom='taxes')
+    Nivell.objects.filter(nom_nivell__in=('DAW', 'ASX', 'ADF', 'GVE',)).update(taxes=tip)
+    Quota.objects.filter(curs__nivell__nom_nivell__in=('SMX', 'ACO', 'ACM', 'GAD', 'DAW', 'ASX', 'ADF', 'GVE',)).update(dataLimit='2020-09-07')

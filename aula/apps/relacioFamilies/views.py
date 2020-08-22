@@ -1199,7 +1199,7 @@ def elMeuInforme( request, pk = None ):
                     
             taula.fileres = []
 
-        for pagquota in pagquotes.order_by( '-quota__any' ):
+        for pagquota in pagquotes.order_by( '-quota__any', '-quota__dataLimit', 'dataLimit' ):
             filera = []
             #----------------------------------------------
             camp = tools.classebuida()
