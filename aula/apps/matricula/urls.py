@@ -20,7 +20,6 @@ urlpatterns = [
     url(r'^matricula/$', LlistaMat, name='gestio__confirma__matricula'),
     url(r'^matfinals/$', LlistaMatFinals, name='gestio__llistat__matricula'),
     url(r'^changeestat/(?P<pk>\d+)$', changeEstat, name='changeestat'),
-    #url(r'^condicions/$', condicions, name='condicions'),
     url(r'^condicions/$', condicions, name ="varis__condicions__matricula" )    ,
 
 ]

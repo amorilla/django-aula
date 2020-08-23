@@ -7,36 +7,59 @@
 <lu>
 	{% for dades in object_list %}
 	  <tr>
-            <td><li>{{ dades.peticio.idAlumne }}</li></td>
+            <td><li>{{ dades.peticio.idAlumne }}&nbsp</li></td>
 
-           <!-- <td><a href="{% url 'matricula:gestio__confirma__matricula' dades.id %}">{{ dades.cognoms }}, {{ dades.nom }}</a></td>-->
-            <td>{{ dades.cognoms }}, {{ dades.nom }}</td>
+	   <!--     <td><a href="{% url 'matricula:gestio__confirma__matricula' dades.id %}">{{ dades.cognoms }}, {{ dades.nom }}</a></td> -->
+			<td>{{ dades.cognoms }}, {{ dades.nom }}&nbsp</td>
         
-			<td>{{ dades.peticio.curs }}</td>
-            <td>{{ dades.rp1_telefon1 }}</td>
-            <td>{{ dades.peticio.email }}</td>
-            {%if dades.acceptar_condicions %}
-               <td><b>Acceptació marcada</b></td>
-            {%else%}
-               <td><b style="color:Tomato;">Falta acceptació</b></td>
-            {%endif%}
+			<td>{{ dades.peticio.curs }}&nbsp</td>
+            <td>{{ dades.rp1_telefon1 }}&nbsp</td>
+            <td>{{ dades.peticio.email }}&nbsp</td>
+		           <!-- {%if dades.acceptar_condicions %}
+		               <td><b>Acceptació marcada</b>&nbsp</td>
+		            {%else%}
+		               <td><b style="color:Tomato;">Falta acceptació</b>&nbsp</td>
+		            {%endif%} -->
             {%if dades.getPagament %}
 	            {%if dades.pagamentFet %}
-	               <td><b>Pagament Fet</b></td>
+	               <td><b>Pagament Fet</b>&nbsp</td>
 	            {%else%}
-	               <td><b style="color:Tomato;">Pagament no fet</b></td>
+	            	<td><b style="color:Tomato;">Pagament pendent
+		            {%if dades.fracciona_taxes %}
+			            (Fraccionat)
+		            {%endif%}	               
+		            &nbsp</b></td>
 	            {%endif%}
+	            {%if dades.bonificacio != '0' %}
+		            <td><b>Bon.Tax:{{ dades.get_bonificacio_display }}&nbsp</b></td>
+		        {%else%}
+		            <td></td>
+	            {%endif%}
+	 		{%else%}
+	            <td></td><td></td>
             {%endif%}
-            <td><a href="{{ dades.files.url }}" target="_blank">Fitxer</a></td>
+
+            <td><a href="{{ dades.files.url }}" target="_blank">Fitxer</a>&nbsp</td>
             {%if dades.peticio.estat == 'A' %}
-            <td><a class="btn btn-info pull" 
-			    href="{% url "matricula:changeestat" dades.peticio.id %}">
-			    Finalitza
-			</a></td>
+	            <td><a class="btn btn-info pull" 
+				    href="{% url "matricula:changeestat" dades.peticio.id %}">
+				    Finalitza
+				</a></td>
 			{% else %}
 				<td>Finalitzada</td>
 			{% endif %}
 		</tr>
+		<tr><td colspan="9">
+            {%if dades.curs_complet %}
+	            <b>Matrícula curs complet</b>&nbsp
+            {%else%}
+	            {%if dades.quantitat_ufs > 0 %}
+	             	<b>Matrícula ufs soltes ({{ dades.quantitat_ufs }}): {{ dades.llistaufs }}</b>&nbsp
+	            {%endif%}
+            {%endif%}
+            </td>
+         </tr>
+         <tr><td colspan="9">&nbsp</tr>
 	{% empty %}
 		<li>Sense matrícules pendents</li>
 	{% endfor %}

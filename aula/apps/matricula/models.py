@@ -53,7 +53,8 @@ class Dades(models.Model):
     
     @property
     def getPagament(self):
-        p=QuotaPagament.objects.filter(alumne=self.peticio.alumne, quota=self.peticio.quota)
+        #p=QuotaPagament.objects.filter(alumne=self.peticio.alumne, quota=self.peticio.quota)
+        p=QuotaPagament.objects.filter(alumne=self.peticio.alumne, quota__any=self.peticio.any)
         return p
 
 class UFS(models.Model):

@@ -76,11 +76,11 @@ class DadesForm2b(forms.ModelForm):
     class Meta:
         model=Dades
         fields = ['curs_complet', 'quantitat_ufs', 'llistaufs', 'bonificacio', ]
-    '''
+
     def __init__(self, *args, **kwargs):
         super(DadesForm2b, self).__init__(*args, **kwargs)
-        self.fields['llistaufs'].widget=forms.Textarea
-    '''
+        self.fields['bonificacio'].help_text='Només per cicles de grau superior'
+
     def clean(self):
         cleaned_data = super(DadesForm2b, self).clean()
         complet = cleaned_data.get('curs_complet')

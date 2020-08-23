@@ -659,7 +659,7 @@ class MatriculesView(LoginRequiredMixin, ListView):
         return context
     
     def get_queryset(self):
-        return Dades.objects.filter(peticio__any=django.utils.timezone.now().year, peticio__estat='A', acceptar_condicions=True).order_by('peticio__curs__nom_curs_complert', 'cognoms', 'nom')
+        return Dades.objects.filter(peticio__curs__nivell__matricula_oberta=True, peticio__any=django.utils.timezone.now().year, peticio__estat='A', acceptar_condicions=True).order_by('peticio__curs__nom_curs_complert', 'cognoms', 'nom')
     
 @login_required
 @group_required(['direcció','administradors'])
@@ -677,7 +677,7 @@ class MatriculesList(LoginRequiredMixin, ListView):
         return context
         
     def get_queryset(self):
-        return Dades.objects.filter(peticio__any=django.utils.timezone.now().year).order_by('peticio__curs__nom_curs_complert', 'cognoms', 'nom')
+        return Dades.objects.filter(peticio__curs__nivell__matricula_oberta=True, peticio__any=django.utils.timezone.now().year).order_by('peticio__curs__nom_curs_complert', 'cognoms', 'nom')
 
 @login_required
 @group_required(['direcció','administradors'])
