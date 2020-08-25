@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% load i18n %}
+{% load altres %}
 
 {% block content %}
 <h2>{{ titol }}</h2>
@@ -12,7 +13,7 @@
 	   <!--     <td><a href="{% url 'matricula:gestio__confirma__matricula' dades.id %}">{{ dades.cognoms }}, {{ dades.nom }}</a></td> -->
 			<td>{{ dades.cognoms }}, {{ dades.nom }}&nbsp</td>
         
-			<td>{{ dades.peticio.curs }}&nbsp</td>
+			<td>{{ dades.peticio.curs }}({{ dades.peticio | torn }})&nbsp</td>
             <td>{{ dades.rp1_telefon1 }}&nbsp</td>
             <td>{{ dades.peticio.email }}&nbsp</td>
 		           <!-- {%if dades.acceptar_condicions %}
