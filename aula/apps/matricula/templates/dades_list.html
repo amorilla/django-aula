@@ -25,12 +25,12 @@
 	               <td><b>Pagament Fet</b>&nbsp</td>
 	            {%else%}
 	            	<td><b style="color:Tomato;">Pagament pendent
-		            {%if dades.fracciona_taxes %}
+		            {%if dades.fracciona_taxes and dades.peticio.alumne.grup.curs.nivell.taxes %}
 			            (Fraccionat)
 		            {%endif%}	               
 		            &nbsp</b></td>
 	            {%endif%}
-	            {%if dades.bonificacio != '0' %}
+	            {%if dades.bonificacio != '0' and dades.peticio.alumne.grup.curs.nivell.taxes %}
 		            <td><b>Bon.Tax:{{ dades.get_bonificacio_display }}&nbsp</b></td>
 		        {%else%}
 		            <td></td>

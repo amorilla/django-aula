@@ -500,6 +500,36 @@ def controlDSN(dies=15):
     disconnectIMAP(mail)
     return True
 
+def llistato(dias=2):
+    mail=connectIMAP()
+    if mail is None: return []
+    mail.select("[Gmail]/Enviats")
+    id_list=getMailsList(mail, None, dias)
+    if id_list is None: return []
+    i=0
+    adreces=[]
+    while i<len(id_list):
+        try:
+            num=id_list[i]
+            _ , data = mail.fetch(num, '(RFC822)' )
+        except:
+            return []
+        i=i+1
+        # the content data at the '(RFC822)' format comes on
+        # a list with a tuple with header, content, and the closing
+        # byte b')'
+        for response_part in data:
+            # so if its a tuple...
+            if isinstance(response_part, tuple):
+                # we go for the content at its second element
+                # skipping the header at the first and the closing
+                # at the third
+                msg = email.message_from_bytes(response_part[1])
+                to=msg.get('to')
+                print(to)
+                adreces.append(to)
+    disconnectIMAP(mail)
+    return adreces
 
 def enviaOneTimePasswd( email ):
     q_correu_pare = Q( correu_relacio_familia_pare = email )

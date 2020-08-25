@@ -580,7 +580,8 @@ def OmpleDades(request, pk=None):
                         item=dadesAntigues(p.alumne)
                         item.rp1_correu=p.email
                     nomAlumne=(item.nom+" "+item.cognoms) if item.nom and item.cognoms else p.idAlumne
-                    titol="Dades de matrícula de "+nomAlumne+" a "+p.curs.nom_curs_complert
+                    torn=Preinscripcio.objects.get(ralc=p.alumne.ralc).torn
+                    titol="Dades de matrícula de "+nomAlumne+" a "+p.curs.nom_curs_complert+"("+torn+")"
                     #get the initial data to include in the form
                     fields0 = ['nom','cognoms','centre_de_procedencia','data_naixement','alumne_correu','adreca','localitat','cp',]
                     fields1 = ['rp1_nom','rp1_telefon1','rp1_correu','rp2_nom','rp2_telefon1','rp2_correu',]
@@ -891,11 +892,13 @@ def acumulatsQuotes(tpv, nany=None):
         nany=django.utils.timezone.now().year
     
     totfet=QuotaPagament.objects.filter(quota__comerç=tpv, pagament_realitzat=True, data_hora_pagament__year=nany)\
+                    .exclude(quota__curs__isnull=True)\
                     .values_list('quota','data_hora_pagament__month')\
                     .annotate(total=Sum('quota__importQuota', filter=Q(fracciona=False)))\
                     .annotate(totalf=Sum('importParcial', filter=Q(fracciona=True)))
     
     totpendent=QuotaPagament.objects.filter(quota__comerç=tpv, pagament_realitzat=False)\
+                    .exclude(quota__curs__isnull=True)\
                     .values_list('quota')\
                     .annotate(total=Sum('quota__importQuota', filter=Q(fracciona=False)))\
                     .annotate(totalf=Sum('importParcial', filter=Q(fracciona=True)))
@@ -918,6 +921,54 @@ def acumulatsQuotes(tpv, nany=None):
     
     return calcul
 
+def acumulatsTaxes(tpv, nany=None):
+    '''
+    Retorna un diccionari amb tots els acumulats per nivells i mesos i quantitat pendent
+    {{'nivell1': {'pendent':nnnnn, 1:nnnnn, 2:nnnnn, ... 12:nnnnn},
+     {'nivell2': {'pendent':nnnnn, 1:nnnnn, 2:nnnnn, ... 12:nnnnn},
+     ... }
+    '''
+    
+    from django.db.models import Sum, Q
+    
+    if not nany:
+        nany=django.utils.timezone.now().year
+    
+    totfet=QuotaPagament.objects.filter(quota__comerç=tpv, pagament_realitzat=True, 
+                                        data_hora_pagament__year=nany,
+                                        quota__curs__isnull=True,
+                                        alumne__grup__curs__nivell__taxes__isnull=False)\
+                    .values_list('alumne__grup__curs__nivell__nom_nivell','alumne__grup__curs__nivell__taxes__nom','data_hora_pagament__month')\
+                    .annotate(total=Sum('quota__importQuota', filter=Q(fracciona=False)))\
+                    .annotate(totalf=Sum('importParcial', filter=Q(fracciona=True)))
+    
+    totpendent=QuotaPagament.objects.filter(quota__comerç=tpv, pagament_realitzat=False, 
+                                            quota__curs__isnull=True,
+                                            alumne__grup__curs__nivell__taxes__isnull=False)\
+                    .values_list('alumne__grup__curs__nivell__nom_nivell','alumne__grup__curs__nivell__taxes__nom')\
+                    .annotate(total=Sum('quota__importQuota', filter=Q(fracciona=False)))\
+                    .annotate(totalf=Sum('importParcial', filter=Q(fracciona=True)))
+    
+    calcul={}
+    
+    for p in list(totfet):
+        q, x, m, t1, t2 = p
+        q=str(q)+'-'+str(x)
+        tot=t1 if t1 else 0 + t2 if t2 else 0
+        if not q in calcul:
+            calcul[q]={}
+        calcul[q][m]=tot
+    
+    for p in list(totpendent):
+        q, x, t1, t2 = p
+        q=str(q)+'-'+str(x)
+        tot=t1 if t1 else 0 + t2 if t2 else 0
+        if not q in calcul:
+            calcul[q]={}
+        calcul[q]['pendent']=tot
+    
+    return calcul
+
 def fullcalculQuotes(tpv, nany=None):
     '''
     Retorna un full de càlcul xlsx amb els acumulats i pagaments pendents
@@ -925,7 +976,7 @@ def fullcalculQuotes(tpv, nany=None):
     
     import xlsxwriter
     import io
-
+    
     output = io.BytesIO()
     workbook = xlsxwriter.Workbook(output)
     
@@ -933,6 +984,7 @@ def fullcalculQuotes(tpv, nany=None):
         nany=django.utils.timezone.now().year
     
     acumulats=acumulatsQuotes(tpv, nany)
+    acumTaxes=acumulatsTaxes(tpv, nany)
     totes=Quota.objects.filter(importQuota__gt=0).values_list('id').order_by('curs__nom_complert_curs', 'descripcio')
     
     worksheet = workbook.add_worksheet('Acumulats')
@@ -947,9 +999,10 @@ def fullcalculQuotes(tpv, nany=None):
     fila=2
     for q in totes:
         if q[0] in acumulats:
+            a = acumulats[q[0]]
             quota=Quota.objects.get(id=q[0])
             worksheet.write(fila, 0, quota.descripcio)
-            for m, v in iter(acumulats[q[0]].items()):
+            for m, v in a.items():
                 if m=='pendent':
                     col=1
                 else:
@@ -957,6 +1010,18 @@ def fullcalculQuotes(tpv, nany=None):
                 worksheet.write_number(fila, col, v)
             worksheet.write_formula(fila, 14, '=SUM(C{0}:N{0})'.format(fila+1))
             fila=fila+1
+    
+    for t,a in acumTaxes.items():
+        worksheet.write(fila, 0, t)
+        for m, v in a.items():
+            if m=='pendent':
+                col=1
+            else:
+                col=m+1 
+            worksheet.write_number(fila, col, v)
+        worksheet.write_formula(fila, 14, '=SUM(C{0}:N{0})'.format(fila+1))
+        fila=fila+1
+    
     if fila>2:
         for t in range(ord('B'),ord('P')):
             worksheet.write_formula(fila, t-ord('A'), '=SUM({0}3:{0}{1})'.format(chr(t),fila))
@@ -967,13 +1032,12 @@ def fullcalculQuotes(tpv, nany=None):
     worksheet.write_row(1,0,('Concepte','Alumne','Import','Data límit','Fraccionat'))
     fila=2
     pag=QuotaPagament.objects.filter(quota__comerç=tpv, pagament_realitzat=False).order_by('quota__dataLimit','quota__descripcio','alumne__cognoms','alumne__nom')
-    money_format = workbook.add_format({'num_format': '#,##0'})
     date_format = workbook.add_format({'num_format': 'dd/mm/yyyy'})
     
     for p in pag:
         worksheet.write_string(fila, 0, p.quota.descripcio )
         worksheet.write_string(fila, 1, str(p.alumne) )
-        worksheet.write_number(fila, 2, p.quota.importQuota if not p.fracciona else p.importParcial, money_format )
+        worksheet.write_number(fila, 2, p.quota.importQuota if not p.fracciona else p.importParcial )
         worksheet.write_datetime(fila, 3, p.quota.dataLimit if not p.fracciona else p.dataLimit, date_format )
         worksheet.write_string(fila, 4, 'SI' if p.fracciona else 'NO' )
         fila=fila+1
