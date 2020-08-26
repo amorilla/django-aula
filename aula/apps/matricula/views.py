@@ -13,8 +13,7 @@ from django.core.files.storage import FileSystemStorage
 from django.http import HttpResponseRedirect
 from django.conf import settings
 from aula.utils.decorators import group_required
-from aula.apps.matricula.forms import peticioForm, DadesForm1, DadesForm2, DadesForm2b, DadesForm3, MatriculaForm, \
-                EscollirCursForm, PagQuotesForm, EscollirAny
+from aula.apps.matricula.forms import peticioForm, DadesForm1, DadesForm2, DadesForm2b, DadesForm3, MatriculaForm, EscollirCursForm, PagQuotesForm, EscollirAny
 from aula.apps.matricula.models import Peticio, Dades
 from aula.apps.sortides.models import QuotaPagament, Quota
 from aula.apps.alumnes.models import Alumne, Curs, Nivell
@@ -907,14 +906,14 @@ def acumulatsQuotes(tpv, nany=None):
     
     for p in list(totfet):
         q, m, t1, t2 = p
-        tot=t1 if t1 else 0 + t2 if t2 else 0
+        tot=(t1 if t1 else 0) + (t2 if t2 else 0)
         if not q in calcul:
             calcul[q]={}
         calcul[q][m]=tot
     
     for p in list(totpendent):
         q, t1, t2 = p
-        tot=t1 if t1 else 0 + t2 if t2 else 0
+        tot=(t1 if t1 else 0) + (t2 if t2 else 0)
         if not q in calcul:
             calcul[q]={}
         calcul[q]['pendent']=tot
@@ -937,15 +936,15 @@ def acumulatsTaxes(tpv, nany=None):
     totfet=QuotaPagament.objects.filter(quota__comerç=tpv, pagament_realitzat=True, 
                                         data_hora_pagament__year=nany,
                                         quota__curs__isnull=True,
-                                        alumne__grup__curs__nivell__taxes__isnull=False)\
-                    .values_list('alumne__grup__curs__nivell__nom_nivell','alumne__grup__curs__nivell__taxes__nom','data_hora_pagament__month')\
+                                        alumne__peticio__curs__nivell__taxes__isnull=False)\
+                    .values_list('alumne__peticio__curs__nivell__nom_nivell','alumne__peticio__curs__nivell__taxes__nom','data_hora_pagament__month')\
                     .annotate(total=Sum('quota__importQuota', filter=Q(fracciona=False)))\
                     .annotate(totalf=Sum('importParcial', filter=Q(fracciona=True)))
     
     totpendent=QuotaPagament.objects.filter(quota__comerç=tpv, pagament_realitzat=False, 
                                             quota__curs__isnull=True,
-                                            alumne__grup__curs__nivell__taxes__isnull=False)\
-                    .values_list('alumne__grup__curs__nivell__nom_nivell','alumne__grup__curs__nivell__taxes__nom')\
+                                            alumne__peticio__curs__nivell__taxes__isnull=False)\
+                    .values_list('alumne__peticio__curs__nivell__nom_nivell','alumne__peticio__curs__nivell__taxes__nom')\
                     .annotate(total=Sum('quota__importQuota', filter=Q(fracciona=False)))\
                     .annotate(totalf=Sum('importParcial', filter=Q(fracciona=True)))
     
@@ -954,7 +953,7 @@ def acumulatsTaxes(tpv, nany=None):
     for p in list(totfet):
         q, x, m, t1, t2 = p
         q=str(q)+'-'+str(x)
-        tot=t1 if t1 else 0 + t2 if t2 else 0
+        tot=(t1 if t1 else 0) + (t2 if t2 else 0)
         if not q in calcul:
             calcul[q]={}
         calcul[q][m]=tot
@@ -962,7 +961,7 @@ def acumulatsTaxes(tpv, nany=None):
     for p in list(totpendent):
         q, x, t1, t2 = p
         q=str(q)+'-'+str(x)
-        tot=t1 if t1 else 0 + t2 if t2 else 0
+        tot=(t1 if t1 else 0) + (t2 if t2 else 0)
         if not q in calcul:
             calcul[q]={}
         calcul[q]['pendent']=tot
