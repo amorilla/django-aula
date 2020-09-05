@@ -34,7 +34,7 @@ def get_url_alumne(usuari):
             p=Peticio.objects.filter(alumne=usuari.alumne, any=django.utils.timezone.now().year, estat='A')
             if p:
                 p=p[0]
-                if not p.dades or not p.dades.pagamentFet:
+                if not p.dades:
                     return reverse_lazy('matricula:relacio_families__matricula__dades')
     except Exception:
         return None
@@ -422,8 +422,13 @@ class DadesView(LoginRequiredMixin, SessionWizardView):
         pagid = self.kwargs.get('pagid', None)
         context['pagament'] = QuotaPagament.objects.get(pk=pagid) if bool(pagid) else None
         return context
-    
+
     def get_form_initial(self, step):
+        if step == '2':
+            p=Peticio.objects.get(alumne=self.request.user.alumne, estat='A', any=django.utils.timezone.now().year)
+            dictf2=self.initial_dict.get(step, {})
+            dictf2.update({'peticio': p.id})
+            return dictf2
         if step == '3': 
             step2data = self.get_cleaned_data_for_step('2')
             if step2data:
@@ -449,6 +454,7 @@ class DadesView(LoginRequiredMixin, SessionWizardView):
                 dictf3=self.initial_dict.get(step, {})
                 dictf3['importTaxes']=total
                 dictf3['quotaMat']=quotamat[0].importQuota
+                dictf3.update({'peticio': p.id})
                 return dictf3
         return self.initial_dict.get(step, {})
    
@@ -558,6 +564,8 @@ def updateAlumne(alumne, dades):
 
 @login_required
 def OmpleDades(request, pk=None):
+    from django.utils.datetime_safe import  date, datetime
+
     user=request.user
     infos=[]
     try:
@@ -566,7 +574,14 @@ def OmpleDades(request, pk=None):
             if p:
                 p=p[0]
                 if p.estat=='A':
-                    
+                    data = datetime.strptime('2020-09-08', r"%Y-%m-%d")
+                    if django.utils.timezone.now()>=data:
+                        infos.append('El període de matrícula ha finalitzat.')
+                        return render(
+                            request,
+                            'resultat.html', 
+                            {'msgs': {'errors': [], 'warnings': [], 'infos': infos} },
+                            )
                     pagament=QuotaPagament.objects.filter(alumne=p.alumne, quota=p.quota).order_by('dataLimit')
                     if pagament:
                         pagid=pagament[0].pk
@@ -846,17 +861,19 @@ def quotesCurs( request, curs, tipus ):
                         'fracciona': pg.fracciona
                         })
             else:
-                llistapag.append({
-                    'pkp': 'None',
-                    'pka': a.pk,
-                    'cognoms': a.cognoms,
-                    'nom':  a.nom ,
-                    'grup': a.grup,
-                    'correu': email,
-                    'quota': quotacurs,
-                    'estat': 'No assignat',
-                    'fracciona': False
-                    })
+                p=Peticio.objects.filter(alumne=a, estat='A', any=django.utils.timezone.now().year)
+                if not p:
+                    llistapag.append({
+                        'pkp': 'None',
+                        'pka': a.pk,
+                        'cognoms': a.cognoms,
+                        'nom':  a.nom ,
+                        'grup': a.grup,
+                        'correu': email,
+                        'quota': quotacurs,
+                        'estat': 'No assignat',
+                        'fracciona': False
+                        })
 
         if len(llistapag)==0:
             return render(
@@ -984,13 +1001,13 @@ def fullcalculQuotes(tpv, nany=None):
     
     acumulats=acumulatsQuotes(tpv, nany)
     acumTaxes=acumulatsTaxes(tpv, nany)
-    totes=Quota.objects.filter(importQuota__gt=0).values_list('id').order_by('curs__nom_complert_curs', 'descripcio')
+    totes=Quota.objects.filter(importQuota__gt=0).values_list('id').order_by('curs__nom_curs_complert', 'descripcio')
     
     worksheet = workbook.add_worksheet('Acumulats')
     cap=['Concepte','Pendent']
     date=django.utils.timezone.now()
     for i in range(1,13):
-        cap.append(date.replace(month=i).strftime('%B')[2:].strip())
+        cap.append(date.replace(month=i, day=1).strftime('%B')[2:].strip())
     cap.append('Total Pagat')
     worksheet.set_column(0, 0, 30)
     worksheet.write_string(0,0,tpv.descripcio+'-'+str(nany)+'. Dades a '+date.strftime('%d/%m/%Y %H:%M'))

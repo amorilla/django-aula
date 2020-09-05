@@ -79,8 +79,19 @@ class DadesForm2b(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super(DadesForm2b, self).__init__(*args, **kwargs)
-        self.fields['bonificacio'].help_text='Només per cicles de grau superior'
-
+        idpeticio = kwargs['initial'].pop('peticio')
+        p=Peticio.objects.get(pk=idpeticio)
+        taxes=p.curs.nivell.taxes
+        if not taxes:
+            self.fields['bonificacio'].help_text='No s\'apliquen taxes en aquest curs'
+            self.fields['bonificacio'].disabled=True
+        pag=QuotaPagament.objects.filter(alumne=p.alumne, quota__any=p.any, quota__tipus=taxes, pagament_realitzat=True)
+        if pag:
+            self.fields['curs_complet'].disabled=True
+            self.fields['quantitat_ufs'].disabled=True
+            self.fields['llistaufs'].disabled=True
+            self.fields['bonificacio'].disabled=True
+        
     def clean(self):
         cleaned_data = super(DadesForm2b, self).clean()
         complet = cleaned_data.get('curs_complet')
@@ -103,7 +114,14 @@ class DadesForm3(forms.ModelForm):
         super(DadesForm3, self).__init__(*args, **kwargs)
         self.fields['acceptar_condicions'].required=True
         self.fields['files'].help_text="És necessari el document de la titulació aportada (ESO, BAT, ...) i/o compliment de les bonificacions.\nEnvia tot en un zip."
-
+        idpeticio = kwargs['initial'].pop('peticio')
+        importTaxes = kwargs['initial'].pop('importTaxes')
+        p=Peticio.objects.get(pk=idpeticio)
+        taxes=p.curs.nivell.taxes
+        pag=QuotaPagament.objects.filter(alumne=p.alumne, quota__any=p.any, quota__tipus=taxes, pagament_realitzat=True)
+        if not taxes or pag or importTaxes==0:
+            self.fields['fracciona_taxes'].disabled=True
+    
     class Meta:
         model=Dades
         fields = ['quotaMat', 'importTaxes', 'fracciona_taxes', 'files', 'acceptar_condicions',]
@@ -124,7 +142,7 @@ class EscollirCursForm(forms.Form):
         self.fields['curs_list'].queryset = Curs.objects.filter(grup__alumne__isnull=False, 
                                                                 grup__alumne__data_baixa__isnull=True,
                                                 ).order_by('nom_curs_complert').distinct()
-        self.fields['tipus_quota'].queryset = TipusQuota.objects.filter(quota__isnull=False).order_by('nom').distinct()
+        self.fields['tipus_quota'].queryset = TipusQuota.objects.exclude(nom='uf').exclude(nom='taxcurs').filter(quota__isnull=False).order_by('nom').distinct()
 
 class PagQuotesForm(forms.Form):
     pkp = forms.CharField( widget=forms.HiddenInput() )

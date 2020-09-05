@@ -386,6 +386,8 @@ def recoverPasswd( request , username, oneTimePasswd ):
     return alumneRecoverPasswd( request , username, oneTimePasswd )
 
 def alumneRecoverPasswd( request , username, oneTimePasswd ):     
+    import django.utils.timezone
+    from aula.apps.matricula.models import Peticio
     
     if not AlumneUser.objects.filter( username = username) or not OneTimePasswd.objects.filter(clau = oneTimePasswd):
         return HttpResponseRedirect( '/' )
@@ -417,8 +419,9 @@ def alumneRecoverPasswd( request , username, oneTimePasswd ):
                     dataOK = data_neixement == dataN
                 else:
                     dataOK = True
-                    #  Per fer la matrícula es permeten 15 díes
-                a_temps = datetime.now() - timedelta( minutes = 30 if dataN else 60*24*15)
+                #  Per fer la matrícula es permeten 15 díes
+                p=Peticio.objects.filter(alumne=alumneUser.getAlumne(), estat='A', any=django.utils.timezone.now().year, dades__isnull=True)
+                a_temps = datetime.now() - timedelta( minutes = 30 if not p else 60*24*15)
                 if alumneOK:
                     codiOK = OneTimePasswd.objects.filter( usuari = alumneUser.getUser(), 
                                                                   clau = oneTimePasswd, 
