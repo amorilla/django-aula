@@ -1183,3 +1183,65 @@ def gestQuotes():
     tip=TipusQuota.objects.get(nom='taxes')
     Nivell.objects.filter(nom_nivell__in=('DAW', 'ASX', 'ADF', 'GVE',)).update(taxes=tip)
     Quota.objects.filter(curs__nivell__nom_nivell__in=('SMX', 'ACO', 'ACM', 'GAD', 'DAW', 'ASX', 'ADF', 'GVE',)).update(dataLimit='2020-09-07')
+
+def correcte(p):
+    taxes=p.curs.nivell.taxes
+    tcomplet=Quota.objects.filter(any=django.utils.timezone.now().year, tipus__nom='taxcurs')
+    tuf=Quota.objects.filter(any=django.utils.timezone.now().year, tipus__nom='uf')
+    quotamat=Quota.objects.get(curs=p.curs, any=p.any, tipus__nom=settings.CUSTOM_TIPUS_QUOTA_MATRICULA)
+    total=0
+    fracciona=False
+    if p.dades: 
+        if p.dades.curs_complet and taxes and tcomplet:
+            total=tcomplet[0].importQuota
+        else:
+            if taxes and tuf and p.dades.quantitat_ufs>0:
+                total=p.dades.quantitat_ufs*tuf[0].importQuota
+        if p.dades.bonificacio=='5':
+            total=total/2
+        if p.dades.bonificacio=='1':
+            total=0
+        fracciona=p.dades.fracciona_taxes
+    importTaxes=total
+    
+    if not taxes and p.dades and (p.dades.bonificacio!='0' or p.dades.fracciona_taxes):
+        print('dades CFGM amb bonif o fracc', p.alumne.id, p.curs, p.quota)
+    
+    # Quota matrícula
+    pag=QuotaPagament.objects.filter(alumne=p.alumne, quota__any=p.any, 
+                             quota__tipus__nom=settings.CUSTOM_TIPUS_QUOTA_MATRICULA)
+    if pag:
+        if pag.count()==1 and p.dades and pag[0].quota==quotamat and pag[0].quota==p.quota:
+            pass
+        else:
+            if not p.dades:
+                if pag[0].pagament_realitzat:
+                    print('pag. sense matrícula fet', p.alumne.id, pag.count(), pag[0].quota, quotamat, p.quota)
+                else:
+                    print('pag. sense matrícula', p.alumne.id, pag.count(), pag[0].quota, quotamat, p.quota)
+            else:
+                print('quota incorrecte material', p.alumne.id, pag.count(), pag[0].quota, quotamat, p.quota)
+    else:
+        if not p.dades:
+            pass
+        else:
+            print('falta quota material', p.alumne.id, quotamat)
+    
+    # Quota taxes
+    pag=QuotaPagament.objects.filter(alumne=p.alumne, quota__any=p.any, 
+                             quota__tipus=taxes)
+    if pag:
+        if p.dades and pag[0].quota.importQuota==importTaxes:
+            if fracciona:
+                if pag.count()!=2:
+                    print('fraccionament incorrecte', p.alumne.id, pag[0])
+            else:
+                if pag.count()!=1:
+                    print('no fraccionament incorrecte', p.alumne.id, pag[0])
+        else:
+            print('quota incorrecte taxes', p.alumne.id, importTaxes, pag[0])
+    else:
+        if not p.dades or importTaxes==0:
+            pass
+        else:
+            print('falta quota taxes', p.alumne.id, importTaxes)
