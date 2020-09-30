@@ -1,5 +1,6 @@
 from django.conf.urls import url
 from django.conf import settings
+from aula.apps.sortides.models import Comerç
 from aula.apps.matricula.views import peticio, PeticioVerifica, PeticiobyId, \
             OmpleDades, LlistaMat, changeEstat, condicions, LlistaMatFinals, DadesbyId, assignaQuotes, quotesCurs,\
             totalsQuotes, blanc

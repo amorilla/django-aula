@@ -73,7 +73,7 @@ def creaAgrupaments(gruph, llista, di, df, senseGrups):
     for nomg in llista:
         nomg=nomg[3:]
         galum, n, c, g = esGrupAlumnes(nomg,senseGrups)
-
+        
         if (galum):
             # Si és un grup d'alumnes el crea
             grupnomg, warn=creaGrup(n,c,g,di,df)
@@ -81,13 +81,13 @@ def creaAgrupaments(gruph, llista, di, df, senseGrups):
         else:
             warnings.append(u'No es crea Agrupament, grup erroni: \'%s\' --> \'%s\'' % (nomg, str(gruph)) )
             continue
-
+        
         c_agrup=Agrupament.objects.filter(grup_alumnes=grupnomg, grup_horari=gruph)
         if not c_agrup.exists():
             agrup=Agrupament.objects.create(grup_alumnes=grupnomg, grup_horari=gruph)
             agrup.save()
             warnings.append(u'Nou agrupament: \'%s\'' % (agrup))
-            
+    
     return warnings
 
 def fusionaGrups(llgrup, di, df, senseGrups):
@@ -213,7 +213,7 @@ def fusionaGrups(llgrup, di, df, senseGrups):
                 except ObjectDoesNotExist:
                     pass
                 return grupc, tipus, warnings            
-
+            
             grups=''
             for g in llista:
                 grups=grups+g[3:]
@@ -228,7 +228,7 @@ def fusionaGrups(llgrup, di, df, senseGrups):
 def creaGrup(n, c, g, di, df):
     '''
     Crea el grup.
-
+    
     n nivell
     c curs
     g grup (i subgrup)
@@ -273,7 +273,7 @@ def creaGrup(n, c, g, di, df):
                 grup.descripcio_grup=g
         warnings.append(u'Nou grup: \'%s\'' % (grup))
         grup.save()
-
+    
     return grup, warnings
 
 def sincronitza(xml, usuari):
@@ -764,3 +764,52 @@ def creaHorari(mat, prof, grup, tipus, dia, hini, hfi, aula, KronowinToUntis, as
                         str(hini) + ',' + str(hfi) + ',' + str(aula))
         warnings.append( traceback.format_exc() )
         return False, warnings,compAssig
+
+def creaAgrupabyNoms(grupAlumnes, grupHorari):
+    grAlum=Grup.objects.filter(descripcio_grup=grupAlumnes)
+    grHor=Grup.objects.filter(descripcio_grup=grupHorari)
+    if not grAlum:
+        galum, n, c, g = esGrupAlumnes(grupAlumnes,True)
+        if galum:
+            # Si és un grup d'alumnes el crea
+            grAlum, warn=creaGrup(n,c,g,
+                                    datetime.datetime.strptime('20200914', '%Y%m%d').date(),
+                                    datetime.datetime.strptime('20210622', '%Y%m%d').date())
+    else:
+        grAlum=grAlum[0]    
+    if not grHor:
+        galum, n, c, g = esGrupAlumnes(grupHorari,True)
+        if galum:
+            # Si és un grup d'alumnes el crea
+            grHor, warn=creaGrup(n,c,g,
+                                    datetime.datetime.strptime('20200914', '%Y%m%d').date(),
+                                    datetime.datetime.strptime('20210622', '%Y%m%d').date())
+    else:
+        grHor=grHor[0]
+    agrup, nou = Agrupament.objects.get_or_create(grup_alumnes=grAlum, grup_horari=grHor)
+    if nou:
+        print('Creat nou agrupament',grupAlumnes, grupHorari)
+        agrup.save()
+
+'''
+creaAgrupabyNoms('SMX1A','SMX1G1')
+creaAgrupabyNoms('SMX1B','SMX1G1')
+creaAgrupabyNoms('SMX1A','SMX1G2')
+creaAgrupabyNoms('SMX1B','SMX1G2')
+creaAgrupabyNoms('SMX1A','SMX1G3')
+creaAgrupabyNoms('SMX1B','SMX1G3')
+creaAgrupabyNoms('SMX1C','SMX1G4')
+creaAgrupabyNoms('SMX1D','SMX1G4')
+creaAgrupabyNoms('SMX1C','SMX1G5')
+creaAgrupabyNoms('SMX1D','SMX1G5')
+creaAgrupabyNoms('SMX1C','SMX1G6')
+creaAgrupabyNoms('SMX1D','SMX1G6')
+creaAgrupabyNoms('SMX2A','SMX2G1')
+creaAgrupabyNoms('SMX2B','SMX2G1')
+creaAgrupabyNoms('SMX2A','SMX2G2')
+creaAgrupabyNoms('SMX2B','SMX2G2')
+creaAgrupabyNoms('SMX2A','SMX2G3')
+creaAgrupabyNoms('SMX2B','SMX2G3')
+creaAgrupabyNoms('SMX2C','SMX2G4')
+creaAgrupabyNoms('SMX2C','SMX2G5')
+'''

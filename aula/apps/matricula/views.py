@@ -13,7 +13,7 @@ from django.core.files.storage import FileSystemStorage
 from django.http import HttpResponseRedirect
 from django.conf import settings
 from aula.utils.decorators import group_required
-from aula.apps.matricula.forms import peticioForm, DadesForm1, DadesForm2, DadesForm2b, DadesForm3, MatriculaForm, EscollirCursForm, PagQuotesForm, EscollirAny
+from aula.apps.matricula.forms import peticioForm, DadesForm1, DadesForm2, DadesForm2b, DadesForm3, MatriculaForm, EscollirCursForm, PagQuotesForm
 from aula.apps.matricula.models import Peticio, Dades
 from aula.apps.sortides.models import QuotaPagament, Quota
 from aula.apps.alumnes.models import Alumne, Curs, Nivell
@@ -115,7 +115,7 @@ def mailPeticio(estat, idalum, email, alumne=None):
             ),
         'F': u"La matrícula de l'alumne {0} ha finalitzat correctament.\n".format(str(alumne)) + \
             "Sempre podreu accedir a l'aplicació {0} amb el vostre usuari {1}\n".format(settings.URL_DJANGO_AULA, username) + \
-            "Puja una fotografía tipus carnet des de l'opció de paràmetres.",
+            "Pugeu una fotografia tipus carnet des de l'opció de paràmetres.",
         }
     missatge = [u"Aquest missatge ha estat enviat per un sistema automàtic. No respongui a aquest e-mail, el missatge no serà llegit per ningú.",
                 u"",
@@ -574,9 +574,12 @@ def OmpleDades(request, pk=None):
             if p:
                 p=p[0]
                 if p.estat=='A':
-                    data = datetime.strptime('2020-09-08', r"%Y-%m-%d")
+                    data = datetime.strptime('2020-09-07', r"%Y-%m-%d")
                     if django.utils.timezone.now()>=data:
-                        infos.append('El període de matrícula ha finalitzat.')
+                        if not p.dades:
+                            infos.append('El període de matrícula ha quedat tancat. No ha completat les seves dades, la seva matrícula no s\'ha realitzat.')
+                        else:
+                            infos.append('Estem comprovant la seva matrícula. Una vegada verificada la documentació, rebrà un missatge amb la confirmació.')
                         return render(
                             request,
                             'resultat.html', 
@@ -870,7 +873,7 @@ def quotesCurs( request, curs, tipus ):
                         'nom':  a.nom ,
                         'grup': a.grup,
                         'correu': email,
-                        'quota': quotacurs,
+                        'quota': None,
                         'estat': 'No assignat',
                         'fracciona': False
                         })
@@ -1068,6 +1071,8 @@ def fullcalculQuotes(tpv, nany=None):
 @group_required(['direcció','administradors'])
 def totalsQuotes(request):
     from django.http import HttpResponse
+    from aula.apps.matricula.forms import EscollirAny
+
     
     if request.method == 'POST':
         form = EscollirAny(request.POST)

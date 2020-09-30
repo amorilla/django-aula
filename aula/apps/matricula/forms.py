@@ -1,7 +1,7 @@
 from django import forms
 from captcha.fields import CaptchaField
 from aula.apps.matricula.models import Peticio, Dades
-from aula.apps.sortides.models import Quota, TipusQuota, QuotaPagament, Comerç
+from aula.apps.sortides.models import Quota, TipusQuota, QuotaPagament
 from aula.apps.alumnes.models import Curs, Alumne
 from aula.apps.extPreinscripcio.models import Preinscripcio
 from aula.utils.widgets import DateTextImput
@@ -180,11 +180,14 @@ def current_year():
     return datetime.date.today().year
 
 class EscollirAny(forms.Form):
+    from aula.apps.sortides.models import Comerç
+    
     defecte = Comerç.objects.all().order_by('id').first()
     tpv = forms.ModelChoiceField(label='TPV', queryset=None, initial=defecte, required = True,)
     year = forms.TypedChoiceField(label='Any', coerce=int, choices=year_choices, initial=current_year, required = True)
     
     def __init__(self, *args, **kwargs):
+        from aula.apps.sortides.models import Comerç
+        
         super(EscollirAny, self).__init__(*args, **kwargs)
         self.fields['tpv'].queryset = Comerç.objects.all().order_by('id')
-        
