@@ -22,6 +22,14 @@ from appy.pod.buffers import ELSE_WITHOUT_IF
 
 from aula.utils.tools import unicode
 
+def actualitzaRegistre(ant, nou, camps, manteDades=True):
+    for f in camps:
+        if manteDades and not bool(ant[f]) and bool(nou[f]):
+            ant[f]=nou[f]
+        if not manteDades and bool(nou[f]):
+            ant[f]=nou[f]
+    return ant
+
 def sincronitza(f, user = None):
 
     errors = []
@@ -230,19 +238,20 @@ def sincronitza(f, user = None):
                 a.foto = alumneDadesAnteriors.foto
 
             # amorilla@xtec.cat
-            manteNom, _ = ParametreSaga.objects.get_or_create( nom_parametre = 'mantenirNom' )
-            manteCorreus, _ = ParametreSaga.objects.get_or_create( nom_parametre = 'mantenirCorreus' )
+            manteDades, _ = ParametreSaga.objects.get_or_create( nom_parametre = 'mantenirDades' )
             
-            if manteNom.valor_parametre=='True':
-                a.nom=alumneDadesAnteriors.nom
-            
-            if manteCorreus.valor_parametre=='True':
-                a.correu_relacio_familia_pare=alumneDadesAnteriors.correu_relacio_familia_pare
-                a.correu_relacio_familia_mare=alumneDadesAnteriors.correu_relacio_familia_mare
-                a.rp1_correu=alumneDadesAnteriors.rp1_correu
-                a.rp2_correu=alumneDadesAnteriors.rp2_correu
-                a.correu=alumneDadesAnteriors.correu
-                a.correu_tutors=alumneDadesAnteriors.correu_tutors
+            from django.forms.models import model_to_dict
+            from aula.apps.usuaris.models import AlumneUser
+            nou=model_to_dict(a)
+            ant=model_to_dict(alumneDadesAnteriors)
+            grup=a.grup
+            camps=('nom', 'cognoms', 'data_neixement', 'correu_tutors', 'correu_relacio_familia_pare', 'correu_relacio_familia_mare', 
+            'centre_de_procedencia', 'localitat', 'municipi', 'cp', 'telefons', 'tutors', 'adreca', 'correu', 'rp1_nom', 'rp1_telefon', 
+            'rp1_mobil', 'rp1_correu', 'rp2_nom', 'rp2_telefon', 'rp2_mobil', 'rp2_correu', 'altres_telefons', 'primer_responsable', 'observacions')
+            ok=actualitzaRegistre(ant, nou, camps, manteDades.valor_parametre=='True')
+            ok['grup']=grup
+            ok['user_associat']=AlumneUser.objects.get(id=ok['user_associat'])
+            a=Alumne(**ok)
 
         a.save()
         nivells.add(a.grup.curs.nivell)
