@@ -220,23 +220,7 @@ def sincronitza(f, user = None):
                     AlumnesCanviatsDeGrup.append(a)
 
             a.user_associat = alumneDadesAnteriors.user_associat
-            #el recuperem, havia estat baixa:
-            if alumneDadesAnteriors.data_baixa:
-                info_nAlumnesInsertats+=1
-                a.data_alta = date.today()
-                a.motiu_bloqueig = u'No sol·licitat'
-                a.tutors_volen_rebre_correu = False
-                a.foto = alumneDadesAnteriors.foto
-            else:
-                a.correu_relacio_familia_pare         = alumneDadesAnteriors.correu_relacio_familia_pare
-                a.correu_relacio_familia_mare         = alumneDadesAnteriors.correu_relacio_familia_mare
-                a.motiu_bloqueig                      = alumneDadesAnteriors.motiu_bloqueig
-                a.relacio_familia_darrera_notificacio = alumneDadesAnteriors.relacio_familia_darrera_notificacio
-                a.periodicitat_faltes                 = alumneDadesAnteriors.periodicitat_faltes
-                a.periodicitat_incidencies            = alumneDadesAnteriors.periodicitat_incidencies
-                a.tutors_volen_rebre_correu           = alumneDadesAnteriors.tutors_volen_rebre_correu = False
-                a.foto = alumneDadesAnteriors.foto
-
+            
             # amorilla@xtec.cat
             manteDades, _ = ParametreSaga.objects.get_or_create( nom_parametre = 'mantenirDades' )
             
@@ -245,13 +229,22 @@ def sincronitza(f, user = None):
             nou=model_to_dict(a)
             ant=model_to_dict(alumneDadesAnteriors)
             grup=a.grup
+            sinc=a.estat_sincronitzacio
             camps=('nom', 'cognoms', 'data_neixement', 'correu_tutors', 'correu_relacio_familia_pare', 'correu_relacio_familia_mare', 
             'centre_de_procedencia', 'localitat', 'municipi', 'cp', 'telefons', 'tutors', 'adreca', 'correu', 'rp1_nom', 'rp1_telefon', 
-            'rp1_mobil', 'rp1_correu', 'rp2_nom', 'rp2_telefon', 'rp2_mobil', 'rp2_correu', 'altres_telefons', 'primer_responsable', 'observacions')
+            'rp1_mobil', 'rp1_correu', 'rp2_nom', 'rp2_telefon', 'rp2_mobil', 'rp2_correu', 'altres_telefons')
             ok=actualitzaRegistre(ant, nou, camps, manteDades.valor_parametre=='True')
             ok['grup']=grup
+            ok['estat_sincronitzacio']=sinc
             ok['user_associat']=AlumneUser.objects.get(id=ok['user_associat'])
             a=Alumne(**ok)
+            
+            #el recuperem, havia estat baixa:
+            if alumneDadesAnteriors.data_baixa:
+                info_nAlumnesInsertats+=1
+                a.data_alta = date.today()
+                a.motiu_bloqueig = u'No sol·licitat'
+                a.tutors_volen_rebre_correu = False
 
         a.save()
         nivells.add(a.grup.curs.nivell)
@@ -261,7 +254,9 @@ def sincronitza(f, user = None):
 
     # Els alumnes d'Esfer@ no s'han de tenir en compte per fer les baixes
     AlumnesDeEsfera = Alumne.objects.exclude(grup__curs__nivell__in=nivells)
-    AlumnesDeEsfera.update(estat_sincronitzacio='')
+    # Es canvia estat PRC a ''. No modifica DEL ni MAN
+    AlumnesDeEsfera.filter( estat_sincronitzacio__exact = 'PRC' ).update(estat_sincronitzacio='')
+    
     #Els alumnes que hagin quedat a PRC és que s'han donat de baixa:
     AlumnesDonatsDeBaixa = Alumne.objects.filter( estat_sincronitzacio__exact = 'PRC' )
     AlumnesDonatsDeBaixa.update(
