@@ -230,6 +230,9 @@ def initComplet():
     # Esborra usuaris alumne sense alumne associat
     User.objects.filter(username__startswith='almn',alumne__isnull=True).delete()
 
+    # Activa usuaris alumne no donats de baixa
+    User.objects.filter(username__startswith='almn', alumne__data_baixa__isnull=True).update(is_active=True)
+    
     # Elimina dates d'inici i final de curs
     Curs.objects.all().update(data_inici_curs=None, data_fi_curs=None)
     
