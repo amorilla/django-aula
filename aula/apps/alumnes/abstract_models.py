@@ -25,7 +25,7 @@ class AbstractNivell(models.Model):
     descripcio_nivell = models.CharField(max_length=240, blank=True)
     anotacions_nivell = models.TextField(blank=True)
     matricula_oberta = models.BooleanField(default=False)
-    taxes = models.ForeignKey('sortides.TipusQuota', on_delete=models.PROTECT, null=True, default=None)
+    taxes = models.ForeignKey('sortides.TipusQuota', on_delete=models.PROTECT, blank=True, null=True, default=None)
     
     class Meta:
         abstract = True        

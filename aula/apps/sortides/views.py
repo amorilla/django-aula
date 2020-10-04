@@ -324,9 +324,9 @@ def sortidaEdit(request, pk=None, clonar=False, origen=False):
     if settings.CUSTOM_FORMULARI_SORTIDES_REDUIT:
         exclude = ('alumnes_convocats', 'alumnes_que_no_vindran', 'alumnes_justificacio', 'data_inici', 'franja_inici', 'data_fi',
                    'franja_fi', 'codi_de_barres', 'empresa_de_transport', 'pagament_a_empresa_de_transport',
-                   'pagament_a_altres_empreses', 'feina_per_als_alumnes_aula', 'pagaments')
+                   'pagament_a_altres_empreses', 'feina_per_als_alumnes_aula', 'pagaments', 'comerç')
     else:
-        exclude = ('alumnes_convocats', 'alumnes_que_no_vindran', 'alumnes_justificacio', 'pagaments')
+        exclude = ('alumnes_convocats', 'alumnes_que_no_vindran', 'alumnes_justificacio', 'pagaments', 'comerç')
 
     formIncidenciaF = modelform_factory(Sortida, form=SortidaForm, exclude=exclude)
 
@@ -1519,13 +1519,13 @@ def detallPagament(request, pk):
         # -Pagat--------------------------------------------
         camp = tools.classebuida()
         camp.enllac = None
-        camp.contingut = pagament.data_hora_pagament.strftime('%d/%m/%Y %H:%M') if pagament.data_hora_pagament else 'No'
+        camp.contingut = pagament.data_hora_pagament.strftime('%d/%m/%Y %H:%M') if pagament.data_hora_pagament and pagament.pagament_realitzat else 'No'
         filera.append(camp)
 
         # -Codi--------------------------------------------
         camp = tools.classebuida()
         camp.enllac = None
-        camp.contingut = pagament.ordre_pagament if pagament.ordre_pagament else ''
+        camp.contingut = pagament.ordre_pagament if pagament.ordre_pagament and pagament.pagament_realitzat else ''
         filera.append(camp)
 
         # --
