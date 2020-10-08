@@ -737,7 +737,7 @@ def llistaAlumnescsv( request ):
     Generates an Excel spreadsheet for review by a staff member.
     """
     ara = datetime.now()
-    q_no_es_baixa = Q(data_baixa__gte = ara ) | Q(data_baixa__isnull = True )
+    q_no_es_baixa = Q(data_baixa__gt = ara ) | Q(data_baixa__isnull = True )
   
     llistaAlumnes = Alumne.objects.filter(q_no_es_baixa).order_by('cognoms','nom')
     

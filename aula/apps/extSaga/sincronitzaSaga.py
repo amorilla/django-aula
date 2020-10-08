@@ -228,21 +228,20 @@ def sincronitza(f, user = None):
             from aula.apps.usuaris.models import AlumneUser
             nou=model_to_dict(a)
             ant=model_to_dict(alumneDadesAnteriors)
-            grup=a.grup
-            sinc=a.estat_sincronitzacio
             camps=('nom', 'cognoms', 'data_neixement', 'correu_tutors', 'correu_relacio_familia_pare', 'correu_relacio_familia_mare', 
             'centre_de_procedencia', 'localitat', 'municipi', 'cp', 'telefons', 'tutors', 'adreca', 'correu', 'rp1_nom', 'rp1_telefon', 
             'rp1_mobil', 'rp1_correu', 'rp2_nom', 'rp2_telefon', 'rp2_mobil', 'rp2_correu', 'altres_telefons')
             ok=actualitzaRegistre(ant, nou, camps, manteDades.valor_parametre=='True')
-            ok['grup']=grup
-            ok['estat_sincronitzacio']=sinc
-            ok['user_associat']=AlumneUser.objects.get(id=ok['user_associat'])
+            ok['grup']=a.grup
+            ok['estat_sincronitzacio']=a.estat_sincronitzacio
+            ok['user_associat']=a.user_associat
             a=Alumne(**ok)
             
             #el recuperem, havia estat baixa:
             if alumneDadesAnteriors.data_baixa:
                 info_nAlumnesInsertats+=1
                 a.data_alta = date.today()
+                a.data_baixa = None
                 a.motiu_bloqueig = u'No sol·licitat'
                 a.tutors_volen_rebre_correu = False
 
