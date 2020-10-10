@@ -703,17 +703,18 @@ def LlistaMatFinals(request):
     return MatriculesList.as_view()(request)
 
 @login_required
-@group_required(['direcció','administradors'])
+@group_required(['direcció','administradors','ampa'])
 def assignaQuotes(request):
     if request.method == 'POST':
-        form = EscollirCursForm(request.POST)
+        form = EscollirCursForm(request.user, request.POST)
         if form.is_valid():
             curs=form.cleaned_data['curs_list']
             tipus=form.cleaned_data['tipus_quota']
+            auto=form.cleaned_data['automatic']
             return HttpResponseRedirect(reverse_lazy("matricula:gestio__quotes__assigna", 
-                                                     kwargs={"curs": curs.id, "tipus": tipus.id}))
+                                                     kwargs={"curs": curs.id, "tipus": tipus.id, "auto":auto}))
     else:
-        form = EscollirCursForm()
+        form = EscollirCursForm(request.user)
     return render(
                 request,
                 'form.html', 
@@ -727,8 +728,8 @@ def get_QuotaPagament(alumne, tipus, nany=None):
     return QuotaPagament.objects.filter(alumne=alumne, quota__tipus=tipus, quota__any=nany)
 
 @login_required
-@group_required(['direcció','administradors'])
-def quotesCurs( request, curs, tipus ):
+@group_required(['direcció','administradors','ampa'])
+def quotesCurs( request, curs, tipus, auto ):
     from django.forms import formset_factory
 
     if request.method == "POST":
@@ -817,24 +818,26 @@ def quotesCurs( request, curs, tipus ):
             formset=formsetQuotes(form_kwargs={'tipus': tipus}, initial= llistapag)
             
     else:
-        c=Curs.objects.get(id=curs)
-        try:
-            ncurs=str(int(c.nom_curs)+1)
-            quotacurs=Quota.objects.filter(curs__nivell=c.nivell, curs__nom_curs=ncurs, any=django.utils.timezone.now().year, tipus=tipus)
-        except:
-            quotacurs=None
-        
-        if not quotacurs:
-            # No troba una quota adequada, comprova si existeixen altres quotes del mateix tipus
-            quotacurs=Quota.objects.filter(any=django.utils.timezone.now().year, tipus=tipus)
-            if quotacurs.count()!=1:
-                # Si troba varies no selecciona cap, si només troba una aleshores la fa servir per defecte
+        quotacurs=None
+        if auto:
+            c=Curs.objects.get(id=curs)
+            try:
+                ncurs=str(int(c.nom_curs)+1)
+                quotacurs=Quota.objects.filter(curs__nivell=c.nivell, curs__nom_curs=ncurs, any=django.utils.timezone.now().year, tipus=tipus)
+            except:
                 quotacurs=None
-                
-        if quotacurs:
-            quotacurs=quotacurs[0]
-        else:
-            quotacurs=None
+            
+            if not quotacurs:
+                # No troba una quota adequada, comprova si existeixen altres quotes del mateix tipus
+                quotacurs=Quota.objects.filter(any=django.utils.timezone.now().year, tipus=tipus)
+                if quotacurs.count()!=1:
+                    # Si troba varies no selecciona cap, si només troba una aleshores la fa servir per defecte
+                    quotacurs=None
+                    
+            if quotacurs:
+                quotacurs=quotacurs[0]
+            else:
+                quotacurs=None
         
         llista=Alumne.objects.filter(grup__curs__id=curs,
                              data_baixa__isnull=True,
@@ -873,7 +876,7 @@ def quotesCurs( request, curs, tipus ):
                         'nom':  a.nom ,
                         'grup': a.grup,
                         'correu': email,
-                        'quota': None,
+                        'quota': quotacurs,
                         'estat': 'No assignat',
                         'fracciona': False
                         })
@@ -1068,14 +1071,14 @@ def fullcalculQuotes(tpv, nany=None):
     return output
 
 @login_required
-@group_required(['direcció','administradors'])
+@group_required(['direcció','administradors','ampa'])
 def totalsQuotes(request):
     from django.http import HttpResponse
     from aula.apps.matricula.forms import EscollirAny
 
     
     if request.method == 'POST':
-        form = EscollirAny(request.POST)
+        form = EscollirAny(request.user, request.POST)
         if form.is_valid():
             nany=form.cleaned_data['year']
             tpv=form.cleaned_data['tpv']
@@ -1091,7 +1094,7 @@ def totalsQuotes(request):
             return response
 
     else:
-        form = EscollirAny()
+        form = EscollirAny(request.user)
     return render(
                 request,
                 'form.html', 
@@ -1100,7 +1103,7 @@ def totalsQuotes(request):
                 )
 
 @login_required
-@group_required(['direcció','administradors'])
+@group_required(['direcció','administradors','ampa'])
 def blanc( request ):
     return render(
                 request,

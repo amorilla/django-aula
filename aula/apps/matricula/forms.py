@@ -136,13 +136,21 @@ class EscollirCursForm(forms.Form):
 
     curs_list = forms.ModelChoiceField(label=u'Curs', queryset=None, required = True,)
     tipus_quota = forms.ModelChoiceField(label=u'Tipus de quota', queryset=None, required = True,)
+    automatic = forms.BooleanField(label=u'Assigna automàticament', required = False)
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, user, *args, **kwargs):
+        from django.contrib.auth.models import Group
+        
         super(EscollirCursForm, self).__init__(*args, **kwargs)
         self.fields['curs_list'].queryset = Curs.objects.filter(grup__alumne__isnull=False, 
                                                                 grup__alumne__data_baixa__isnull=True,
                                                 ).order_by('nom_curs_complert').distinct()
-        self.fields['tipus_quota'].queryset = TipusQuota.objects.exclude(nom='uf').exclude(nom='taxcurs').filter(quota__isnull=False).order_by('nom').distinct()
+        di=Group.objects.filter(name='direcció')
+        ad=Group.objects.filter(name='administradors')
+        if (di and di[0] not in user.groups.all()) and (ad and ad[0] not in user.groups.all()):
+            self.fields['tipus_quota'].queryset = TipusQuota.objects.exclude(nom='uf').exclude(nom='taxcurs').filter(quota__isnull=False, nom=user.groups.all()[0].name).order_by('nom').distinct()
+        else:
+            self.fields['tipus_quota'].queryset = TipusQuota.objects.exclude(nom='uf').exclude(nom='taxcurs').filter(quota__isnull=False).order_by('nom').distinct()
 
 class PagQuotesForm(forms.Form):
     pkp = forms.CharField( widget=forms.HiddenInput() )
@@ -186,8 +194,14 @@ class EscollirAny(forms.Form):
     tpv = forms.ModelChoiceField(label='TPV', queryset=None, initial=defecte, required = True,)
     year = forms.TypedChoiceField(label='Any', coerce=int, choices=year_choices, initial=current_year, required = True)
     
-    def __init__(self, *args, **kwargs):
+    def __init__(self, user, *args, **kwargs):
         from aula.apps.sortides.models import Comerç
+        from django.contrib.auth.models import Group
         
         super(EscollirAny, self).__init__(*args, **kwargs)
-        self.fields['tpv'].queryset = Comerç.objects.all().order_by('id')
+        di=Group.objects.filter(name='direcció')
+        ad=Group.objects.filter(name='administradors')
+        if (di and di[0] not in user.groups.all()) and (ad and ad[0] not in user.groups.all()):
+            self.fields['tpv'].queryset = Comerç.objects.filter(descripcio=user.groups.all()[0].name)
+        else:
+            self.fields['tpv'].queryset = Comerç.objects.all().order_by('id')
