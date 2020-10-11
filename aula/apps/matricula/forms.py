@@ -181,8 +181,12 @@ class PagQuotesForm(forms.Form):
 import datetime
 
 def year_choices():
-    primer=QuotaPagament.objects.filter(pagament_realitzat=True).order_by('data_hora_pagament').first().data_hora_pagament.year
-    return [(r,r) for r in range(primer, datetime.date.today().year+1)]
+    primer=QuotaPagament.objects.filter(pagament_realitzat=True).order_by('data_hora_pagament').first()
+    if primer:
+        primer = primer.data_hora_pagament.year
+        return [(r,r) for r in range(primer, datetime.date.today().year+1)]
+    else:
+        return [(current_year(),current_year())]
 
 def current_year():
     return datetime.date.today().year
