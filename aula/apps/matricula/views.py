@@ -958,16 +958,14 @@ def acumulatsTaxes(tpv, nany=None):
     
     totfet=QuotaPagament.objects.filter(quota__comerç=tpv, pagament_realitzat=True, 
                                         data_hora_pagament__year=nany,
-                                        quota__curs__isnull=True,
-                                        alumne__peticio__curs__nivell__taxes__isnull=False)\
-                    .values_list('alumne__peticio__curs__nivell__nom_nivell','alumne__peticio__curs__nivell__taxes__nom','data_hora_pagament__month')\
+                                        quota__curs__isnull=True)\
+                    .values_list('alumne__grup__curs__nivell__nom_nivell','quota__tipus__nom','data_hora_pagament__month')\
                     .annotate(total=Sum('quota__importQuota', filter=Q(fracciona=False)))\
                     .annotate(totalf=Sum('importParcial', filter=Q(fracciona=True)))
     
     totpendent=QuotaPagament.objects.filter(quota__comerç=tpv, pagament_realitzat=False, 
-                                            quota__curs__isnull=True,
-                                            alumne__peticio__curs__nivell__taxes__isnull=False)\
-                    .values_list('alumne__peticio__curs__nivell__nom_nivell','alumne__peticio__curs__nivell__taxes__nom')\
+                                            quota__curs__isnull=True)\
+                    .values_list('alumne__grup__curs__nivell__nom_nivell','quota__tipus__nom')\
                     .annotate(total=Sum('quota__importQuota', filter=Q(fracciona=False)))\
                     .annotate(totalf=Sum('importParcial', filter=Q(fracciona=True)))
     
@@ -1010,12 +1008,17 @@ def fullcalculQuotes(tpv, nany=None):
     totes=Quota.objects.filter(importQuota__gt=0).values_list('id').order_by('curs__nom_curs_complert', 'descripcio')
     
     worksheet = workbook.add_worksheet('Acumulats')
+    
+    num_format = workbook.add_format()
+    num_format.set_num_format('0.00')
+    
     cap=['Concepte','Pendent']
     date=django.utils.timezone.now()
     for i in range(1,13):
         cap.append(date.replace(month=i, day=1).strftime('%B')[2:].strip())
     cap.append('Total Pagat')
     worksheet.set_column(0, 0, 30)
+    worksheet.set_column(1, 14, 10)
     worksheet.write_string(0,0,tpv.descripcio+'-'+str(nany)+'. Dades a '+date.strftime('%d/%m/%Y %H:%M'))
     worksheet.write_row(1,0,cap)
     fila=2
@@ -1030,7 +1033,7 @@ def fullcalculQuotes(tpv, nany=None):
                 else:
                     col=m+1 
                 worksheet.write_number(fila, col, v)
-            worksheet.write_formula(fila, 14, '=SUM(C{0}:N{0})'.format(fila+1))
+            worksheet.write_formula(fila, 14, '=SUM(C{0}:N{0})'.format(fila+1), num_format)
             fila=fila+1
     
     for t,a in acumTaxes.items():
@@ -1041,12 +1044,12 @@ def fullcalculQuotes(tpv, nany=None):
             else:
                 col=m+1 
             worksheet.write_number(fila, col, v)
-        worksheet.write_formula(fila, 14, '=SUM(C{0}:N{0})'.format(fila+1))
+        worksheet.write_formula(fila, 14, '=SUM(C{0}:N{0})'.format(fila+1), num_format)
         fila=fila+1
     
     if fila>2:
         for t in range(ord('B'),ord('P')):
-            worksheet.write_formula(fila, t-ord('A'), '=SUM({0}3:{0}{1})'.format(chr(t),fila))
+            worksheet.write_formula(fila, t-ord('A'), '=SUM({0}3:{0}{1})'.format(chr(t),fila), num_format)
     
     worksheet = workbook.add_worksheet('Pendents')
     worksheet.set_column(0, 4, 30)
@@ -1065,7 +1068,7 @@ def fullcalculQuotes(tpv, nany=None):
         fila=fila+1
     
     if fila>2:
-        worksheet.write_formula(fila, 2, '=SUM(C3:C{0})'.format(fila))
+        worksheet.write_formula(fila, 2, '=SUM(C3:C{0})'.format(fila), num_format)
     
     workbook.close()
     return output
