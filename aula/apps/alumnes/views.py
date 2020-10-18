@@ -736,7 +736,10 @@ def llistaAlumnescsv( request ):
     """
     Generates an Excel spreadsheet for review by a staff member.
     """
-    llistaAlumnes = Alumne.objects.order_by('cognoms','nom')
+    ara = datetime.now()
+    q_no_es_baixa = Q(data_baixa__gt = ara ) | Q(data_baixa__isnull = True )
+  
+    llistaAlumnes = Alumne.objects.filter(q_no_es_baixa).order_by('cognoms','nom')
     
     dades = [ [e.ralc, 
                (unicode( e.grup ) + ' - ' + e.cognoms + ', ' + e.nom) , 
@@ -747,10 +750,14 @@ def llistaAlumnescsv( request ):
                e.rp2_correu,
                e.correu_relacio_familia_mare,
                e.correu_relacio_familia_pare,
-               e.correu_tutors ] for e in llistaAlumnes]
+               e.correu_tutors,
+               e.user_associat.last_login,
+               e.user_associat.is_active,
+               (bool(e.correu_relacio_familia_pare) or bool(e.correu_relacio_familia_mare)) ] for e in llistaAlumnes]
     
     capcelera = [ 'ralc', 'alumne', 'grup', 'username', 'correu', 'rp1_correu', 'rp2_correu', 
-                 'correu_relacio_mare', 'correu_relacio_pare', 'correu_tutors' ]
+                 'correu_relacio_mare', 'correu_relacio_pare', 'correu_tutors',
+                 'last_login', 'usuari actiu', 'correus OK' ]
 
     template = loader.get_template("export.csv")
     context = {
