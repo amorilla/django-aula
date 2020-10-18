@@ -19,6 +19,7 @@ LOGIN_URL="/usuaris/login/"
 LICENSE_FILE = location( r'../LICENSE' )
 DADES_FISCALS_FILE = location( r'../customising/docs/DADESFISCALS' )
 POLITICA_VENDA_FILE = location( r'../customising/docs/POLITICAVENDA' )
+CONDICIONS_MATRICULA = location( r'../customising/docs/MATRICULA' )
 
 MANAGERS = ADMINS
 
@@ -184,6 +185,8 @@ INSTALLED_APPS_DJANGO = [
     'django_extensions',
     'django_tables2',
     'django.contrib.humanize',
+    'captcha',
+    'formtools',
 ]
     
 INSTALLED_APPS_AULA = [
@@ -211,6 +214,8 @@ INSTALLED_APPS_AULA = [
     'aula.utils',
     'aula.apps.presenciaSetmanal',
     'aula.apps.extUntis',
+    'aula.apps.matricula',
+    'aula.apps.extPreinscripcio',
 ]
 
 #select2
@@ -257,4 +262,4 @@ LOGGING = {
 }
 
 
-PRIVATE_STORAGE_AUTH_FUNCTION = 'aula.utils.views.allow_foto'
+PRIVATE_STORAGE_AUTH_FUNCTION = 'aula.utils.views.allow_private_files'
