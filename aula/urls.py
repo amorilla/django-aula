@@ -34,18 +34,20 @@ urlpatterns = [
     url(r'^presencia/', include('aula.apps.presencia.urls', ), ),
     url(r'^incidencies/', include('aula.apps.incidencies.urls')),
     url(r'^missatgeria/', include('aula.apps.missatgeria.urls')),
+    url(r'^sortides/', include('aula.apps.sortides.urls')),
     url(r'^usuaris/', include('aula.apps.usuaris.urls')),
     url(r'^utils/', include('aula.utils.urls')),
     url(r'^tutoria/', include('aula.apps.tutoria.urls')),
     url(r'^avaluacioQualitativa/', include('aula.apps.avaluacioQualitativa.urls')),
     url(r'^todo/', include('aula.apps.todo.urls')),
-    url(r'^sortides/', include('aula.apps.sortides.urls')),
     url(r'^baixes/', include('aula.apps.baixes.urls')),
     url(r'^open/', include('aula.apps.relacioFamilies.urls')),
     url(r'^aules/', include('aula.apps.aules.urls')),
     url(r'^recursos/', include('aula.apps.material.urls')),
     url(r'^presenciaSetmanal/', include('aula.apps.presenciaSetmanal.urls')),
     url(r'^extUntis/', include('aula.apps.extUntis.urls')),
+    url(r'^matricula/', include('aula.apps.matricula.urls', namespace='matricula')),
+    url(r'^extPreinscripcio/', include('aula.apps.extPreinscripcio.urls')),
     # Uncomment the next line to enable the admin:
     path('admin/', admin.site.urls),
     # Login i logout automàtics
@@ -56,6 +58,7 @@ urlpatterns = [
     url(r'^site-css/(?P<path>.*)$', serve,{'document_root': site_media_site_css}),
     url(r'^error500$', TemplateView.as_view(template_name='500.html') ),
     url('^private-media/', include(private_storage.urls)),
+    url(r'^captcha/', include('captcha.urls')),
 
 ]
 
