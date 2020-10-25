@@ -37,7 +37,6 @@ from django.contrib.auth.models import User, Group
 from aula.apps.usuaris.tools import enviaOneTimePasswd, testEmail
 from aula.apps.usuaris.models import User2Professor, GetDadesAddicionalsProfessor, DadesAddicionalsProfessor
 from aula.utils.tools import getClientAdress
-#from aula.apps.matricula.views import get_url_alumne
 
 from django.contrib import messages
 from django.conf import settings
@@ -266,7 +265,6 @@ def elsProfessors( request ):
         
 
 def loginUser( request ):
-    from aula.apps.matricula.views import get_url_alumne
     
     head=u'Login' 
 
@@ -388,10 +386,7 @@ def recoverPasswd( request , username, oneTimePasswd ):
     return alumneRecoverPasswd( request , username, oneTimePasswd )
 
 def alumneRecoverPasswd( request , username, oneTimePasswd ):
-    from aula.apps.matricula.views import get_url_alumne
-         
     import django.utils.timezone
-    from aula.apps.matricula.models import Peticio
     
     if not AlumneUser.objects.filter( username = username) or not OneTimePasswd.objects.filter(clau = oneTimePasswd):
         return HttpResponseRedirect( '/' )

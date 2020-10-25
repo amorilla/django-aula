@@ -24,7 +24,6 @@ class AbstractNivell(models.Model):
     ordre_nivell =  models.IntegerField(null=True, blank=True,help_text=u"S\'utilitza per mostrar un nivell abans que un altre (Ex: ESO=0, CFSI=1000)")
     descripcio_nivell = models.CharField(max_length=240, blank=True)
     anotacions_nivell = models.TextField(blank=True)
-    matricula_oberta = models.BooleanField(default=False)
     taxes = models.ForeignKey('sortides.TipusQuota', on_delete=models.PROTECT, blank=True, null=True, default=None)
     
     class Meta:
