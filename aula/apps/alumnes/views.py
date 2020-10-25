@@ -739,11 +739,13 @@ def llistaAlumnescsv( request ):
     ara = datetime.now()
     q_no_es_baixa = Q(data_baixa__gt = ara ) | Q(data_baixa__isnull = True )
   
-    llistaAlumnes = Alumne.objects.filter(q_no_es_baixa).order_by('cognoms','nom')
+    llistaAlumnes = Alumne.objects.filter(q_no_es_baixa).order_by('grup__descripcio_grup','cognoms','nom')
     
     dades = [ [e.ralc, 
                (unicode( e.grup ) + ' - ' + e.cognoms + ', ' + e.nom) , 
                e.grup, 
+               e.cognoms,
+               e.nom, 
                e.user_associat.username, 
                e.correu,
                e.rp1_correu, 
@@ -755,7 +757,7 @@ def llistaAlumnescsv( request ):
                e.user_associat.is_active,
                (bool(e.correu_relacio_familia_pare) or bool(e.correu_relacio_familia_mare)) ] for e in llistaAlumnes]
     
-    capcelera = [ 'ralc', 'alumne', 'grup', 'username', 'correu', 'rp1_correu', 'rp2_correu', 
+    capcelera = [ 'ralc', 'alumne', 'grup', 'cognoms', 'nom', 'username', 'correu', 'rp1_correu', 'rp2_correu', 
                  'correu_relacio_mare', 'correu_relacio_pare', 'correu_tutors',
                  'last_login', 'usuari actiu', 'correus OK' ]
 
