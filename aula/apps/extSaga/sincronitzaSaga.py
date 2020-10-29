@@ -244,7 +244,7 @@ def sincronitza(f, user = None):
                 a.data_baixa = None
                 a.motiu_bloqueig = u'No sol·licitat'
                 a.tutors_volen_rebre_correu = False
-
+        
         a.save()
         nivells.add(a.grup.curs.nivell)
     #

@@ -738,7 +738,7 @@ def llistaAlumnescsv( request ):
     """
     ara = datetime.now()
     q_no_es_baixa = Q(data_baixa__gt = ara ) | Q(data_baixa__isnull = True )
-  
+    
     llistaAlumnes = Alumne.objects.filter(q_no_es_baixa).order_by('grup__descripcio_grup','cognoms','nom')
     
     dades = [ [e.ralc, 
@@ -760,7 +760,7 @@ def llistaAlumnescsv( request ):
     capcelera = [ 'ralc', 'alumne', 'grup', 'cognoms', 'nom', 'username', 'correu', 'rp1_correu', 'rp2_correu', 
                  'correu_relacio_mare', 'correu_relacio_pare', 'correu_tutors',
                  'last_login', 'usuari actiu', 'correus OK' ]
-
+    
     template = loader.get_template("export.csv")
     context = {
                          'capcelera':capcelera,
