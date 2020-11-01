@@ -793,7 +793,7 @@ def fullLlistes(professor):
     output = io.BytesIO()
     workbook = xlsxwriter.Workbook(output)
     
-    llgrups=Grup.objects.filter(horari__professor = professor).distinct()
+    llgrups=Grup.objects.filter(horari__professor = professor).distinct().order_by('descripcio_grup')
     for g in llgrups:
         worksheet = workbook.add_worksheet(g.descripcio_grup)
         cap=['Cognoms','Nom','email']
@@ -807,9 +807,9 @@ def fullLlistes(professor):
                                                 .order_by('alumne__cognoms','alumne__nom')
         fila=1
         for a in llalumnes:
-            worksheet.write_string(fila,0,llalumnes['alumne__cognoms'])
-            worksheet.write_string(fila,1,llalumnes['alumne__nom'])
-            worksheet.write_string(fila,2,llalumnes['alumne__correu'])
+            worksheet.write_string(fila,0,a['alumne__cognoms'])
+            worksheet.write_string(fila,1,a['alumne__nom'])
+            worksheet.write_string(fila,2,a['alumne__correu'])
             fila=fila+1
         
     workbook.close()
