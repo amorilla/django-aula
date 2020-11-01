@@ -780,3 +780,55 @@ def llistaAlumnescsv( request ):
 
 
     return response
+
+def fullLlistes(professor):
+    '''
+    Retorna un full de càlcul xlsx amb les llistes d'alumnes dels grups del professor
+    '''
+    
+    import xlsxwriter
+    import io
+    from aula.apps.presencia.models import ControlAssistencia
+    
+    output = io.BytesIO()
+    workbook = xlsxwriter.Workbook(output)
+    
+    llgrups=Grup.objects.filter(horari__professor = professor).distinct()
+    for g in llgrups:
+        worksheet = workbook.add_worksheet(g.descripcio_grup)
+        cap=['Cognoms','Nom','email']
+        worksheet.set_column(0, 0, 40)
+        worksheet.set_column(1, 1, 20)
+        worksheet.set_column(2, 2, 40)
+        worksheet.write_row(0,0,cap)
+        llalumnes=ControlAssistencia.objects.filter(impartir__horari__grup=g,\
+                                                impartir__horari__professor_id=professor).distinct()\
+                                                .values('alumne__cognoms','alumne__nom','alumne__correu')\
+                                                .order_by('alumne__cognoms','alumne__nom')
+        fila=1
+        for a in llalumnes:
+            worksheet.write_string(fila,0,llalumnes['alumne__cognoms'])
+            worksheet.write_string(fila,1,llalumnes['alumne__nom'])
+            worksheet.write_string(fila,2,llalumnes['alumne__correu'])
+            fila=fila+1
+        
+    workbook.close()
+    return output
+
+@login_required
+@group_required(['professors'])
+def elsMeusGrupsLlistes( request ):
+    
+    (user, l4) = tools.getImpersonateUser(request)
+    professor = User2Professor( user )
+    
+    output=fullLlistes(professor)
+    output.seek(0)
+    filename = (professor.last_name if professor.last_name else professor.username) + '-grups.xlsx'
+    response = HttpResponse(
+        output,
+        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    )
+    response['Content-Disposition'] = 'attachment; filename="%s"' % filename
+
+    return response
