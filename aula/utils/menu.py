@@ -147,7 +147,7 @@ def calcula_menu( user , path, sessioImpersonada ):
                       ("Alumnes", 'aula__alumnes__blanc', pr, None,
                           ( 
                             ("Els meus alumnes", 'aula__alumnes__alumnes_i_assignatures', pr, None),
-                            ("Els meus grups", 'aula__alumnes__alumnes_i_grups', pr, None),
+                            ("Descàrrega de llistes", 'aula__alumnes__alumnes_i_grups', pr, None),
                           ),                        
                       ),                                                            
 

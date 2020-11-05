@@ -13,7 +13,8 @@ from django.core.files.storage import FileSystemStorage
 from django.http import HttpResponseRedirect
 from django.conf import settings
 from aula.utils.decorators import group_required
-from aula.apps.matricula.forms import peticioForm, DadesForm1, DadesForm2, DadesForm2b, DadesForm3, MatriculaForm, EscollirCursForm, PagQuotesForm
+from aula.apps.matricula.forms import peticioForm, DadesForm1, DadesForm2, DadesForm2b, DadesForm3, \
+                MatriculaForm, EscollirCursForm, PagQuotesForm, AcceptaCond
 from aula.apps.matricula.models import Peticio, Dades
 from aula.apps.sortides.models import QuotaPagament, Quota
 from aula.apps.alumnes.models import Alumne, Curs, Nivell
@@ -626,6 +627,66 @@ def OmpleDades(request, pk=None):
     except Exception as e:
         print(str(e))
         infos.append('Error a l\'accedir a les dades de matrícula: '+str(e))
+        
+    return render(
+                request,
+                'resultat.html', 
+                {'msgs': {'errors': [], 'warnings': [], 'infos': infos} },
+             )
+
+@login_required
+def AcceptaCondicions(request):
+    user=request.user
+    infos=[]
+    try:
+        if user.alumne:
+            p=Peticio.objects.filter(alumne=user.alumne, any=django.utils.timezone.now().year).exclude(estat='D')
+            if not p:
+                p=Peticio()
+                p.idAlumne=user.alumne.ralc
+                p.tipusIdent='R'
+                p.email=user.alumne.correu_relacio_familia_pare
+                p.any=django.utils.timezone.now().year
+                p.estat='A'
+                p.curs = user.alumne.grup.curs
+                p.quota=None
+                p.alumne=user.alumne
+                p.dades=dadesAntigues(user.alumne)
+                if not p.dades.acceptar_condicions: 
+                    p.dades.acceptar_condicions=False
+                p.dades.save()
+                p.save()
+            else:
+                p=p[0]
+            if p.estat=='A':
+                if p.dades:
+                    item=p.dades
+                else:
+                    item=dadesAntigues(p.alumne)
+                    item.rp1_correu=p.email
+                
+                if request.method == 'POST':
+                    form = AcceptaCond(request.POST)
+                    if form.is_valid():
+                        infos=[]
+                        errors=[]
+                        item.acceptar_condicions=form.cleaned_data['acceptar_condicions']
+                        item.save()
+                        item.peticio.estat='F'
+                        item.peticio.save()
+                        infos.append('Dades guardades correctament')
+                        return render(
+                                    request,
+                                    'resultat.html', 
+                                    {'msgs': {'errors': errors, 'warnings': [], 'infos': infos} },
+                                 )
+                else:
+                    form = AcceptaCond()
+                return render(request, 'accepta_form.html', {'form': form, 'titol_formulari': 'Accepta condicions'})
+    
+    except Exception as e:
+        print(str(e))
+        infos.append('Error en l\'acceptació de condicions: '+str(e))
         
     return render(
                 request,

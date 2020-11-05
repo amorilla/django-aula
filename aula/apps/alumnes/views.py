@@ -7,7 +7,7 @@ from django.template import RequestContext, loader
 #tables
 from django.utils.safestring import mark_safe
 
-from .tables2_models import HorariAlumneTable
+from aula.apps.alumnes.tables2_models import HorariAlumneTable
 from django_tables2 import RequestConfig
 
 #from django import forms as forms
@@ -795,22 +795,30 @@ def fullLlistes(professor):
     
     llgrups=Grup.objects.filter(horari__professor = professor).distinct().order_by('descripcio_grup')
     for g in llgrups:
-        worksheet = workbook.add_worksheet(g.descripcio_grup)
-        cap=['Cognoms','Nom','email']
-        worksheet.set_column(0, 0, 40)
-        worksheet.set_column(1, 1, 20)
-        worksheet.set_column(2, 2, 40)
-        worksheet.write_row(0,0,cap)
-        llalumnes=ControlAssistencia.objects.filter(impartir__horari__grup=g,\
-                                                impartir__horari__professor_id=professor).distinct()\
-                                                .values('alumne__cognoms','alumne__nom','alumne__correu')\
-                                                .order_by('alumne__cognoms','alumne__nom')
-        fila=1
-        for a in llalumnes:
-            worksheet.write_string(fila,0,a['alumne__cognoms'])
-            worksheet.write_string(fila,1,a['alumne__nom'])
-            worksheet.write_string(fila,2,a['alumne__correu'])
-            fila=fila+1
+        assignatures=ControlAssistencia.objects.filter(impartir__horari__grup=g, \
+                                                       impartir__horari__professor_id=professor).\
+                                                       values_list('impartir__horari__assignatura').\
+                                                       distinct()
+        for a in assignatures:
+            assignatura=Assignatura.objects.get(id=a[0])
+            worksheet = workbook.add_worksheet(u'{0} - {1}'.format(str( assignatura ) , str( g ) ))
+            cap=['Cognoms','Nom','email']
+            worksheet.set_column(0, 0, 40)
+            worksheet.set_column(1, 1, 20)
+            worksheet.set_column(2, 2, 40)
+            worksheet.write_row(0,0,cap)
+            llalumnes=ControlAssistencia.objects.filter(impartir__horari__grup=g,\
+                                                    impartir__horari__professor_id=professor,\
+                                                    impartir__horari__assignatura=assignatura)\
+                                                    .distinct()\
+                                                    .values('alumne__cognoms','alumne__nom','alumne__correu')\
+                                                    .order_by('alumne__cognoms','alumne__nom')
+            fila=1
+            for a in llalumnes:
+                worksheet.write_string(fila,0,a['alumne__cognoms'])
+                worksheet.write_string(fila,1,a['alumne__nom'])
+                worksheet.write_string(fila,2,a['alumne__correu'])
+                fila=fila+1
         
     workbook.close()
     return output

@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h3>Acceptació condicions de G Suite</h3>
+<form method="post">{% csrf_token %}
+	Benvolguda família i alumne,<br>
+
+A l'Institut Thos i Codina utilitzem G Suite per Centres Educatius.<br>
+G Suite per Centres Educatius és un conjunt d’eines de productivitat<br>
+educativa de Google (Gmail, Calendar, Documents, Classroom, etc.) que<br>
+utilitzaran els alumnes per completar les tasques, comunicar-se amb<br>
+els seus professors i aprendre les destreses digitals del segle XXI.<br>
+Crearem un compte dins del nostre domini iesthosicodina.cat<br><br>
+    {{ form.as_p }}<b>Declaro</b> que he llegit i accepto les <a target = _blank href="/site-css/Condicions GSuite.pdf">condicions de G Suite</a>
+    <br><br>
+    <input class="btn btn-primary" type="submit" value="Grava" />
+</form>
+{% endblock %}
+
+
+
