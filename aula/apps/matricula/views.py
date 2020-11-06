@@ -664,6 +664,7 @@ def AcceptaCondicions(request):
                 else:
                     item=dadesAntigues(p.alumne)
                     item.rp1_correu=p.email
+                    p.dades=item
                 
                 if request.method == 'POST':
                     form = AcceptaCond(request.POST)
@@ -672,8 +673,8 @@ def AcceptaCondicions(request):
                         errors=[]
                         item.acceptar_condicions=form.cleaned_data['acceptar_condicions']
                         item.save()
-                        item.peticio.estat='F'
-                        item.peticio.save()
+                        p.estat='F'
+                        p.save()
                         infos.append('Dades guardades correctament')
                         return render(
                                     request,
