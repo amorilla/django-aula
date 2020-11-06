@@ -651,10 +651,11 @@ def AcceptaCondicions(request):
                 p.curs = user.alumne.grup.curs
                 p.quota=None
                 p.alumne=user.alumne
-                p.dades=dadesAntigues(user.alumne)
-                if not p.dades.acceptar_condicions: 
-                    p.dades.acceptar_condicions=False
-                p.dades.save()
+                dades=dadesAntigues(user.alumne)
+                if not dades.acceptar_condicions: 
+                    dades.acceptar_condicions=False
+                dades.save()
+                p.dades=dades
                 p.save()
             else:
                 p=p[0]
@@ -664,7 +665,9 @@ def AcceptaCondicions(request):
                 else:
                     item=dadesAntigues(p.alumne)
                     item.rp1_correu=p.email
+                    item.save()
                     p.dades=item
+                    p.save()
                 
                 if request.method == 'POST':
                     form = AcceptaCond(request.POST)
