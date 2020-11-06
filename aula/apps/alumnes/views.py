@@ -47,6 +47,9 @@ from aula.apps.alumnes.tools import fusiona_alumnes_by_pk
 from aula.apps.alumnes.forms import promoForm, newAlumne
 from django.conf import settings
 from aula.apps.alumnes.gestioGrups import grupsPromocionar
+from aula.apps.extPreinscripcio.models import Preinscripcio
+from aula.apps.matricula.models import Peticio
+from aula.apps.tutoria import rpt_elsMeusAlumnesTutorats
 
 #duplicats
 @login_required
@@ -729,6 +732,11 @@ def cercaUsuari(request):
          }
         )
 
+def acceptaCondicions(alumne):
+    pe=Peticio.objects.filter(alumne=alumne)
+    pr=Preinscripcio.objects.filter(ralc=alumne.ralc)
+    return (pe and pe[0].dades and pe[0].dades.acceptar_condicions) or pr
+
 #amorilla@xtec.cat 
 @login_required
 @group_required(['direcció'])
@@ -755,11 +763,12 @@ def llistaAlumnescsv( request ):
                e.correu_tutors,
                e.user_associat.last_login,
                e.user_associat.is_active,
-               (bool(e.correu_relacio_familia_pare) or bool(e.correu_relacio_familia_mare)) ] for e in llistaAlumnes]
+               'OK' if (bool(e.correu_relacio_familia_pare) or bool(e.correu_relacio_familia_mare)) else '',
+               'OK' if acceptaCondicions(e) else '' ] for e in llistaAlumnes ]
     
     capcelera = [ 'ralc', 'alumne', 'grup', 'cognoms', 'nom', 'username', 'correu', 'rp1_correu', 'rp2_correu', 
                  'correu_relacio_mare', 'correu_relacio_pare', 'correu_tutors',
-                 'last_login', 'usuari actiu', 'correus OK' ]
+                 'last_login', 'usuari actiu', 'correus OK', 'Accepta G Suite' ]
     
     template = loader.get_template("export.csv")
     context = {
