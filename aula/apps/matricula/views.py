@@ -23,6 +23,11 @@ from aula.apps.extSaga.models import ParametreSaga
 from aula.apps.extUntis.sincronitzaUntis import creaGrup
 from aula.apps.usuaris.models import OneTimePasswd
 
+def acceptaCondicions(alumne):
+    pe=Peticio.objects.filter(alumne=alumne)
+    pr=Preinscripcio.objects.filter(ralc=alumne.ralc)
+    return (pe and pe[0].dades and pe[0].dades.acceptar_condicions) or pr
+
 def get_url_alumne(usuari):
     '''
     Si l'usuari és un alumne i té una petició de matrícula acceptada que encara
@@ -37,6 +42,8 @@ def get_url_alumne(usuari):
                 p=p[0]
                 if not p.dades:
                     return reverse_lazy('matricula:relacio_families__matricula__dades')
+            if not acceptaCondicions(usuari.alumne):
+                return reverse_lazy('matricula:relacio_families__matricula__accepta')
     except Exception:
         return None
     return None
@@ -580,7 +587,8 @@ def OmpleDades(request, pk=None):
                         if not p.dades:
                             infos.append('El període de matrícula ha quedat tancat. No ha completat les seves dades, la seva matrícula no s\'ha realitzat.')
                         else:
-                            infos.append('Estem comprovant la seva matrícula. Una vegada verificada la documentació, rebrà un missatge amb la confirmació.')
+                            #infos.append('Estem comprovant la seva matrícula. Una vegada verificada la documentació, rebrà un missatge amb la confirmació.')
+                            infos.append('Sense dades necessàries')
                         return render(
                             request,
                             'resultat.html', 
@@ -636,6 +644,8 @@ def OmpleDades(request, pk=None):
 
 @login_required
 def AcceptaCondicions(request):
+    from aula.apps.usuaris.tools import testEmail
+    
     user=request.user
     infos=[]
     try:
@@ -670,23 +680,33 @@ def AcceptaCondicions(request):
                     p.save()
                 
                 if request.method == 'POST':
-                    form = AcceptaCond(request.POST)
+                    form = AcceptaCond(request.user, request.POST)
                     if form.is_valid():
-                        infos=[]
-                        errors=[]
-                        item.acceptar_condicions=form.cleaned_data['acceptar_condicions']
-                        item.save()
-                        p.estat='F'
-                        p.save()
-                        infos.append('Dades guardades correctament')
-                        return render(
-                                    request,
-                                    'resultat.html', 
-                                    {'msgs': {'errors': errors, 'warnings': [], 'infos': infos} },
-                                 )
+                        errors = {}
+                        email=form.cleaned_data['alumne_correu']
+                        res, email = testEmail(email, False)
+                        if res<-1:
+                            errors.setdefault('alumne_correu', []).append(u'''Adreça no vàlida''')
+                        if len(errors)>0:
+                            form._errors.update(errors)
+                        else:
+                            infos=[]
+                            item.acceptar_condicions=form.cleaned_data['acceptar_condicions']
+                            item.alumne_correu=email
+                            item.save()
+                            p.alumne.correu=email
+                            p.alumne.save()
+                            p.estat='F'
+                            p.save()
+                            infos.append('Dades guardades correctament')
+                            return render(
+                                        request,
+                                        'resultat.html', 
+                                        {'msgs': {'errors': [], 'warnings': [], 'infos': infos} },
+                                     )
                 else:
-                    form = AcceptaCond()
-                return render(request, 'accepta_form.html', {'form': form, 'titol_formulari': 'Accepta condicions'})
+                    form = AcceptaCond(request.user)
+                return render(request, 'accepta_form.html', {'form': form})
     
     except Exception as e:
         print(str(e))

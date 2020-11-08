@@ -732,11 +732,6 @@ def cercaUsuari(request):
          }
         )
 
-def acceptaCondicions(alumne):
-    pe=Peticio.objects.filter(alumne=alumne)
-    pr=Preinscripcio.objects.filter(ralc=alumne.ralc)
-    return (pe and pe[0].dades and pe[0].dades.acceptar_condicions) or pr
-
 #amorilla@xtec.cat 
 @login_required
 @group_required(['direcció'])
@@ -744,6 +739,7 @@ def llistaAlumnescsv( request ):
     """
     Generates an Excel spreadsheet for review by a staff member.
     """
+    from aula.apps.matricula.views import acceptaCondicions
     ara = datetime.now()
     q_no_es_baixa = Q(data_baixa__gt = ara ) | Q(data_baixa__isnull = True )
     
