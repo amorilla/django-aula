@@ -174,20 +174,17 @@ def calcula_menu( user , path, sessioImpersonada ):
                ),
 
                #--Gestió--------------------------------------------------------------------------
-               ('gestio', 'Gestió', 'gestio__reserva_aula__list' if not am else 'matricula:gestio__quotes__blanc', co or pl or am, None,
+               ('gestio', 'Gestió', 'gestio__reserva_aula__list' if not am else 'gestio__quotes__blanc', co or pl or am, None,
                   (
                       ("Reserva Aula", 'gestio__reserva_aula__list', co or pl, None, None),
                       ("Reserva Material", 'gestio__reserva_recurs__list', co or pl, None, None),
                       ("Cerca Alumne", 'gestio__usuari__cerca', co or pl, None, None),
                       ("Cerca Professor", 'gestio__professor__cerca', co or pl, None, None),  
                       ("iCal", 'gestio__calendari__integra', pl, None, None),  
-                      ("Peticions pendents", 'matricula:gestio__peticions__pendents', di, None, None),  
-                      ("Matrícules per confirmar", 'matricula:gestio__confirma__matricula', di, None, None),  
-                      ("Matrícules", 'matricula:gestio__llistat__matricula', di, None, None),  
-                      ("Quotes", 'matricula:gestio__quotes__blanc', di or am, None,
+                      ("Quotes", 'gestio__quotes__blanc', di or am, None,
                           ( 
-                            ("Assigna Quotes", 'matricula:gestio__quotes__assigna', di or am, None),
-                            ("Descàrrega acumulats", 'matricula:gestio__quotes__descarrega', di or am, None )
+                            ("Assigna Quotes", 'gestio__quotes__assigna', di or am, None),
+                            ("Descàrrega acumulats", 'gestio__quotes__descarrega', di or am, None )
                           )
                       ),         
                    )
@@ -257,7 +254,6 @@ def calcula_menu( user , path, sessioImpersonada ):
                         (
                           ("Alumnes ESO/BAT", 'administracio__sincronitza__esfera', di , None  ),
                           ("Alumnes Cicles", 'administracio__sincronitza__saga', di, None),
-                          ("Preinscripció", 'administracio__sincronitza__preinscripcio', di , None  ),
                           ("HorarisKronowin", 'administracio__sincronitza__kronowin', di , None  ),
                           ("HorarisUntis", 'administracio__sincronitza__Untis', di , None  ),
                           ("Aules", 'gestio__aula__assignacomentari', di, None),
@@ -280,8 +276,6 @@ def calcula_menu( user , path, sessioImpersonada ):
                   (
                       ("Informe", 'relacio_families__informe__el_meu_informe', al, None, None ),
                       ("Paràmetres", 'relacio_families__configuracio__canvi_parametres', al, None, None ),
-                      ("Matrícula", 'matricula:relacio_families__matricula__dades', 
-                       al if settings.CUSTOM_MODUL_MATRICULA_ACTIU else None, None, None ),
                    )
                ),
              )
@@ -297,7 +291,6 @@ def calcula_menu( user , path, sessioImpersonada ):
                       ("Email a les famílies", 'varis__mail__enviaEmailFamilies', di, None, None ),
                       ("About", 'varis__about__about', tots, None, None ),
                       ("Pagament Online", 'varis__pagament__pagament_online', (al or am) if settings.CUSTOM_SORTIDES_PAGAMENT_ONLINE or settings.CUSTOM_QUOTES_ACTIVES else None, None, None),
-                      ("Condicions Matrícula", 'matricula:varis__condicions__matricula', tots if settings.CUSTOM_MODUL_MATRICULA_ACTIU else None, None, None),
                    )
                ),
 
@@ -492,20 +485,15 @@ tutoria__relacio_families__dades_relacio_families
 tutoria__relacio_families__envia_benvinguda
 tutoria__seguiment_tutorial__formulari
 
-matricula:gestio__peticions__pendents
-matricula:gestio__confirma__matricula
-matricula:gestio__llistat__matricula
-matricula:gestio__quotes__assigna
-matricula:gestio__quotes__descarrega
+gestio__quotes__assigna
+gestio__quotes__descarrega
 
 nologin__usuari__login
 nologin__usuari__recover_password
 nologin__usuari__send_pass_by_email
 obsolet__tria_alumne
 psico__informes_alumne
-relacio_families__matricula__dades
 relacio_families__configuracio__canvi_parametres
-'relacio_families__informe__el_meu_informe'),
 relacio_families__informe__el_meu_informe
 triaAlumneAlumneAjax
 triaAlumneCursAjax

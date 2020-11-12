@@ -1554,7 +1554,7 @@ def assignaQuotes(request):
             curs=form.cleaned_data['curs_list']
             tipus=form.cleaned_data['tipus_quota']
             auto=form.cleaned_data['automatic']
-            return HttpResponseRedirect(reverse_lazy("matricula:gestio__quotes__assigna", 
+            return HttpResponseRedirect(reverse_lazy("gestio__quotes__assigna", 
                                                      kwargs={"curs": curs.id, "tipus": tipus.id, "auto":auto}))
     else:
         form = EscollirCursForm(request.user)
@@ -1575,6 +1575,7 @@ def get_QuotaPagament(alumne, tipus, nany=None):
 def quotesCurs( request, curs, tipus, auto ):
     from django.forms import formset_factory
 
+    auto=str(auto)=='True'
     if request.method == "POST":
         formsetQuotes = formset_factory(PagQuotesForm) 
         formset = formsetQuotes(request.POST, form_kwargs={'tipus': tipus}) 
@@ -1676,7 +1677,7 @@ def quotesCurs( request, curs, tipus, auto ):
                 if quotacurs.count()!=1:
                     # Si troba varies no selecciona cap, si només troba una aleshores la fa servir per defecte
                     quotacurs=None
-                    
+            
             if quotacurs:
                 quotacurs=quotacurs[0]
             else:
