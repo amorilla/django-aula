@@ -817,6 +817,7 @@ def get_QuotaPagament(alumne, tipus, nany=None):
 def quotesCurs( request, curs, tipus, auto ):
     from django.forms import formset_factory
 
+    auto=str(auto)=='True'
     if request.method == "POST":
         formsetQuotes = formset_factory(PagQuotesForm) 
         formset = formsetQuotes(request.POST, form_kwargs={'tipus': tipus}) 
