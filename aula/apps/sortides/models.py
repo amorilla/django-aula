@@ -14,13 +14,14 @@ from aula.utils.tools import unicode
 import django.utils.timezone
 
 class Comerç(models.Model):
-    codi=models.CharField(max_length=32, unique=True)
-    key=models.CharField(max_length=64)
-    descripcio=models.CharField(max_length=200, blank=True)
+    codi=models.CharField("Codi", max_length=32)
+    key=models.CharField("Key", max_length=64)
+    descripcio=models.CharField("Nom del TPV", max_length=200, unique=True)
+    entornReal=models.BooleanField("Fa servir entorn real", default=False)
     
     class Meta:
-        verbose_name = u'Comerç'
-        verbose_name_plural = u'Comerços' 
+        verbose_name = u'TPV'
+        verbose_name_plural = u'TPVs' 
         
     def __str__(self):
         return self.descripcio
