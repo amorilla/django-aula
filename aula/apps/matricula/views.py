@@ -453,7 +453,7 @@ class DadesView(LoginRequiredMixin, SessionWizardView):
                     total=0
                 dictf3=self.initial_dict.get(step, {})
                 dictf3['importTaxes']=total
-                dictf3['quotaMat']=quotamat[0].importQuota
+                dictf3['quotaMat']=quotamat[0].importQuota if quotamat else None
                 dictf3.update({'peticio': p.id})
                 return dictf3
         return self.initial_dict.get(step, {})
@@ -568,64 +568,64 @@ def OmpleDades(request, pk=None):
 
     user=request.user
     infos=[]
-    try:
-        if user.alumne:
-            p=Peticio.objects.filter(alumne=user.alumne, any=django.utils.timezone.now().year).exclude(estat='D')
-            if p:
-                p=p[0]
-                if p.estat=='A':
-                    data = datetime.strptime('2020-09-07', r"%Y-%m-%d")
-                    if django.utils.timezone.now()>=data:
-                        if not p.dades:
-                            infos.append('El període de matrícula ha quedat tancat. No ha completat les seves dades, la seva matrícula no s\'ha realitzat.')
-                        else:
-                            infos.append('Estem comprovant la seva matrícula. Una vegada verificada la documentació, rebrà un missatge amb la confirmació.')
-                        return render(
-                            request,
-                            'resultat.html', 
-                            {'msgs': {'errors': [], 'warnings': [], 'infos': infos} },
-                            )
-                    pagament=QuotaPagament.objects.filter(alumne=p.alumne, quota=p.quota).order_by('dataLimit')
-                    if pagament:
-                        pagid=pagament[0].pk
+    #try:
+    if user.alumne:
+        p=Peticio.objects.filter(alumne=user.alumne, any=django.utils.timezone.now().year).exclude(estat='D')
+        if p:
+            p=p[0]
+            if p.estat=='A':
+                data = datetime.strptime('2021-09-07', r"%Y-%m-%d")
+                if django.utils.timezone.now()>=data:
+                    if not p.dades:
+                        infos.append('El període de matrícula ha quedat tancat. No ha completat les seves dades, la seva matrícula no s\'ha realitzat.')
                     else:
-                        pagid=''
-                    
-                    if p.dades:
-                        item=p.dades
-                    else:
-                        item=dadesAntigues(p.alumne)
-                        item.rp1_correu=p.email
-                    nomAlumne=(item.nom+" "+item.cognoms) if item.nom and item.cognoms else p.idAlumne
-                    torn=Preinscripcio.objects.get(ralc=p.alumne.ralc).torn
-                    titol="Dades de matrícula de "+nomAlumne+" a "+p.curs.nom_curs_complert+"("+torn+")"
-                    #get the initial data to include in the form
-                    fields0 = ['nom','cognoms','centre_de_procedencia','data_naixement','alumne_correu','adreca','localitat','cp',]
-                    fields1 = ['rp1_nom','rp1_telefon1','rp1_correu','rp2_nom','rp2_telefon1','rp2_correu',]
-                    fields2 = ['curs_complet', 'quantitat_ufs', 'bonificacio', 'llistaufs',]
-                    fields3 = ['fracciona_taxes', 'acceptar_condicions','files',]
-                    initial = {'0': dict([(f,getattr(item,f)) for f in fields0]),
-                               '1': dict([(f,getattr(item,f)) for f in fields1]),
-                               '2': dict([(f,getattr(item,f)) for f in fields2]),
-                               '3': dict([(f,getattr(item,f)) for f in fields3]),
-                    }
-                    initial['3']['acceptar_condicions']=False
-                    if item.pk:
-                        return DadesView.as_view(initial_dict=initial)(request, pk=item.pk, titol=titol, pagid=pagid)
-                    else:
-                        return DadesView.as_view(initial_dict=initial)(request, titol=titol, pagid=pagid)
+                        infos.append('Estem comprovant la seva matrícula. Una vegada verificada la documentació, rebrà un missatge amb la confirmació.')
+                    return render(
+                        request,
+                        'resultat.html', 
+                        {'msgs': {'errors': [], 'warnings': [], 'infos': infos} },
+                        )
+                pagament=QuotaPagament.objects.filter(alumne=p.alumne, quota=p.quota).order_by('dataLimit')
+                if pagament:
+                    pagid=pagament[0].pk
                 else:
-                    if p.estat=='F':
-                        infos.append('Matrícula finalitzada. No fan falta més dades.')
-                    else:
-                        infos.append('Petició pendent de verificació.')
+                    pagid=''
+                
+                if p.dades:
+                    item=p.dades
+                else:
+                    item=dadesAntigues(p.alumne)
+                    item.rp1_correu=p.email
+                nomAlumne=(item.nom+" "+item.cognoms) if item.nom and item.cognoms else p.idAlumne
+                torn=Preinscripcio.objects.get(ralc=p.alumne.ralc).torn
+                titol="Dades de matrícula de "+nomAlumne+" a "+p.curs.nom_curs_complert+"("+torn+")"
+                #get the initial data to include in the form
+                fields0 = ['nom','cognoms','centre_de_procedencia','data_naixement','alumne_correu','adreca','localitat','cp',]
+                fields1 = ['rp1_nom','rp1_telefon1','rp1_correu','rp2_nom','rp2_telefon1','rp2_correu',]
+                fields2 = ['curs_complet', 'quantitat_ufs', 'bonificacio', 'llistaufs',]
+                fields3 = ['fracciona_taxes', 'acceptar_condicions','files',]
+                initial = {'0': dict([(f,getattr(item,f)) for f in fields0]),
+                           '1': dict([(f,getattr(item,f)) for f in fields1]),
+                           '2': dict([(f,getattr(item,f)) for f in fields2]),
+                           '3': dict([(f,getattr(item,f)) for f in fields3]),
+                }
+                initial['3']['acceptar_condicions']=False
+                if item.pk:
+                    return DadesView.as_view(initial_dict=initial)(request, pk=item.pk, titol=titol, pagid=pagid)
+                else:
+                    return DadesView.as_view(initial_dict=initial)(request, titol=titol, pagid=pagid)
             else:
-                infos.append('Sense dades necessàries')
+                if p.estat=='F':
+                    infos.append('Matrícula finalitzada. No fan falta més dades.')
+                else:
+                    infos.append('Petició pendent de verificació.')
         else:
             infos.append('Sense dades necessàries')
-    except Exception as e:
-        print(str(e))
-        infos.append('Error a l\'accedir a les dades de matrícula: '+str(e))
+    else:
+        infos.append('Sense dades necessàries')
+    #except Exception as e:
+    #    print(str(e))
+    #    infos.append('Error a l\'accedir a les dades de matrícula: '+str(e))
         
     return render(
                 request,
