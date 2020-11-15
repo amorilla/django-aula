@@ -991,7 +991,7 @@ def elMeuInforme( request, pk = None ):
     pagquotesNoves = pagquotes.filter(pagament_realitzat=False)
     infQuota=detall in ['all', 'sortides'] and pagquotes and settings.CUSTOM_QUOTES_ACTIVES
 
-    if settings.CUSTOM_MODUL_MATRICULA_ACTIU or settings.CUSTOM_QUOTES_ACTIVES:
+    if settings.CUSTOM_QUOTES_ACTIVES:
         titol_sortides = 'Activitats/Pagaments'
     else:
         titol_sortides = 'Activitats/Sortides'
@@ -1129,19 +1129,21 @@ def elMeuInforme( request, pk = None ):
             filera.append(camp)
 
             # ----------------------------------------------
-            if act.tipus_de_pagament == 'ON' and act.termini_pagament >= datetime.now():
-                camp = tools.classebuida()
+            if act.tipus_de_pagament == 'ON':
                 #pagament corresponent a una sortida i un alumne
                 pagament_sortida_alumne = get_object_or_404(SortidaPagament, alumne=alumne, sortida=act)
-                camp.id = pagament_sortida_alumne.id
-                camp.nexturl = reverse_lazy('relacio_families__informe__el_meu_informe')
-                if pagament_sortida_alumne.pagamentFet:
-                    camp.negreta = True
-                    camp.contingut = "Pagat"
-                else:
-                    camp.buto = u'sortides__sortides__pago_on_line'
-                    camp.contingut = "Pagar Online"
-                filera.append(camp)
+                if act.termini_pagament >= datetime.now() or pagament_sortida_alumne.pagamentFet:
+                    camp = tools.classebuida()
+                    camp.id = pagament_sortida_alumne.id
+                    camp.nexturl = reverse_lazy('relacio_families__informe__el_meu_informe')
+                    if pagament_sortida_alumne.pagamentFet:
+                        camp.negreta = True
+                        camp.contingut = "Pagat"
+                    else:
+                        if settings.CUSTOM_SORTIDES_PAGAMENT_ONLINE:
+                            camp.buto = u'sortides__sortides__pago_on_line'
+                            camp.contingut = "Pagar Online"
+                    filera.append(camp)
 
             #--
             taula.fileres.append( filera )
@@ -1246,8 +1248,9 @@ def elMeuInforme( request, pk = None ):
                                         )
             valor=pagquota.importReal
             camp.modal['body'] =  u'{0}\n{1}\n{2}'.format(
-                                        u'Amb targeta' if settings.CUSTOM_SORTIDES_PAGAMENT_ONLINE else \
-                                        u'Ingrés en compte' if settings.CUSTOM_SORTIDES_PAGAMENT_CAIXER else '',
+                                        settings.CUSTOM_SORTIDES_INSTRUCCIONS_PAGAMENT_ONLINE if settings.CUSTOM_SORTIDES_PAGAMENT_ONLINE else \
+                                        settings.CUSTOM_SORTIDES_INSTRUCCIONS_PAGAMENT_ENTITAT_BANCARIA if settings.CUSTOM_SORTIDES_PAGAMENT_CAIXER else \
+                                        settings.CUSTOM_SORTIDES_INSTRUCCIONS_PAGAMENT,
                                         u'Preu: {0} €'.format(valor),
                                         u'Data límit pagament: {0}'.format(str(pagquota.getdataLimit)) if pagquota.getdataLimit else ''
                                   )

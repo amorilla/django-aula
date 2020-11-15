@@ -37,7 +37,6 @@ from django.contrib.auth.models import User, Group
 from aula.apps.usuaris.tools import enviaOneTimePasswd, testEmail
 from aula.apps.usuaris.models import User2Professor, GetDadesAddicionalsProfessor, DadesAddicionalsProfessor
 from aula.utils.tools import getClientAdress
-#from aula.apps.matricula.views import get_url_alumne
 
 from django.contrib import messages
 from django.conf import settings
@@ -266,7 +265,6 @@ def elsProfessors( request ):
         
 
 def loginUser( request ):
-    from aula.apps.matricula.views import get_url_alumne
     
     head=u'Login' 
 
@@ -293,9 +291,6 @@ def loginUser( request ):
                     if user.is_active:
                         login(request, user)
                         LoginUsuari.objects.create( usuari = user, exitos = True, ip = client_address)   #TODO: truncar IP
-                        url_mat=get_url_alumne(user)
-                        if url_mat:
-                            return HttpResponseRedirect( url_mat )
                         return HttpResponseRedirect( url_next )
                     else:
                         LoginUsuari.objects.create( usuari = user, exitos = False, ip = client_address)   #TODO: truncar IP
@@ -388,10 +383,7 @@ def recoverPasswd( request , username, oneTimePasswd ):
     return alumneRecoverPasswd( request , username, oneTimePasswd )
 
 def alumneRecoverPasswd( request , username, oneTimePasswd ):
-    from aula.apps.matricula.views import get_url_alumne
-         
     import django.utils.timezone
-    from aula.apps.matricula.models import Peticio
     
     if not AlumneUser.objects.filter( username = username) or not OneTimePasswd.objects.filter(clau = oneTimePasswd):
         return HttpResponseRedirect( '/' )
@@ -423,9 +415,7 @@ def alumneRecoverPasswd( request , username, oneTimePasswd ):
                     dataOK = data_neixement == dataN
                 else:
                     dataOK = True
-                #  Per fer la matrícula es permeten 15 díes
-                p=Peticio.objects.filter(alumne=alumneUser.getAlumne(), estat='A', any=django.utils.timezone.now().year, dades__isnull=True)
-                a_temps = datetime.now() - timedelta( minutes = 30 if not p else 60*24*15)
+                a_temps = datetime.now() - timedelta( minutes = 30 )
                 if alumneOK:
                     codiOK = OneTimePasswd.objects.filter( usuari = alumneUser.getUser(), 
                                                                   clau = oneTimePasswd, 
@@ -470,9 +460,6 @@ def alumneRecoverPasswd( request , username, oneTimePasswd ):
                 LoginUsuari.objects.create( usuari = user, exitos = True, ip = client_address) 
                                 
                 url_next = '/' 
-                url_mat=get_url_alumne(user)
-                if url_mat:
-                    return HttpResponseRedirect( url_mat )
                 return HttpResponseRedirect( url_next )    
             else:
                 try:
