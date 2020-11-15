@@ -17,7 +17,6 @@ class Comerç(models.Model):
     codi=models.CharField("Codi", max_length=32)
     key=models.CharField("Key", max_length=64)
     descripcio=models.CharField("Nom del TPV", max_length=200, unique=True)
-    entornReal=models.BooleanField("Fa servir entorn real", default=False)
     
     class Meta:
         verbose_name = u'TPV'
