@@ -41,8 +41,11 @@
 	 		{%else%}
 	            <td></td><td></td>
             {%endif%}
-
-            <td><a href="{{ dades.files.url }}" target="_blank">Fitxer</a>&nbsp</td>
+			{%if dades.files %}
+                <td><a href="{{ dades.files.url }}" target="_blank">Fitxer</a>&nbsp</td>
+            {% else %}
+                <td></td>
+            {% endif %}
             {%if dades.peticio.estat == 'A' %}
 	            <td><a class="btn btn-info pull" 
 				    href="{% url "matricula:changeestat" dades.peticio.id %}">
