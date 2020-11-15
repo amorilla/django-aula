@@ -1246,8 +1246,9 @@ def elMeuInforme( request, pk = None ):
                                         )
             valor=pagquota.importReal
             camp.modal['body'] =  u'{0}\n{1}\n{2}'.format(
-                                        u'Amb targeta' if settings.CUSTOM_SORTIDES_PAGAMENT_ONLINE else \
-                                        u'Ingrés en compte' if settings.CUSTOM_SORTIDES_PAGAMENT_CAIXER else '',
+                                        settings.CUSTOM_SORTIDES_INSTRUCCIONS_PAGAMENT_ONLINE if settings.CUSTOM_SORTIDES_PAGAMENT_ONLINE else \
+                                        settings.CUSTOM_SORTIDES_INSTRUCCIONS_PAGAMENT_ENTITAT_BANCARIA if settings.CUSTOM_SORTIDES_PAGAMENT_CAIXER else \
+                                        settings.CUSTOM_SORTIDES_INSTRUCCIONS_PAGAMENT,
                                         u'Preu: {0} €'.format(valor),
                                         u'Data límit pagament: {0}'.format(str(pagquota.getdataLimit)) if pagquota.getdataLimit else ''
                                   )
