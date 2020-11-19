@@ -1005,7 +1005,8 @@ def acumulatsQuotes(tpv, nany=None):
                     .annotate(total=Sum('quota__importQuota', filter=Q(fracciona=False)))\
                     .annotate(totalf=Sum('importParcial', filter=Q(fracciona=True)))
     
-    totpendent=QuotaPagament.objects.filter(quota__comerç=tpv, pagament_realitzat=False)\
+    totpendent=QuotaPagament.objects.filter(quota__comerç=tpv, pagament_realitzat=False, 
+                                            alumne__data_baixa__isnull=True)\
                     .exclude(quota__curs__isnull=True)\
                     .values_list('quota')\
                     .annotate(total=Sum('quota__importQuota', filter=Q(fracciona=False)))\
@@ -1050,7 +1051,8 @@ def acumulatsTaxes(tpv, nany=None):
                     .annotate(totalf=Sum('importParcial', filter=Q(fracciona=True)))
     
     totpendent=QuotaPagament.objects.filter(quota__comerç=tpv, pagament_realitzat=False, 
-                                            quota__curs__isnull=True)\
+                                            quota__curs__isnull=True,
+                                            alumne__data_baixa__isnull=True)\
                     .values_list('alumne__grup__curs__nivell__nom_nivell','quota__tipus__nom')\
                     .annotate(total=Sum('quota__importQuota', filter=Q(fracciona=False)))\
                     .annotate(totalf=Sum('importParcial', filter=Q(fracciona=True)))
@@ -1142,7 +1144,8 @@ def fullcalculQuotes(tpv, nany=None):
     worksheet.write_string(0,0,'Pagaments pendents. Dades a '+date.strftime('%d/%m/%Y %H:%M'))
     worksheet.write_row(1,0,('Concepte','Alumne','Import','Data límit','Fraccionat'))
     fila=2
-    pag=QuotaPagament.objects.filter(quota__comerç=tpv, pagament_realitzat=False).order_by('quota__dataLimit','quota__descripcio','alumne__cognoms','alumne__nom')
+    pag=QuotaPagament.objects.filter(quota__comerç=tpv, pagament_realitzat=False, alumne__data_baixa__isnull=True)\
+                    .order_by('quota__dataLimit','quota__descripcio','alumne__cognoms','alumne__nom')
     date_format = workbook.add_format({'num_format': 'dd/mm/yyyy'})
     
     for p in pag:
