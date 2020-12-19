@@ -179,8 +179,7 @@ def enviaEmailFamilies(assumpte, missatge, fitxers=None):
             informaNoCorreus(tutors,a.get_user_associat(),geturlconf('TUT',a.get_user_associat()))
 
     correus_alumnes = Alumne.objects.filter(q_no_es_baixa).values_list(
-        'correu_relacio_familia_pare','correu_relacio_familia_mare','correu_tutors', 
-        'rp1_correu', 'rp2_correu', 'correu')
+        'correu_relacio_familia_pare','correu_relacio_familia_mare') # ,'correu_tutors', 'rp1_correu', 'rp2_correu', 'correu')
     
     # crea llista de correus
     correus_alumnes=[item for sublist in list(correus_alumnes) for item in sublist]
