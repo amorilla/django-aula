@@ -6,7 +6,7 @@ from django_tables2 import RequestConfig
 from django.urls import reverse
 
 from aula.apps.usuaris.forms import CanviDadesUsuari, triaUsuariForm, loginUsuariForm, \
-    recuperacioDePasswdForm, sendPasswdByEmailForm, canviDePasswdForm, triaProfessorSelect2Form
+    recuperacioDePasswdForm, sendPasswdByEmailForm, canviDePasswdForm, triaProfessorSelect2Form, CanviDadesAddicionalsUsuari
 
 from django.contrib.auth.decorators import login_required
 
@@ -18,6 +18,7 @@ from aula.apps.extKronowin.models import ParametreKronowin
 #workflow
 from django.http import HttpResponseRedirect
 from django.shortcuts import  get_object_or_404, render
+from django import forms
 
 #helpers
 from django.http import HttpResponseNotFound, HttpResponse
@@ -49,45 +50,74 @@ from icalendar import vCalAddress, vText
 from django.templatetags.tz import localtime
 
 @login_required
-def canviDadesUsuari( request):
-    credentials = tools.getImpersonateUser(request) 
+@group_required(['professors', 'consergeria'])
+def canviDadesUsuari(request):
+    credentials = tools.getImpersonateUser(request)
     (user, _) = credentials
-        
+
+    if User2Professor(user):
+        professor = User2Professor(user)
+        dadesaddicionalsprofessor = DadesAddicionalsProfessor.objects.get(professor=professor)
+        imageUrl = dadesaddicionalsprofessor.get_foto_or_default
+    else:
+        professor = None
+        imageUrl = None
+
     if request.method == "POST":
-        form=CanviDadesUsuari(
-                                request.POST,                                
-                                instance= user )
-        form.fields['first_name'].label = 'Nom'
-        form.fields['last_name'].label = 'Cognoms'
-        if form.is_valid():
+        formUsuari = CanviDadesUsuari(
+            request.POST,
+            instance=user)
+        formUsuari.fields['first_name'].label = 'Nom'
+        formUsuari.fields['last_name'].label = 'Cognoms'
+
+        if professor:
+            formDadesAddicionals = CanviDadesAddicionalsUsuari(request.POST, request.FILES, instance=dadesaddicionalsprofessor)
+            formDadesAddicionals.fields['foto'].label = 'Foto'
+
+        if formUsuari.is_valid():
+            # Verifica si domini correcte
             errors = {}
-            email=form.cleaned_data['email']
+            email=formUsuari.cleaned_data['email']
             res, email = testEmail(email, False)
             if res<-1:
                 errors.setdefault('email', []).append(u'''Adreça no vàlida''')
 
             if len(errors)>0:
-                form._errors.update(errors)
+                formUsuari._errors.update(errors)
             else:
-                form.save()
-                return HttpResponseRedirect( '/' )
+                formUsuari.save()
+                if professor and formDadesAddicionals.is_valid():
+                    formDadesAddicionals.save()
+                return HttpResponseRedirect('/')         
+
     else:
-        form=CanviDadesUsuari(instance=user)
-        form.fields['first_name'].label = 'Nom'
-        form.fields['last_name'].label = 'Cognoms'
+        formUsuari =  CanviDadesUsuari(instance=user)
+        formUsuari.fields['first_name'].label = 'Nom'
+        formUsuari.fields['last_name'].label = 'Cognoms'
+
+        if professor:
+            dadesaddicionalsprofessor = DadesAddicionalsProfessor.objects.get(professor = professor)
+            formDadesAddicionals = CanviDadesAddicionalsUsuari(instance=dadesaddicionalsprofessor)
+            formDadesAddicionals.fields['foto'].label = 'Foto'
+            formDadesAddicionals.fields['foto'].widget = forms.FileInput()
+        else:
+            formDadesAddicionals = None
 
     head = u'''Dades d'usuari'''
-    infoForm = [ (u'Codi Usuari', user.username), ]      
-          
+    infoForm = [(u'Codi Usuari', user.username), ]
+
+    formset = [formUsuari, formDadesAddicionals]
+
     resposta = render(
-                request,
-                  "form.html", 
-                  {"form": form,
-                   "head": head,
-                   'infoForm': infoForm,
-                   }
-                )
-    
+        request,
+        "dadesUsuari.html",
+        {"formset": formset,
+         "head": head,
+         'image': imageUrl,
+         'infoForm': infoForm,
+         }
+    )
+
     return resposta
 
 #--------------------------------------------------------------------
@@ -391,6 +421,7 @@ def alumneRecoverPasswd( request , username, oneTimePasswd ):
     from aula.apps.matricula.models import Peticio
     import django.utils.timezone
     
+    # Comprova que correspongui a dades vàlides actuals
     if not AlumneUser.objects.filter( username = username) or not OneTimePasswd.objects.filter(clau = oneTimePasswd):
         return HttpResponseRedirect( '/' )
     
@@ -716,6 +747,7 @@ def detallProfessorHorari(request, pk, detall='all'):
 
 
     professor = get_object_or_404( Professor, pk=pk)
+    dadesAddicionalsProfessor = get_object_or_404( DadesAddicionalsProfessor, professor=professor)
     tutoria = professor.tutor_set.filter( professor = professor )
 
     qHorari = Q(horari__professor = professor, dia_impartir = data)
@@ -725,12 +757,22 @@ def detallProfessorHorari(request, pk, detall='all'):
     table=HorariProfessorTable(imparticions)
 
     RequestConfig(request).configure(table)
+    if dadesAddicionalsProfessor.foto:
+        Accio.objects.create(
+            tipus='AS',
+            usuari=user,
+            l4=l4,
+            impersonated_from=request.user if request.user != user else None,
+            moment=datetime.now(),
+            text=u"""Accés a dades sensibles del profe {0} per part de l'usuari {1}.""".format(professor, user)
+        )
 
     return render(
         request,
         'mostraInfoProfessorCercat.html',
         {'table': table,
          'professor':professor,
+         'dadesAddicionalsProfessor':dadesAddicionalsProfessor,
          'tutoria': tutoria,
          'dia' : data,
          'lendema': (data + timedelta( days = +1 )).strftime(r'%Y-%m-%d'),

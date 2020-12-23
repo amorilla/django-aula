@@ -30,9 +30,9 @@ def calcula_menu( user , path, sessioImpersonada ):
     co = not al and Group.objects.get_or_create(name= 'consergeria' )[0] in user.groups.all()
     pg = not al and Group.objects.get_or_create(name= 'psicopedagog' )[0] in user.groups.all()
     so = not al and Group.objects.get_or_create(name= 'sortides' )[0] in user.groups.all()
-    am = not al and Group.objects.get_or_create(name= 'ampa' )[0] in user.groups.all()
+    tp = not al and Group.objects.get_or_create(name= 'tpvs' )[0] in user.groups.all()
     tu = not al and pr and ( User2Professor( user).tutor_set.exists() or User2Professor( user).tutorindividualitzat_set.exists() )    
-    tots = al or ad or di or pr or pl or co or pg or so or am
+    tots = al or ad or di or pr or pl or co or pg or so or tp
     
     #Comprovar si té missatges sense llegir
     nMissatges = user.destinatari_set.filter( moment_lectura__isnull = True ).count()
@@ -174,7 +174,7 @@ def calcula_menu( user , path, sessioImpersonada ):
                ),
 
                #--Gestió--------------------------------------------------------------------------
-               ('gestio', 'Gestió', 'gestio__reserva_aula__list' if not am else 'gestio__quotes__blanc', co or pl or am, None,
+               ('gestio', 'Gestió', 'gestio__reserva_aula__list' if not tp else 'gestio__quotes__blanc', co or pl or tp, None,
                   (
                       ("Reserva Aula", 'gestio__reserva_aula__list', co or pl, None, None),
                       ("Reserva Material", 'gestio__reserva_recurs__list', co or pl, None, None),
@@ -184,10 +184,10 @@ def calcula_menu( user , path, sessioImpersonada ):
                       ("Peticions pendents", 'matricula:gestio__peticions__pendents', di, None, None),  
                       ("Matrícules per confirmar", 'matricula:gestio__confirma__matricula', di, None, None),  
                       ("Matrícules", 'matricula:gestio__llistat__matricula', di, None, None),  
-                      ("Quotes", 'gestio__quotes__blanc', di or am, None,
+                      ("Quotes", 'gestio__quotes__blanc', (di or tp) if settings.CUSTOM_QUOTES_ACTIVES else None, None,
                           ( 
-                            ("Assigna Quotes", 'gestio__quotes__assigna', di or am, None),
-                            ("Descàrrega acumulats", 'gestio__quotes__descarrega', di or am, None )
+                            ("Assigna Quotes", 'gestio__quotes__assigna', (di or tp) if settings.CUSTOM_QUOTES_ACTIVES else None, None),
+                            ("Descàrrega acumulats", 'gestio__quotes__descarrega', (di or tp) if settings.CUSTOM_QUOTES_ACTIVES else None, None)
                           )
                       ),         
                    )
@@ -289,14 +289,15 @@ def calcula_menu( user , path, sessioImpersonada ):
     arbre2 = (
 
                #--Varis--------------------------------------------------------------------------
-               ('varis', 'Ajuda i Avisos', 'varis__about__about' if al or am else 'varis__elmur__veure', tots, nMissatges > 0,
+               ('varis', 'Ajuda i Avisos', 'varis__about__about' if al or tp else 'varis__elmur__veure', tots, nMissatges > 0,
                   (
                       ("Notificacions", 'varis__elmur__veure', di or pr or pl or co or pg , ( nMissatgesDelta, 'info' if nMissatgesDelta < 10 else 'danger' ) if nMissatgesDelta >0 else None, None ),
                       ("Missatge a professorat o PAS", 'varis__prof_i_pas__envia_professors_i_pas', pr or pl or co, None, None ),
                       ("Avisos de Seguretat", 'varis__avisos__envia_avis_administradors', tots, None, None ),
                       ("Email a les famílies", 'varis__mail__enviaEmailFamilies', di, None, None ),
+                      ("Estadístiques", 'varis__estadistiques__estadistiques', pr, None, None),
                       ("About", 'varis__about__about', tots, None, None ),
-                      ("Pagament Online", 'varis__pagament__pagament_online', (al or am) if settings.CUSTOM_SORTIDES_PAGAMENT_ONLINE or settings.CUSTOM_QUOTES_ACTIVES else None, None, None),
+                      ("Pagament Online", 'varis__pagament__pagament_online', (al or tp) if settings.CUSTOM_SORTIDES_PAGAMENT_ONLINE or settings.CUSTOM_QUOTES_ACTIVES else None, None, None),
                       ("Condicions Matrícula", 'matricula:varis__condicions__matricula', tots if settings.CUSTOM_MODUL_MATRICULA_ACTIU else None, None, None),
                    )
                ),
@@ -492,10 +493,13 @@ tutoria__relacio_families__dades_relacio_families
 tutoria__relacio_families__envia_benvinguda
 tutoria__seguiment_tutorial__formulari
 
+<<<<<<< HEAD
 matricula:gestio__peticions__pendents
 matricula:gestio__confirma__matricula
 matricula:gestio__llistat__matricula
 
+=======
+>>>>>>> refs/heads/Quotes
 gestio__quotes__assigna
 gestio__quotes__descarrega
 

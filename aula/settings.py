@@ -55,6 +55,7 @@ CUSTOM_SORTIDES_INSTRUCCIONS_PAGAMENT_ENTITAT_BANCARIA = u"""El pagament s'ha de
 CUSTOM_SORTIDES_INSTRUCCIONS_PAGAMENT_EFECTIU = u"""El pagament s'ha de realitzar en efectiu al professor organitzador de la sortida o al tutor."""
 CUSTOM_SORTIDES_INSTRUCCIONS_PAGAMENT_ONLINE = u"""El pagament s'ha de realitzar a través d'aquesta mateixa plataforma"""
 CUSTOM_REDSYS_ENTORN_REAL = False
+# Si True permet utilitzar les quotes
 CUSTOM_QUOTES_ACTIVES = False
 CUSTOM_TIPUS_QUOTA_MATRICULA = None
 
