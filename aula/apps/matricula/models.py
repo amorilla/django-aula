@@ -70,6 +70,7 @@ class UFS(models.Model):
         return str(self.alumne)+' '+str(self.modul)+' '+str(self.numero)
 
 class Peticio(models.Model):
+    import aula.apps.sortides.models
     TIPUS_CHOICES=[
         ('R','RALC'),
         ('D','DNI'),
@@ -84,7 +85,7 @@ class Peticio(models.Model):
     idAlumne=models.CharField("RALC de l'alumne", max_length=15, help_text='DNI si l\'alumne no té RALC')
     tipusIdent=models.CharField("Tipus d'identificació", max_length=1, choices=TIPUS_CHOICES,  default='R')
     email=models.EmailField("Correu de contacte")
-    any=models.IntegerField(default=django.utils.timezone.now().year)
+    any=models.IntegerField(default=aula.apps.sortides.models.return_any_actual)
     estat=models.CharField( max_length=1, choices=ESTAT_CHOICES, default='P')
     curs = models.ForeignKey(Curs, verbose_name="Curs on matricular-se", on_delete=models.PROTECT)
     quota=models.ForeignKey(Quota, on_delete=models.PROTECT, null=True, blank=True)
