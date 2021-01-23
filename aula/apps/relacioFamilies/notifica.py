@@ -55,7 +55,16 @@ def notifica():
             fa_n_dies = ara - timedelta(  days = alumne.periodicitat_faltes )
             noves_sortides = NotificaSortida.objects.filter( alumne = alumne, relacio_familia_notificada__isnull = True  )
             if settings.CUSTOM_QUOTES_ACTIVES:
-                nous_pagaments = QuotaPagament.objects.filter( alumne=alumne, quota__importQuota__gt=0, data_hora_pagament__isnull=True)
+                #data_hora_pagament serveix per a saber moment del pagament o moment de notificació
+                fa7dies = ara - timedelta( days = 7 )
+                en7dies = ara + timedelta( days = 7 )
+                '''
+                Selecciona pagaments no comunicats o pagaments pendents que no s'han comunicat en l'última setmana i 
+                la data límit ja ha passat o falten menys de 7 dies.
+                '''
+                nous_pagaments = QuotaPagament.objects.filter(
+                    Q(data_hora_pagament__isnull=True) | (Q(data_hora_pagament__lt=fa7dies) & Q(quota__dataLimit__lt=en7dies)),
+                    alumne=alumne, quota__importQuota__gt=0, pagament_realitzat=False)
             else:
                 nous_pagaments = QuotaPagament.objects.none()
             noves_incidencies = alumne.incidencia_set.filter( relacio_familia_notificada__isnull = True  )
@@ -126,10 +135,13 @@ def notifica():
                     enviatOK = True
                 except:
                     #cal enviar msg a tutor que no s'ha pogut enviar correu a un seu alumne.
+                    if settings.DEBUG:
+                        print (u'Error enviant missatge a {0}'.format( alumne ))
                     enviatOK = False
 
             if enviatOK:                    
                 noves_sortides.update( relacio_familia_notificada = ara )
+                #data_hora_pagament serveix per a saber moment del pagament o moment de notificació
                 nous_pagaments.update( data_hora_pagament = ara )
                 noves_incidencies.update( relacio_familia_notificada = ara )
                 noves_expulsions.update( relacio_familia_notificada = ara )

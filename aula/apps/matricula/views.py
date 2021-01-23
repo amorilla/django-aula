@@ -13,8 +13,7 @@ from django.core.files.storage import FileSystemStorage
 from django.http import HttpResponseRedirect
 from django.conf import settings
 from aula.utils.decorators import group_required
-from aula.apps.matricula.forms import peticioForm, DadesForm1, DadesForm2, DadesForm2b, DadesForm3, \
-                MatriculaForm, EscollirCursForm, PagQuotesForm, AcceptaCond
+from aula.apps.matricula.forms import peticioForm, DadesForm1, DadesForm2, DadesForm2b, DadesForm3, MatriculaForm
 from aula.apps.matricula.models import Peticio, Dades
 from aula.apps.sortides.models import QuotaPagament, Quota
 from aula.apps.alumnes.models import Alumne, Curs, Nivell
@@ -22,11 +21,6 @@ from aula.apps.extPreinscripcio.models import Preinscripcio
 from aula.apps.extSaga.models import ParametreSaga
 from aula.apps.extUntis.sincronitzaUntis import creaGrup
 from aula.apps.usuaris.models import OneTimePasswd
-
-def acceptaCondicions(alumne):
-    pe=Peticio.objects.filter(alumne=alumne)
-    pr=Preinscripcio.objects.filter(ralc=alumne.ralc)
-    return (pe and pe[0].dades and pe[0].dades.acceptar_condicions) or pr
 
 def get_url_alumne(usuari):
     '''
@@ -42,8 +36,6 @@ def get_url_alumne(usuari):
                 p=p[0]
                 if not p.dades:
                     return reverse_lazy('matricula:relacio_families__matricula__dades')
-            if not acceptaCondicions(usuari.alumne):
-                return reverse_lazy('matricula:relacio_families__matricula__accepta')
     except Exception:
         return None
     return None
@@ -461,7 +453,7 @@ class DadesView(LoginRequiredMixin, SessionWizardView):
                     total=0
                 dictf3=self.initial_dict.get(step, {})
                 dictf3['importTaxes']=total
-                dictf3['quotaMat']=quotamat[0].importQuota
+                dictf3['quotaMat']=quotamat[0].importQuota if quotamat else None
                 dictf3.update({'peticio': p.id})
                 return dictf3
         return self.initial_dict.get(step, {})
@@ -576,141 +568,64 @@ def OmpleDades(request, pk=None):
 
     user=request.user
     infos=[]
-    try:
-        if user.alumne:
-            p=Peticio.objects.filter(alumne=user.alumne, any=django.utils.timezone.now().year).exclude(estat='D')
-            if p:
-                p=p[0]
-                if p.estat=='A':
-                    data = datetime.strptime('2020-09-07', r"%Y-%m-%d")
-                    if django.utils.timezone.now()>=data:
-                        if not p.dades:
-                            infos.append('El període de matrícula ha quedat tancat. No ha completat les seves dades, la seva matrícula no s\'ha realitzat.')
-                        else:
-                            #infos.append('Estem comprovant la seva matrícula. Una vegada verificada la documentació, rebrà un missatge amb la confirmació.')
-                            infos.append('Sense dades necessàries')
-                        return render(
-                            request,
-                            'resultat.html', 
-                            {'msgs': {'errors': [], 'warnings': [], 'infos': infos} },
-                            )
-                    pagament=QuotaPagament.objects.filter(alumne=p.alumne, quota=p.quota).order_by('dataLimit')
-                    if pagament:
-                        pagid=pagament[0].pk
-                    else:
-                        pagid=''
-                    
-                    if p.dades:
-                        item=p.dades
-                    else:
-                        item=dadesAntigues(p.alumne)
-                        item.rp1_correu=p.email
-                    nomAlumne=(item.nom+" "+item.cognoms) if item.nom and item.cognoms else p.idAlumne
-                    torn=Preinscripcio.objects.get(ralc=p.alumne.ralc).torn
-                    titol="Dades de matrícula de "+nomAlumne+" a "+p.curs.nom_curs_complert+"("+torn+")"
-                    #get the initial data to include in the form
-                    fields0 = ['nom','cognoms','centre_de_procedencia','data_naixement','alumne_correu','adreca','localitat','cp',]
-                    fields1 = ['rp1_nom','rp1_telefon1','rp1_correu','rp2_nom','rp2_telefon1','rp2_correu',]
-                    fields2 = ['curs_complet', 'quantitat_ufs', 'bonificacio', 'llistaufs',]
-                    fields3 = ['fracciona_taxes', 'acceptar_condicions','files',]
-                    initial = {'0': dict([(f,getattr(item,f)) for f in fields0]),
-                               '1': dict([(f,getattr(item,f)) for f in fields1]),
-                               '2': dict([(f,getattr(item,f)) for f in fields2]),
-                               '3': dict([(f,getattr(item,f)) for f in fields3]),
-                    }
-                    initial['3']['acceptar_condicions']=False
-                    if item.pk:
-                        return DadesView.as_view(initial_dict=initial)(request, pk=item.pk, titol=titol, pagid=pagid)
-                    else:
-                        return DadesView.as_view(initial_dict=initial)(request, titol=titol, pagid=pagid)
-                else:
-                    if p.estat=='F':
-                        infos.append('Matrícula finalitzada. No fan falta més dades.')
-                    else:
-                        infos.append('Petició pendent de verificació.')
-            else:
-                infos.append('Sense dades necessàries')
-        else:
-            infos.append('Sense dades necessàries')
-    except Exception as e:
-        print(str(e))
-        infos.append('Error a l\'accedir a les dades de matrícula: '+str(e))
-        
-    return render(
-                request,
-                'resultat.html', 
-                {'msgs': {'errors': [], 'warnings': [], 'infos': infos} },
-             )
-
-@login_required
-def AcceptaCondicions(request):
-    from aula.apps.usuaris.tools import testEmail
-    
-    user=request.user
-    infos=[]
-    try:
-        if user.alumne:
-            p=Peticio.objects.filter(alumne=user.alumne, any=django.utils.timezone.now().year).exclude(estat='D')
-            if not p:
-                p=Peticio()
-                p.idAlumne=user.alumne.ralc
-                p.tipusIdent='R'
-                p.email=user.alumne.correu_relacio_familia_pare
-                p.any=django.utils.timezone.now().year
-                p.estat='A'
-                p.curs = user.alumne.grup.curs
-                p.quota=None
-                p.alumne=user.alumne
-                dades=dadesAntigues(user.alumne)
-                if not dades.acceptar_condicions: 
-                    dades.acceptar_condicions=False
-                dades.save()
-                p.dades=dades
-                p.save()
-            else:
-                p=p[0]
+    #try:
+    if user.alumne:
+        p=Peticio.objects.filter(alumne=user.alumne, any=django.utils.timezone.now().year).exclude(estat='D')
+        if p:
+            p=p[0]
             if p.estat=='A':
+                data = datetime.strptime('2021-09-07', r"%Y-%m-%d")
+                if django.utils.timezone.now()>=data:
+                    if not p.dades:
+                        infos.append('El període de matrícula ha quedat tancat. No ha completat les seves dades, la seva matrícula no s\'ha realitzat.')
+                    else:
+                        infos.append('Estem comprovant la seva matrícula. Una vegada verificada la documentació, rebrà un missatge amb la confirmació.')
+                    return render(
+                        request,
+                        'resultat.html', 
+                        {'msgs': {'errors': [], 'warnings': [], 'infos': infos} },
+                        )
+                pagament=QuotaPagament.objects.filter(alumne=p.alumne, quota=p.quota).order_by('dataLimit')
+                if pagament:
+                    pagid=pagament[0].pk
+                else:
+                    pagid=''
+                
                 if p.dades:
                     item=p.dades
                 else:
                     item=dadesAntigues(p.alumne)
                     item.rp1_correu=p.email
-                    item.save()
-                    p.dades=item
-                    p.save()
-                
-                if request.method == 'POST':
-                    form = AcceptaCond(request.user, request.POST)
-                    if form.is_valid():
-                        errors = {}
-                        email=form.cleaned_data['alumne_correu']
-                        res, email = testEmail(email, False)
-                        if res<-1:
-                            errors.setdefault('alumne_correu', []).append(u'''Adreça no vàlida''')
-                        if len(errors)>0:
-                            form._errors.update(errors)
-                        else:
-                            infos=[]
-                            item.acceptar_condicions=form.cleaned_data['acceptar_condicions']
-                            item.alumne_correu=email
-                            item.save()
-                            p.alumne.correu=email
-                            p.alumne.save()
-                            p.estat='F'
-                            p.save()
-                            infos.append('Dades guardades correctament')
-                            return render(
-                                        request,
-                                        'resultat.html', 
-                                        {'msgs': {'errors': [], 'warnings': [], 'infos': infos} },
-                                     )
+                nomAlumne=(item.nom+" "+item.cognoms) if item.nom and item.cognoms else p.idAlumne
+                torn=Preinscripcio.objects.get(ralc=p.alumne.ralc).torn
+                titol="Dades de matrícula de "+nomAlumne+" a "+p.curs.nom_curs_complert+"("+torn+")"
+                #get the initial data to include in the form
+                fields0 = ['nom','cognoms','centre_de_procedencia','data_naixement','alumne_correu','adreca','localitat','cp',]
+                fields1 = ['rp1_nom','rp1_telefon1','rp1_correu','rp2_nom','rp2_telefon1','rp2_correu',]
+                fields2 = ['curs_complet', 'quantitat_ufs', 'bonificacio', 'llistaufs',]
+                fields3 = ['fracciona_taxes', 'acceptar_condicions','files',]
+                initial = {'0': dict([(f,getattr(item,f)) for f in fields0]),
+                           '1': dict([(f,getattr(item,f)) for f in fields1]),
+                           '2': dict([(f,getattr(item,f)) for f in fields2]),
+                           '3': dict([(f,getattr(item,f)) for f in fields3]),
+                }
+                initial['3']['acceptar_condicions']=False
+                if item.pk:
+                    return DadesView.as_view(initial_dict=initial)(request, pk=item.pk, titol=titol, pagid=pagid)
                 else:
-                    form = AcceptaCond(request.user)
-                return render(request, 'accepta_form.html', {'form': form})
-    
-    except Exception as e:
-        print(str(e))
-        infos.append('Error en l\'acceptació de condicions: '+str(e))
+                    return DadesView.as_view(initial_dict=initial)(request, titol=titol, pagid=pagid)
+            else:
+                if p.estat=='F':
+                    infos.append('Matrícula finalitzada. No fan falta més dades.')
+                else:
+                    infos.append('Petició pendent de verificació.')
+        else:
+            infos.append('Sense dades necessàries')
+    else:
+        infos.append('Sense dades necessàries')
+    #except Exception as e:
+    #    print(str(e))
+    #    infos.append('Error a l\'accedir a les dades de matrícula: '+str(e))
         
     return render(
                 request,
@@ -762,7 +677,7 @@ class MatriculesView(LoginRequiredMixin, ListView):
         return context
     
     def get_queryset(self):
-        return Dades.objects.filter(peticio__curs__nivell__matricula_oberta=True, peticio__any=django.utils.timezone.now().year, peticio__estat='A', acceptar_condicions=True, uploaded_at__lt='2020-11-01').order_by('peticio__curs__nom_curs_complert', 'cognoms', 'nom')
+        return Dades.objects.filter(peticio__curs__nivell__matricula_oberta=True, peticio__any=django.utils.timezone.now().year, peticio__estat='A', acceptar_condicions=True).order_by('peticio__curs__nom_curs_complert', 'cognoms', 'nom')
     
 @login_required
 @group_required(['direcció','administradors'])
@@ -780,568 +695,9 @@ class MatriculesList(LoginRequiredMixin, ListView):
         return context
         
     def get_queryset(self):
-        return Dades.objects.filter(peticio__curs__nivell__matricula_oberta=True, peticio__any=django.utils.timezone.now().year, uploaded_at__lt='2020-11-01').order_by('peticio__curs__nom_curs_complert', 'cognoms', 'nom')
+        return Dades.objects.filter(peticio__curs__nivell__matricula_oberta=True, peticio__any=django.utils.timezone.now().year).order_by('peticio__curs__nom_curs_complert', 'cognoms', 'nom')
 
 @login_required
 @group_required(['direcció','administradors'])
 def LlistaMatFinals(request):
     return MatriculesList.as_view()(request)
-
-@login_required
-@group_required(['direcció','administradors','ampa'])
-def assignaQuotes(request):
-    if request.method == 'POST':
-        form = EscollirCursForm(request.user, request.POST)
-        if form.is_valid():
-            curs=form.cleaned_data['curs_list']
-            tipus=form.cleaned_data['tipus_quota']
-            auto=form.cleaned_data['automatic']
-            return HttpResponseRedirect(reverse_lazy("matricula:gestio__quotes__assigna", 
-                                                     kwargs={"curs": curs.id, "tipus": tipus.id, "auto":auto}))
-    else:
-        form = EscollirCursForm(request.user)
-    return render(
-                request,
-                'form.html', 
-                {'form': form, 
-                 },
-                )
-
-def get_QuotaPagament(alumne, tipus, nany=None):
-    if not nany:
-        nany=django.utils.timezone.now().year
-    return QuotaPagament.objects.filter(alumne=alumne, quota__tipus=tipus, quota__any=nany)
-
-@login_required
-@group_required(['direcció','administradors','ampa'])
-def quotesCurs( request, curs, tipus, auto ):
-    from django.forms import formset_factory
-
-    auto=str(auto)=='True'
-    if request.method == "POST":
-        formsetQuotes = formset_factory(PagQuotesForm) 
-        formset = formsetQuotes(request.POST, form_kwargs={'tipus': tipus}) 
-        if formset.is_valid():
-            fraccions_esborrades=()
-            for form in formset:
-                pg = form.cleaned_data
-                quota = pg.get('quota')
-                pkp = pg.get('pkp')
-                pka = pg.get('pka')
-                if pkp!='None' and int(pkp) in fraccions_esborrades:
-                    continue
-                pagament=QuotaPagament.objects.get(pk=pkp) if pkp!='None' else None
-                a=Alumne.objects.get(pk=pka)
-                if quota:
-                    fracciona = pg.get('fracciona') and quota.importQuota>0
-                    if pagament:
-                        fet_act=pagament.pagamentFet
-                        canviFracc=not pagament.fracciona and fracciona and not fet_act
-                        canviQuota=pagament.quota!=quota and not fet_act and not pagament.fracciona
-                        crea=canviQuota or canviFracc
-                    else:
-                        canviQuota=False
-                        canviFracc=False
-                        crea=True
-
-                    if canviQuota or canviFracc:
-                        QuotaPagament.objects.filter(alumne=a, quota__any=django.utils.timezone.now().year, quota__tipus=tipus).\
-                            exclude(pagament_realitzat=True).delete()
-                    if crea:
-                        if fracciona:
-                            import1=round(float(quota.importQuota)/2.00,2)
-                            import2=float(quota.importQuota)-import1
-                            p=QuotaPagament(alumne=a, quota=quota, fracciona=True, importParcial=import1, dataLimit=quota.dataLimit)
-                            p.save()
-                            p=QuotaPagament(alumne=a, quota=quota, fracciona=True, importParcial=import2, 
-                                            dataLimit=quota.dataLimit + relativedelta(months=+3))
-                            p.save()
-                        else:
-                            p=QuotaPagament(alumne=a, quota=quota)
-                            p.save()
-                else:
-                    # Quota esborrada
-                    if pagament and not pagament.pagament_realitzat:
-                        #esborrar pagament o pagaments
-                        #si fracciona depén dels pagaments previs ja fets
-                        if not pagament.fracciona:
-                            pagament.delete()
-                        else:
-                            p=get_QuotaPagament(a, tipus).filter(fracciona=True)
-                            if p and not p.filter(pagament_realitzat=True):
-                                fraccions_esborrades=fraccions_esborrades+tuple(p.values_list('pk', flat = True))
-                                p.delete()
-
-            llista=Alumne.objects.filter(grup__curs__id=curs,
-                                 data_baixa__isnull=True,
-                                ).order_by('grup__nom_grup', 'cognoms', 'nom')
-    
-            llistapag=[]
-            for a in llista:
-                pagaments=get_QuotaPagament(a, tipus)
-                email=a.correu_relacio_familia_pare if a.correu_relacio_familia_pare else a.correu_relacio_familia_mare
-                if pagaments:
-                    for pg in pagaments:
-                        llistapag.append({
-                            'pkp': pg.pk,
-                            'pka': a.pk,
-                            'cognoms': a.cognoms,
-                            'nom':  a.nom ,
-                            'grup': a.grup,
-                            'correu': email,
-                            'quota': pg.quota,
-                            'estat': 'Ja pagat' if pg.pagamentFet else 'Pendent',
-                            'fracciona': pg.fracciona
-                            })
-
-            if len(llistapag)==0:
-                return render(
-                            request,
-                            'resultat.html', 
-                            {'msgs': {'errors': [], 'warnings': [], 'infos': ['Sense quotes assignades']} },
-                         )
-            formsetQuotes = formset_factory(PagQuotesForm, extra=0)
-            formset=formsetQuotes(form_kwargs={'tipus': tipus}, initial= llistapag)
-            
-    else:
-        quotacurs=None
-        if auto:
-            c=Curs.objects.get(id=curs)
-            try:
-                ncurs=str(int(c.nom_curs)+1)
-                quotacurs=Quota.objects.filter(curs__nivell=c.nivell, curs__nom_curs=ncurs, any=django.utils.timezone.now().year, tipus=tipus)
-            except:
-                quotacurs=None
-            
-            if not quotacurs:
-                # No troba una quota adequada, comprova si existeixen altres quotes del mateix tipus
-                quotacurs=Quota.objects.filter(any=django.utils.timezone.now().year, tipus=tipus)
-                if quotacurs.count()!=1:
-                    # Si troba varies no selecciona cap, si només troba una aleshores la fa servir per defecte
-                    quotacurs=None
-                    
-            if quotacurs:
-                quotacurs=quotacurs[0]
-            else:
-                quotacurs=None
-        
-        llista=Alumne.objects.filter(grup__curs__id=curs,
-                             data_baixa__isnull=True,
-                            ).order_by('grup__nom_grup', 'cognoms', 'nom')
-        if not llista:
-            return render(
-                        request,
-                        'resultat.html', 
-                        {'msgs': {'errors': [], 'warnings': [], 'infos': ['Sense quotes per assignar']} },
-                     )
-
-        llistapag=[]
-        for a in llista:
-            pagaments=get_QuotaPagament(a, tipus)
-            email=a.correu_relacio_familia_pare if a.correu_relacio_familia_pare else a.correu_relacio_familia_mare
-            if pagaments:
-                for pg in pagaments:
-                    llistapag.append({
-                        'pkp': pg.pk,
-                        'pka': a.pk,
-                        'cognoms': a.cognoms,
-                        'nom':  a.nom,
-                        'grup': a.grup,
-                        'correu': email,
-                        'quota': pg.quota,
-                        'estat': 'Ja pagat' if pg.pagamentFet else 'Pendent',
-                        'fracciona': pg.fracciona
-                        })
-            else:
-                p=Peticio.objects.filter(alumne=a, estat='A', any=django.utils.timezone.now().year)
-                if not p:
-                    llistapag.append({
-                        'pkp': 'None',
-                        'pka': a.pk,
-                        'cognoms': a.cognoms,
-                        'nom':  a.nom ,
-                        'grup': a.grup,
-                        'correu': email,
-                        'quota': quotacurs,
-                        'estat': 'No assignat',
-                        'fracciona': False
-                        })
-
-        if len(llistapag)==0:
-            return render(
-                        request,
-                        'resultat.html', 
-                        {'msgs': {'errors': [], 'warnings': [], 'infos': ['Sense quotes per assignar']} },
-                     )
-        
-        formsetQuotes = formset_factory(PagQuotesForm, extra=0)
-        formset=formsetQuotes(form_kwargs={'tipus': tipus}, initial= llistapag)      
-
-            
-    return render(
-                  request,
-                  "formsetgrid.html", 
-                  { "formset": formset,
-                    "head": "Assignació quotes",
-                    }
-                )
-
-def acumulatsQuotes(tpv, nany=None):
-    '''
-    Retorna un diccionari amb tots els acumulats per quotes i mesos i quantitat pendent
-    {{quota1: {'pendent':nnnnn, 1:nnnnn, 2:nnnnn, ... 12:nnnnn},
-     {quota2: {'pendent':nnnnn, 1:nnnnn, 2:nnnnn, ... 12:nnnnn},
-     ... }
-    '''
-    
-    from django.db.models import Sum, Q
-    
-    if not nany:
-        nany=django.utils.timezone.now().year
-    
-    totfet=QuotaPagament.objects.filter(quota__comerç=tpv, pagament_realitzat=True, data_hora_pagament__year=nany)\
-                    .exclude(quota__curs__isnull=True)\
-                    .values_list('quota','data_hora_pagament__month')\
-                    .annotate(total=Sum('quota__importQuota', filter=Q(fracciona=False)))\
-                    .annotate(totalf=Sum('importParcial', filter=Q(fracciona=True)))
-    
-    totpendent=QuotaPagament.objects.filter(quota__comerç=tpv, pagament_realitzat=False, 
-                                            alumne__data_baixa__isnull=True)\
-                    .exclude(quota__curs__isnull=True)\
-                    .values_list('quota')\
-                    .annotate(total=Sum('quota__importQuota', filter=Q(fracciona=False)))\
-                    .annotate(totalf=Sum('importParcial', filter=Q(fracciona=True)))
-    
-    calcul={}
-    
-    for p in list(totfet):
-        q, m, t1, t2 = p
-        tot=(t1 if t1 else 0) + (t2 if t2 else 0)
-        if not q in calcul:
-            calcul[q]={}
-        calcul[q][m]=tot
-    
-    for p in list(totpendent):
-        q, t1, t2 = p
-        tot=(t1 if t1 else 0) + (t2 if t2 else 0)
-        if not q in calcul:
-            calcul[q]={}
-        calcul[q]['pendent']=tot
-    
-    return calcul
-
-def acumulatsTaxes(tpv, nany=None):
-    '''
-    Retorna un diccionari amb tots els acumulats per nivells i mesos i quantitat pendent
-    {{'nivell1': {'pendent':nnnnn, 1:nnnnn, 2:nnnnn, ... 12:nnnnn},
-     {'nivell2': {'pendent':nnnnn, 1:nnnnn, 2:nnnnn, ... 12:nnnnn},
-     ... }
-    '''
-    
-    from django.db.models import Sum, Q
-    
-    if not nany:
-        nany=django.utils.timezone.now().year
-    
-    totfet=QuotaPagament.objects.filter(quota__comerç=tpv, pagament_realitzat=True, 
-                                        data_hora_pagament__year=nany,
-                                        quota__curs__isnull=True)\
-                    .values_list('alumne__grup__curs__nivell__nom_nivell','quota__tipus__nom','data_hora_pagament__month')\
-                    .annotate(total=Sum('quota__importQuota', filter=Q(fracciona=False)))\
-                    .annotate(totalf=Sum('importParcial', filter=Q(fracciona=True)))
-    
-    totpendent=QuotaPagament.objects.filter(quota__comerç=tpv, pagament_realitzat=False, 
-                                            quota__curs__isnull=True,
-                                            alumne__data_baixa__isnull=True)\
-                    .values_list('alumne__grup__curs__nivell__nom_nivell','quota__tipus__nom')\
-                    .annotate(total=Sum('quota__importQuota', filter=Q(fracciona=False)))\
-                    .annotate(totalf=Sum('importParcial', filter=Q(fracciona=True)))
-    
-    calcul={}
-    
-    for p in list(totfet):
-        q, x, m, t1, t2 = p
-        q=str(q)+'-'+str(x)
-        tot=(t1 if t1 else 0) + (t2 if t2 else 0)
-        if not q in calcul:
-            calcul[q]={}
-        calcul[q][m]=tot
-    
-    for p in list(totpendent):
-        q, x, t1, t2 = p
-        q=str(q)+'-'+str(x)
-        tot=(t1 if t1 else 0) + (t2 if t2 else 0)
-        if not q in calcul:
-            calcul[q]={}
-        calcul[q]['pendent']=tot
-    
-    return calcul
-
-def fullcalculQuotes(tpv, nany=None):
-    '''
-    Retorna un full de càlcul xlsx amb els acumulats i pagaments pendents
-    '''
-    
-    import xlsxwriter
-    import io
-    
-    output = io.BytesIO()
-    workbook = xlsxwriter.Workbook(output)
-    
-    if not nany:
-        nany=django.utils.timezone.now().year
-    
-    acumulats=acumulatsQuotes(tpv, nany)
-    acumTaxes=acumulatsTaxes(tpv, nany)
-    totes=Quota.objects.filter(importQuota__gt=0).values_list('id').order_by('curs__nom_curs_complert', 'descripcio')
-    
-    worksheet = workbook.add_worksheet('Acumulats')
-    
-    num_format = workbook.add_format()
-    num_format.set_num_format('0.00')
-    
-    cap=['Concepte','Pendent']
-    date=django.utils.timezone.now()
-    for i in range(1,13):
-        cap.append(date.replace(month=i, day=1).strftime('%B')[2:].strip())
-    cap.append('Total Pagat')
-    worksheet.set_column(0, 0, 30)
-    worksheet.set_column(1, 14, 10)
-    worksheet.write_string(0,0,tpv.descripcio+'-'+str(nany)+'. Dades a '+date.strftime('%d/%m/%Y %H:%M'))
-    worksheet.write_row(1,0,cap)
-    fila=2
-    for q in totes:
-        if q[0] in acumulats:
-            a = acumulats[q[0]]
-            quota=Quota.objects.get(id=q[0])
-            worksheet.write(fila, 0, quota.descripcio)
-            for m, v in a.items():
-                if m=='pendent':
-                    col=1
-                else:
-                    col=m+1 
-                worksheet.write_number(fila, col, v)
-            worksheet.write_formula(fila, 14, '=SUM(C{0}:N{0})'.format(fila+1), num_format)
-            fila=fila+1
-    
-    for t,a in acumTaxes.items():
-        worksheet.write(fila, 0, t)
-        for m, v in a.items():
-            if m=='pendent':
-                col=1
-            else:
-                col=m+1 
-            worksheet.write_number(fila, col, v)
-        worksheet.write_formula(fila, 14, '=SUM(C{0}:N{0})'.format(fila+1), num_format)
-        fila=fila+1
-    
-    if fila>2:
-        for t in range(ord('B'),ord('P')):
-            worksheet.write_formula(fila, t-ord('A'), '=SUM({0}3:{0}{1})'.format(chr(t),fila), num_format)
-    
-    worksheet = workbook.add_worksheet('Pendents')
-    worksheet.set_column(0, 4, 30)
-    worksheet.write_string(0,0,'Pagaments pendents. Dades a '+date.strftime('%d/%m/%Y %H:%M'))
-    worksheet.write_row(1,0,('Concepte','Alumne','Import','Data límit','Fraccionat'))
-    fila=2
-    pag=QuotaPagament.objects.filter(quota__comerç=tpv, pagament_realitzat=False, alumne__data_baixa__isnull=True)\
-                    .order_by('quota__dataLimit','quota__descripcio','alumne__cognoms','alumne__nom')
-    date_format = workbook.add_format({'num_format': 'dd/mm/yyyy'})
-    
-    for p in pag:
-        worksheet.write_string(fila, 0, p.quota.descripcio )
-        worksheet.write_string(fila, 1, str(p.alumne) )
-        worksheet.write_number(fila, 2, p.quota.importQuota if not p.fracciona else p.importParcial )
-        worksheet.write_datetime(fila, 3, p.quota.dataLimit if not p.fracciona else p.dataLimit, date_format )
-        worksheet.write_string(fila, 4, 'SI' if p.fracciona else 'NO' )
-        fila=fila+1
-    
-    if fila>2:
-        worksheet.write_formula(fila, 2, '=SUM(C3:C{0})'.format(fila), num_format)
-    
-    workbook.close()
-    return output
-
-@login_required
-@group_required(['direcció','administradors','ampa'])
-def totalsQuotes(request):
-    from django.http import HttpResponse
-    from aula.apps.matricula.forms import EscollirAny
-
-    
-    if request.method == 'POST':
-        form = EscollirAny(request.user, request.POST)
-        if form.is_valid():
-            nany=form.cleaned_data['year']
-            tpv=form.cleaned_data['tpv']
-            output=fullcalculQuotes(tpv,nany)
-            output.seek(0)
-            filename = tpv.descripcio+'-'+str(nany)+'-quotes.xlsx'
-            response = HttpResponse(
-                output,
-                content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-            )
-            response['Content-Disposition'] = 'attachment; filename="%s"' % filename
-    
-            return response
-
-    else:
-        form = EscollirAny(request.user)
-    return render(
-                request,
-                'form.html', 
-                {'form': form, 
-                 },
-                )
-
-@login_required
-@group_required(['direcció','administradors','ampa'])
-def blanc( request ):
-    return render(
-                request,
-                'blanc.html',
-                    {},
-                )
-
-def creaQuotes():
-    from aula.apps.sortides.models import TipusQuota, Comerç
-    
-    com=Comerç.objects.get(id=1)
-    tip=TipusQuota.objects.get(nom='taxcurs')
-    q=Quota(importQuota=360, any=django.utils.timezone.now().year, 
-            descripcio='Taxes cicles FP', curs=None, comerç=com, tipus=tip)
-    q.save()
-    
-    tip=TipusQuota.objects.get(nom='uf')
-    q=Quota(importQuota=25, any=django.utils.timezone.now().year, 
-            descripcio='Preu UF', curs=None, comerç=com, tipus=tip)
-    q.save()
-    
-    com=Comerç.objects.get(id=1)
-    tcomplet=Quota.objects.get(any=django.utils.timezone.now().year, tipus__nom='taxcurs')
-    tuf=Quota.objects.get(any=django.utils.timezone.now().year, tipus__nom='uf')
-    tip=TipusQuota.objects.get(nom='taxes')
-    for quf in range(1, 15):
-        tot=quf*tuf.importQuota
-        if not Quota.objects.filter(importQuota=tot, any=django.utils.timezone.now().year, tipus=tip):
-            q=Quota(importQuota=tot, dataLimit='2020-09-07', any=django.utils.timezone.now().year, 
-                    descripcio='taxes ufs soltes', curs=None, comerç=com, tipus=tip)
-            q.save()
-        tot=round(float(tot)/2.00,2)
-        if not Quota.objects.filter(importQuota=tot, any=django.utils.timezone.now().year, tipus=tip):
-            q=Quota(importQuota=tot, dataLimit='2020-09-07', any=django.utils.timezone.now().year, 
-                    descripcio='taxes ufs soltes', curs=None, comerç=com, tipus=tip)
-            q.save()
-    
-    tot=tcomplet.importQuota
-    q=Quota(importQuota=tot, dataLimit='2020-09-07', any=django.utils.timezone.now().year, 
-            descripcio='taxes curs complet', curs=None, comerç=com, tipus=tip)
-    q.save()
-    tot=round(float(tot)/2.00,2)
-    q=Quota(importQuota=tot, dataLimit='2020-09-07', any=django.utils.timezone.now().year, 
-            descripcio='taxes curs complet', curs=None, comerç=com, tipus=tip)
-    q.save()
-
-def enviaIniciMat():
-    for m in Preinscripcio.objects.all():
-        if Nivell.objects.filter(nom_nivell=m.codiestudis, matricula_oberta=True):
-            act=Peticio.objects.filter(idAlumne=m.ralc, tipusIdent='R', any=django.utils.timezone.now().year, 
-                                   estat__in=('A','F',))
-            if not act:
-                curs=Curs.objects.get(nivell__nom_nivell=m.codiestudis, nom_curs=m.curs)
-                novaPeticio=Peticio(idAlumne=m.ralc, tipusIdent='R', email=m.correu, estat='A', curs=curs)
-                novaPeticio.save()
-                alumne=creaAlumne(m.ralc, 'R', curs, m.correu)
-                quotacurs=Quota.objects.filter(curs=novaPeticio.curs, any=novaPeticio.any, tipus__nom=settings.CUSTOM_TIPUS_QUOTA_MATRICULA)
-                if quotacurs:
-                    quotacurs=quotacurs[0]
-                    novaPeticio.quota=quotacurs
-                novaPeticio.alumne=alumne
-                novaPeticio.save()
-                mailPeticio(novaPeticio.estat, m.ralc, m.correu, alumne)
-
-def gestQuotes():
-    from aula.apps.sortides.models import TipusQuota, Comerç
-    
-    n=Nivell(nom_nivell='ACM', descripcio_nivell='ACM')
-    n.save()
-    c1=Curs(nom_curs='1', nom_curs_complert='ACM-1', nivell=n)
-    c1.save()
-    c2=Curs(nom_curs='2', nom_curs_complert='ACM-2', nivell=n)
-    c2.save()
-    com=Comerç.objects.get(id=1)
-    tip=TipusQuota.objects.get(nom=settings.CUSTOM_TIPUS_QUOTA_MATRICULA)
-    q=Quota(importQuota=111, dataLimit='2020-09-07', any=django.utils.timezone.now().year, 
-            descripcio='Material,ASS.ESC. 1-ACM', curs=c1, comerç=com, tipus=tip)
-    q.save()
-    q=Quota(importQuota=110, dataLimit='2020-09-07', any=django.utils.timezone.now().year, 
-            descripcio='Material,ASS.ESC. 2-ACM', curs=c2, comerç=com, tipus=tip)
-    q.save()
-    Nivell.objects.all().update(matricula_oberta=False)
-    Nivell.objects.filter(nom_nivell__in=('SMX', 'ACO', 'ACM', 'GAD', 'DAW', 'ASX', 'ADF', 'GVE',)).update(matricula_oberta=True)
-    Nivell.objects.all().update(taxes=None)
-    tip=TipusQuota.objects.get(nom='taxes')
-    Nivell.objects.filter(nom_nivell__in=('DAW', 'ASX', 'ADF', 'GVE',)).update(taxes=tip)
-    Quota.objects.filter(curs__nivell__nom_nivell__in=('SMX', 'ACO', 'ACM', 'GAD', 'DAW', 'ASX', 'ADF', 'GVE',)).update(dataLimit='2020-09-07')
-
-def correcte(p):
-    taxes=p.curs.nivell.taxes
-    tcomplet=Quota.objects.filter(any=django.utils.timezone.now().year, tipus__nom='taxcurs')
-    tuf=Quota.objects.filter(any=django.utils.timezone.now().year, tipus__nom='uf')
-    quotamat=Quota.objects.get(curs=p.curs, any=p.any, tipus__nom=settings.CUSTOM_TIPUS_QUOTA_MATRICULA)
-    total=0
-    fracciona=False
-    if p.dades: 
-        if p.dades.curs_complet and taxes and tcomplet:
-            total=tcomplet[0].importQuota
-        else:
-            if taxes and tuf and p.dades.quantitat_ufs>0:
-                total=p.dades.quantitat_ufs*tuf[0].importQuota
-        if p.dades.bonificacio=='5':
-            total=total/2
-        if p.dades.bonificacio=='1':
-            total=0
-        fracciona=p.dades.fracciona_taxes
-    importTaxes=total
-    
-    if not taxes and p.dades and (p.dades.bonificacio!='0' or p.dades.fracciona_taxes):
-        print('dades CFGM amb bonif o fracc', p.alumne.id, p.curs, p.quota)
-    
-    # Quota matrícula
-    pag=QuotaPagament.objects.filter(alumne=p.alumne, quota__any=p.any, 
-                             quota__tipus__nom=settings.CUSTOM_TIPUS_QUOTA_MATRICULA)
-    if pag:
-        if pag.count()==1 and p.dades and pag[0].quota==quotamat and pag[0].quota==p.quota:
-            pass
-        else:
-            if not p.dades:
-                if pag[0].pagament_realitzat:
-                    print('pag. sense matrícula fet', p.alumne.id, pag.count(), pag[0].quota, quotamat, p.quota)
-                else:
-                    print('pag. sense matrícula', p.alumne.id, pag.count(), pag[0].quota, quotamat, p.quota)
-            else:
-                print('quota incorrecte material', p.alumne.id, pag.count(), pag[0].quota, quotamat, p.quota)
-    else:
-        if not p.dades:
-            pass
-        else:
-            print('falta quota material', p.alumne.id, quotamat)
-    
-    # Quota taxes
-    pag=QuotaPagament.objects.filter(alumne=p.alumne, quota__any=p.any, 
-                             quota__tipus=taxes)
-    if pag:
-        if p.dades and pag[0].quota.importQuota==importTaxes:
-            if fracciona:
-                if pag.count()!=2:
-                    print('fraccionament incorrecte', p.alumne.id, pag[0])
-            else:
-                if pag.count()!=1:
-                    print('no fraccionament incorrecte', p.alumne.id, pag[0])
-        else:
-            print('quota incorrecte taxes', p.alumne.id, importTaxes, pag[0])
-    else:
-        if not p.dades or importTaxes==0:
-            pass
-        else:
-            print('falta quota taxes', p.alumne.id, importTaxes)

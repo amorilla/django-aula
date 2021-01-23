@@ -52,4 +52,9 @@ urlpatterns = [
     url(r'^retornTransaccio/(?P<pk>\d+)/$', sortides_views.retornTransaccio, name='sortides__sortides__retorn_transaccio'),
 
     url(r'^detallPagament/(?P<pk>\d+)/$', sortides_views.detallPagament, name='sortides__sortides__detall_pagament'),
+    
+    url(r'^quotes/$', sortides_views.assignaQuotes, name='gestio__quotes__assigna'),
+    url(r'^quotes/(?P<curs>\d+)/(?P<tipus>\d+)/(?P<nany>\d+)/(?P<auto>.*)/$', sortides_views.quotesCurs, name='gestio__quotes__assigna'),
+    url(r'^totals/$', sortides_views.totalsQuotes, name='gestio__quotes__descarrega'),
+    url(r'^blanc/$', sortides_views.blanc, name="gestio__quotes__blanc"),
 ]

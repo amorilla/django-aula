@@ -183,7 +183,7 @@ def configuraConnexio( request , pk ):
 
     imageUrl = alumne.get_foto_or_default
 
-    telefons_alumne = [alumne.rp1_telefon, alumne.rp2_telefon, alumne.altres_telefons]
+    telefons_alumne = [alumne.rp1_telefon, alumne.rp1_mobil, alumne.rp2_telefon, alumne.rp2_mobil, alumne.altres_telefons]
     noms_responsables = [alumne.rp1_nom, alumne.rp2_nom]
     correus_responsables_saga = [alumne.rp1_correu, alumne.rp2_correu]
     infoForm = [
@@ -191,7 +191,7 @@ def configuraConnexio( request , pk ):
           ('Edat alumne', edatAlumne),
           ('Telèfons Alumne', ','.join(filter(None,telefons_alumne))),
           ('Noms responsables', ' / '.join(filter(None,noms_responsables))),
-          ('Correus responsables (Saga)', ','.join(filter(None,correus_responsables_saga))),
+          ('Correus responsables (Esfer@/Saga)', ','.join(filter(None,correus_responsables_saga))),
                 ]
     
     AlumneFormSet = modelform_factory(Alumne,
@@ -203,6 +203,7 @@ def configuraConnexio( request , pk ):
     if request.method == 'POST':
         form = AlumneFormSet(  request.POST , request.FILES, instance=alumne )
         if form.is_valid(  ):
+            #Comprova els dominis de correu
             errors = {}
             email=form.cleaned_data['correu_relacio_familia_pare']
             res, email = testEmail(email, False)
@@ -397,6 +398,7 @@ def canviParametres( request ):
     if request.method == 'POST':
         form = AlumneFormSet(  request.POST , request.FILES, instance=alumne )
         if form.is_valid(  ):
+            #Comprova els dominis de correu
             errors = {}
             email=form.cleaned_data['correu_relacio_familia_pare']
             res, email = testEmail(email, False)
@@ -1003,10 +1005,11 @@ def elMeuInforme( request, pk = None ):
         
         # sortides a on s'ha convocat a l'alumne
         sortidesnotificat = Sortida.objects.filter(notificasortida__alumne=alumne)
-        # sortides pagades a les que ja no s'ha convocat a l'alumne        
-        sortidespagades = Sortida.objects.filter(pagaments__id=alumne.id, pagaments__pagament__pagament_realitzat=True).exclude(notificasortida__alumne=alumne)
+        # sortides pagades a les que ja no s'ha convocat a l'alumne
+        sortidespagadesperalumne = SortidaPagament.objects.filter(alumne=alumne, pagament_realitzat=True).values_list('sortida', flat=True).distinct()
+        sortidespagadesnonotificades = Sortida.objects.filter(id__in=sortidespagadesperalumne, pagaments__pagament__alumne=alumne, pagaments__pagament__pagament_realitzat=True).exclude(notificasortida__alumne=alumne)
         # totes les sortides relacionades amb l'alumne
-        activitats=sortidesnotificat.union(sortidespagades)
+        activitats=sortidesnotificat.union(sortidespagadesnonotificades)
         
         sortidesNoves = sortides.filter(  relacio_familia_revisada__isnull = True )
         sortides_on_no_assistira = alumne.sortides_on_ha_faltat.values_list( 'id', flat=True ).distinct()           
@@ -1014,7 +1017,8 @@ def elMeuInforme( request, pk = None ):
         
         taula = tools.classebuida()
         taula.codi = nTaula; nTaula+=1
-        taula.tabTitle = '{0} {1}'.format( titol_sortides, pintaNoves( sortidesNoves.count() + pagquotesNoves.count()) )
+        taula.tabTitle = '{0} {1}'.format( titol_sortides, pintaNoves( sortidesNoves.count() + 
+                                                pagquotesNoves.count() if settings.CUSTOM_QUOTES_ACTIVES else 0) )
     
         taula.titol = tools.classebuida()
         taula.titol.contingut = ''
@@ -1129,19 +1133,22 @@ def elMeuInforme( request, pk = None ):
             filera.append(camp)
 
             # ----------------------------------------------
-            if act.tipus_de_pagament == 'ON' and act.termini_pagament >= datetime.now():
-                camp = tools.classebuida()
+            if act.tipus_de_pagament == 'ON':
                 #pagament corresponent a una sortida i un alumne
                 pagament_sortida_alumne = get_object_or_404(SortidaPagament, alumne=alumne, sortida=act)
-                camp.id = pagament_sortida_alumne.id
-                camp.nexturl = reverse_lazy('relacio_families__informe__el_meu_informe')
-                if pagament_sortida_alumne.pagamentFet:
-                    camp.negreta = True
-                    camp.contingut = "Pagat"
-                else:
-                    camp.buto = u'sortides__sortides__pago_on_line'
-                    camp.contingut = "Pagar Online"
-                filera.append(camp)
+                # Pagaments pendents o ja fets. Si sortida caducada no mostra pagament pendent.
+                if act.termini_pagament >= datetime.now() or pagament_sortida_alumne.pagamentFet:
+                    camp = tools.classebuida()
+                    camp.id = pagament_sortida_alumne.id
+                    camp.nexturl = reverse_lazy('relacio_families__informe__el_meu_informe')
+                    if pagament_sortida_alumne.pagamentFet:
+                        camp.negreta = True
+                        camp.contingut = "Pagat"
+                    else:
+                        if settings.CUSTOM_SORTIDES_PAGAMENT_ONLINE:
+                            camp.buto = u'sortides__sortides__pago_on_line'
+                            camp.contingut = "Pagar Online"
+                    filera.append(camp)
 
             #--
             taula.fileres.append( filera )
