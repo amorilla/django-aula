@@ -13,8 +13,6 @@ from django.core.files.storage import FileSystemStorage
 from django.http import HttpResponseRedirect
 from django.conf import settings
 from aula.utils.decorators import group_required
-from aula.apps.matricula.forms import peticioForm, DadesForm1, DadesForm2, DadesForm2b, DadesForm3, \
-                MatriculaForm, EscollirCursForm, PagQuotesForm, AcceptaCond
 from aula.apps.matricula.models import Peticio, Dades
 from aula.apps.sortides.models import QuotaPagament, Quota
 from aula.apps.alumnes.models import Alumne, Curs, Nivell
@@ -231,6 +229,9 @@ def gestionaPag(peticio, importTaxes):
         creaPagament(peticio.alumne, quotatax, fracciona)
 
 def peticio(request):
+    from aula.apps.matricula.forms import peticioForm, DadesForm1, DadesForm2, DadesForm2b, DadesForm3, \
+                MatriculaForm, EscollirCursForm, PagQuotesForm, AcceptaCond
+
     '''
     View per a fer la petició de matrícula
     Crea Peticio pendent (tipus 'P') amb les dades i envia email de confirmació de recepció.
@@ -338,6 +339,7 @@ def peticio(request):
     return render(request, 'peticio.html', {'form': form, 'titol_formulari': 'Petició de matrícula'})
     
 class PeticioDetail(LoginRequiredMixin, UpdateView):
+
     '''
     View per editar una Peticio
     Al finalitzar mostra la següent
@@ -420,6 +422,9 @@ def PeticioVerifica(request):
                  )
 
 class DadesView(LoginRequiredMixin, SessionWizardView):
+    from aula.apps.matricula.forms import peticioForm, DadesForm1, DadesForm2, DadesForm2b, DadesForm3, \
+                MatriculaForm, EscollirCursForm, PagQuotesForm, AcceptaCond
+
     form_list = [DadesForm1, DadesForm2, DadesForm2b, DadesForm3]
     template_name = 'dades_form.html'
     file_storage = FileSystemStorage(location=settings.PRIVATE_STORAGE_ROOT)
@@ -644,6 +649,9 @@ def OmpleDades(request, pk=None):
 
 @login_required
 def AcceptaCondicions(request):
+    from aula.apps.matricula.forms import peticioForm, DadesForm1, DadesForm2, DadesForm2b, DadesForm3, \
+                MatriculaForm, EscollirCursForm, PagQuotesForm, AcceptaCond
+
     from aula.apps.usuaris.tools import testEmail
     
     user=request.user
@@ -751,6 +759,9 @@ def condicions(request):
              )
 
 class MatriculesView(LoginRequiredMixin, ListView):
+    from aula.apps.matricula.forms import peticioForm, DadesForm1, DadesForm2, DadesForm2b, DadesForm3, \
+                MatriculaForm, EscollirCursForm, PagQuotesForm, AcceptaCond
+
     model = Dades
     template_name='dades_list.html'
     form_class = MatriculaForm
@@ -770,6 +781,9 @@ def LlistaMat(request):
     return MatriculesView.as_view()(request)
 
 class MatriculesList(LoginRequiredMixin, ListView):
+    from aula.apps.matricula.forms import peticioForm, DadesForm1, DadesForm2, DadesForm2b, DadesForm3, \
+                MatriculaForm, EscollirCursForm, PagQuotesForm, AcceptaCond
+
     model = Dades
     template_name='dades_list.html'
     form_class = MatriculaForm
@@ -790,6 +804,9 @@ def LlistaMatFinals(request):
 @login_required
 @group_required(['direcció','administradors','ampa'])
 def assignaQuotes(request):
+    from aula.apps.matricula.forms import peticioForm, DadesForm1, DadesForm2, DadesForm2b, DadesForm3, \
+                MatriculaForm, EscollirCursForm, PagQuotesForm, AcceptaCond
+
     if request.method == 'POST':
         form = EscollirCursForm(request.user, request.POST)
         if form.is_valid():
@@ -815,6 +832,9 @@ def get_QuotaPagament(alumne, tipus, nany=None):
 @login_required
 @group_required(['direcció','administradors','ampa'])
 def quotesCurs( request, curs, tipus, auto ):
+    from aula.apps.matricula.forms import peticioForm, DadesForm1, DadesForm2, DadesForm2b, DadesForm3, \
+                MatriculaForm, EscollirCursForm, PagQuotesForm, AcceptaCond
+
     from django.forms import formset_factory
 
     auto=str(auto)=='True'
@@ -1166,10 +1186,9 @@ def fullcalculQuotes(tpv, nany=None):
 @group_required(['direcció','administradors','ampa'])
 def totalsQuotes(request):
     from django.http import HttpResponse
-    from aula.apps.matricula.forms import EscollirAny
-
     
     if request.method == 'POST':
+        from aula.apps.matricula.forms import EscollirAny
         form = EscollirAny(request.user, request.POST)
         if form.is_valid():
             nany=form.cleaned_data['year']
@@ -1186,6 +1205,7 @@ def totalsQuotes(request):
             return response
 
     else:
+        from aula.apps.matricula.forms import EscollirAny
         form = EscollirAny(request.user)
     return render(
                 request,

@@ -14,13 +14,16 @@ from aula.utils.tools import unicode
 import django.utils.timezone
 
 class Comerç(models.Model):
-    codi=models.CharField(max_length=32, unique=True)
-    key=models.CharField(max_length=64)
-    descripcio=models.CharField(max_length=200, blank=True)
+    # nom és la clau, es reserva el nom "centre" per identificar el TPV principal
+    nom=models.CharField("Nom", max_length=32, unique=True)
+    codi=models.CharField("Codi Comerç", max_length=32)
+    key=models.CharField("Key", max_length=64)
+    descripcio=models.CharField("Descripció", max_length=200)
+    entornReal=models.BooleanField("Fa servir entorn real", default=False)
     
     class Meta:
-        verbose_name = u'Comerç'
-        verbose_name_plural = u'Comerços' 
+        verbose_name = u'TPV'
+        verbose_name_plural = u'TPVs' 
         
     def __str__(self):
         return self.descripcio
@@ -155,8 +158,10 @@ class Sortida(models.Model):
 
     pagaments = models.ManyToManyField(Alumne, through='Pagament')
     
+    # Per futures ampliacions, de moment no es fa servir. 
+    # Totes les sortides es paguen amb el TPV per defecte.
     comerç = models.ForeignKey(Comerç, on_delete=models.PROTECT, null=True)
-        
+    
     @property
     def n_acompanyants(self):
         return self.altres_professors_acompanyants.count()
@@ -223,16 +228,20 @@ class TipusQuota(models.Model):
     def __str__(self):
         return self.nom
 
+def return_any_actual():
+    return django.utils.timezone.now().year
+
 class Quota(models.Model):
     from aula.apps.alumnes.models import Curs
     
     importQuota=models.DecimalField(max_digits=7, decimal_places=2, default=0)
     dataLimit=models.DateField(null=True, blank=True)
-    any=models.IntegerField(default=django.utils.timezone.now().year)
-    descripcio=models.CharField(max_length=200, blank=True)
+    any=models.IntegerField(default=return_any_actual)
+    descripcio=models.CharField(max_length=200)
+    #  Si no s'indica curs, serveix per a tots els alumnes
     curs=models.ForeignKey(Curs, on_delete=models.PROTECT, null=True, blank=True)
-    comerç = models.ForeignKey(Comerç, on_delete=models.PROTECT, null=True, blank=True)
-    tipus = models.ForeignKey(TipusQuota, on_delete=models.PROTECT, default=None)
+    comerç = models.ForeignKey(Comerç, on_delete=models.PROTECT)
+    tipus = models.ForeignKey(TipusQuota, on_delete=models.PROTECT)
     
     class Meta:
         ordering = ['any','curs__nom_curs_complert']
@@ -240,19 +249,30 @@ class Quota(models.Model):
         verbose_name_plural = u'Quotes'
         
     def __str__(self):
-        return str(self.importQuota)+' '+str(self.curs)+' '+str(self.any)+' '+self.descripcio
+        return str(self.importQuota)+' '+str(self.curs)+' '+str(self.any)+' '+self.descripcio if self.descripcio else self.tipus
 
 @python_2_unicode_compatible
 class Pagament(models.Model):
+    # Pagament per a una sortida o una quota
     alumne = models.ForeignKey(Alumne, on_delete=models.PROTECT, null=True)
     sortida = models.ForeignKey(Sortida, on_delete=models.PROTECT, null=True)
     data_hora_pagament = models.DateTimeField(null=True)
     pagament_realitzat = models.BooleanField(null=True, default=False )
     ordre_pagament = models.CharField(max_length=12, unique=True, null=True)
     quota = models.ForeignKey(Quota, on_delete=models.PROTECT, null=True)
+    # Si es fracciona es fa en dos pagaments, només per quotes
     fracciona =  models.BooleanField(null=True, default=False )
+    # import d'aquesta fracció,  si fraccionat
     importParcial = models.DecimalField(max_digits=7, decimal_places=2, default=0)
+    # data límit d'aquesta fracció
     dataLimit = models.DateField(null=True)
+    '''
+    estat del pagament:
+        '' Pagament no iniciat.
+        'E' Error. Pagament rebujat per redsys.
+        'T' Transmès. Pagament iniciat, però no finalitzat. Es deixa un temps per completar-ho.
+        'F' Finalitzat. Pagament correctament finalitzat.
+    '''
     estat = models.CharField(max_length=1, blank=True, null=True, default='')
     
     def __str__(self):

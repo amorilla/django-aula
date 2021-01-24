@@ -205,11 +205,13 @@ def year_choices():
 def current_year():
     return datetime.date.today().year
 
-class EscollirAny(forms.Form):
+def tpv_defecte():
     from aula.apps.sortides.models import Comerç
+    return Comerç.objects.all().order_by('id').first()
     
-    defecte = Comerç.objects.all().order_by('id').first()
-    tpv = forms.ModelChoiceField(label='TPV', queryset=None, initial=defecte, required = True,)
+class EscollirAny(forms.Form):
+    
+    tpv = forms.ModelChoiceField(label='TPV', queryset=None, initial=tpv_defecte, required = True,)
     year = forms.TypedChoiceField(label='Any', coerce=int, choices=year_choices, initial=current_year, required = True)
     
     def __init__(self, user, *args, **kwargs):
