@@ -235,7 +235,7 @@ class Quota(models.Model):
     from aula.apps.alumnes.models import Curs
     
     importQuota=models.DecimalField(max_digits=7, decimal_places=2, default=0)
-    dataLimit=models.DateField()
+    dataLimit=models.DateField(null=True, blank=True)
     any=models.IntegerField(default=return_any_actual)
     descripcio=models.CharField(max_length=200)
     #  Si no s'indica curs, serveix per a tots els alumnes
