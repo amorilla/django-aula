@@ -4,7 +4,6 @@ import aula.apps.sortides.models
 from django.db import migrations, models
 import django.db.models.deletion
 import django.utils.timezone
-import random
 
 class Migration(migrations.Migration):
 
@@ -25,7 +24,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='comerç',
             name='nom',
-            field=models.CharField(default='centre'+str(random.randint(1, 100)), max_length=32, unique=True, verbose_name='Nom'),
+            field=models.CharField(default=None, blank=True, null=True, max_length=32, verbose_name='Nom'),
             preserve_default=False,
         ),
         migrations.AlterField(
@@ -57,7 +56,7 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='quota',
             name='dataLimit',
-            field=models.DateField(default=django.utils.timezone.now()),
+            field=models.DateField(blank=True, null=True),
         ),
         migrations.AlterField(
             model_name='quota',
