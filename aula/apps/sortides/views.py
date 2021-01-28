@@ -1368,10 +1368,6 @@ def passarella(request, pk):
 def retornTransaccio(request,pk):
     '''
     Comprova el resultat i actualitza el pagament.
-<<<<<<< HEAD
-    # TODO en cas d'error, abans dels diferents returns, s'ha de marcar el pagament
-=======
->>>>>>> refs/heads/matricula
     '''
 
     ips_permeses = ['195.76.9.117',

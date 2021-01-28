@@ -496,23 +496,12 @@ tutoria__relacio_families__dades_relacio_families
 tutoria__relacio_families__envia_benvinguda
 tutoria__seguiment_tutorial__formulari
 
-<<<<<<< HEAD
-matricula:gestio__peticions__pendents
-matricula:gestio__confirma__matricula
-matricula:gestio__llistat__matricula
-matricula:gestio__quotes__assigna
-matricula:gestio__quotes__descarrega
-=======
-<<<<<<< HEAD
 matricula:gestio__peticions__pendents
 matricula:gestio__confirma__matricula
 matricula:gestio__llistat__matricula
 
-=======
->>>>>>> refs/heads/Quotes
 gestio__quotes__assigna
 gestio__quotes__descarrega
->>>>>>> refs/heads/matricula
 
 nologin__usuari__login
 nologin__usuari__recover_password
