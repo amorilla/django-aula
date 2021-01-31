@@ -175,6 +175,7 @@ def gestioCartesRpt(professor, l4):
             cal_imprimir_carta = False
             try:
                 carta.clean()
+                #  TODO  revisió
                 llindar = settings.CUSTOM_FALTES_ABSENCIA_PER_TIPUS_CARTA.get( carta.tipus_carta, 
                                                                              settings.CUSTOM_FALTES_ABSENCIA_PER_CARTA )
                 cal_imprimir_carta = carta.nfaltes >= llindar

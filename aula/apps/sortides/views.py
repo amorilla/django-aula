@@ -361,7 +361,7 @@ def sortidaEdit(request, pk=None, clonar=False, origen=False):
                             horari__hora__hora_inici__gte=instance.calendari_desde.time()).order_by(
                             'dia_impartir', 'horari__hora__hora_inici')
                     .first() )
-                primerafranja = primeraimparticio.horari.hora if primeraimparticio else None
+                primerafranja = primeraimparticio.horari if primeraimparticio else None
 
                 if primeraimparticio is None:
                     primeraimparticio = (
@@ -370,11 +370,16 @@ def sortidaEdit(request, pk=None, clonar=False, origen=False):
                             dia_impartir__gt=instance.calendari_desde.date()).order_by(
                             'dia_impartir')
                         .first() )
-                    primerafranja = primeraimparticio.horari.hora if primeraimparticio else None
+                    primerafranja = (
+                        FranjaHoraria
+                        .objects
+                        .order_by('hora_inici')
+                        .first()
+                    )
 
                 if primeraimparticio is not None:
                     instance.data_inici = primeraimparticio.dia_impartir
-                    instance.franja_inici = primerafranja
+                    instance.franja_inici = primerafranja.hora
 
 
                 # Buscar darrera impartició afectada
@@ -386,7 +391,7 @@ def sortidaEdit(request, pk=None, clonar=False, origen=False):
                             'dia_impartir', 'horari__hora__hora_fi')
                     .last()
                 )
-                darrerafranja = darreraimparticio.horari.hora if darreraimparticio else None
+                darrerafranja = darreraimparticio.horari if darreraimparticio else None
 
                 if darreraimparticio is None:
                     darreraimparticio = (
@@ -396,11 +401,11 @@ def sortidaEdit(request, pk=None, clonar=False, origen=False):
                         .order_by('dia_impartir')
                         .last()
                     )
-                    darrerafranja = darreraimparticio.horari.hora if darreraimparticio else None
+                    darrerafranja = FranjaHoraria.objects.order_by('hora_inici').last()
 
                 if darreraimparticio is not None:
                     instance.data_fi = darreraimparticio.dia_impartir
-                    instance.franja_fi = darrerafranja
+                    instance.franja_fi = darrerafranja.hora
 
                 # Comprovem si la sortida en realitat no afecta cap hora d'impartició, això passa quan la data inicial > data final
                 if ( instance.data_fi and instance.data_inici and instance.data_fi < instance.data_inici):

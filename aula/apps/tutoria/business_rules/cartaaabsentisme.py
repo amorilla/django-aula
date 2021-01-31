@@ -116,6 +116,7 @@ def cartaabsentisme_clean( instance ):
             if carta_numero>maxCartes and maxCartes>0:
                 errors.append(u'Aquest alumne ha arribat al màxim de cartes' )
             else:
+                #  TODO  revisió
                 if llindar==0:
                     raise Exception(u"Error triant la carta a enviar a la família")
         else:

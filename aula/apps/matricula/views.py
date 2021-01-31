@@ -13,7 +13,8 @@ from django.core.files.storage import FileSystemStorage
 from django.http import HttpResponseRedirect
 from django.conf import settings
 from aula.utils.decorators import group_required
-from aula.apps.matricula.forms import peticioForm, DadesForm1, DadesForm2, DadesForm2b, DadesForm3, MatriculaForm
+from aula.apps.matricula.forms import peticioForm, DadesForm1, DadesForm2, DadesForm2b, DadesForm3, MatriculaForm, \
+                            AcceptaCond
 from aula.apps.matricula.models import Peticio, Dades
 from aula.apps.sortides.models import QuotaPagament, Quota
 from aula.apps.alumnes.models import Alumne, Curs, Nivell
@@ -21,6 +22,11 @@ from aula.apps.extPreinscripcio.models import Preinscripcio
 from aula.apps.extSaga.models import ParametreSaga
 from aula.apps.extUntis.sincronitzaUntis import creaGrup
 from aula.apps.usuaris.models import OneTimePasswd
+
+def acceptaCondicions(alumne):
+    pe=Peticio.objects.filter(alumne=alumne)
+    pr=Preinscripcio.objects.filter(ralc=alumne.ralc)
+    return (pe and pe[0].dades and pe[0].dades.acceptar_condicions) or pr
 
 def get_url_alumne(usuari):
     '''
@@ -36,6 +42,8 @@ def get_url_alumne(usuari):
                 p=p[0]
                 if not p.dades:
                     return reverse_lazy('matricula:relacio_families__matricula__dades')
+            if not acceptaCondicions(usuari.alumne):
+                return reverse_lazy('matricula:relacio_families__matricula__accepta')
     except Exception:
         return None
     return None
@@ -568,64 +576,141 @@ def OmpleDades(request, pk=None):
 
     user=request.user
     infos=[]
-    #try:
-    if user.alumne:
-        p=Peticio.objects.filter(alumne=user.alumne, any=django.utils.timezone.now().year).exclude(estat='D')
-        if p:
-            p=p[0]
-            if p.estat=='A':
-                data = datetime.strptime('2021-09-07', r"%Y-%m-%d")
-                if django.utils.timezone.now()>=data:
-                    if not p.dades:
-                        infos.append('El període de matrícula ha quedat tancat. No ha completat les seves dades, la seva matrícula no s\'ha realitzat.')
+    try:
+        if user.alumne:
+            p=Peticio.objects.filter(alumne=user.alumne, any=django.utils.timezone.now().year).exclude(estat='D')
+            if p:
+                p=p[0]
+                if p.estat=='A':
+                    data = datetime.strptime('2020-09-07', r"%Y-%m-%d")
+                    if django.utils.timezone.now()>=data:
+                        if not p.dades:
+                            infos.append('El període de matrícula ha quedat tancat. No ha completat les seves dades, la seva matrícula no s\'ha realitzat.')
+                        else:
+                            #infos.append('Estem comprovant la seva matrícula. Una vegada verificada la documentació, rebrà un missatge amb la confirmació.')
+                            infos.append('Sense dades necessàries')
+                        return render(
+                            request,
+                            'resultat.html', 
+                            {'msgs': {'errors': [], 'warnings': [], 'infos': infos} },
+                            )
+                    pagament=QuotaPagament.objects.filter(alumne=p.alumne, quota=p.quota).order_by('dataLimit')
+                    if pagament:
+                        pagid=pagament[0].pk
                     else:
-                        infos.append('Estem comprovant la seva matrícula. Una vegada verificada la documentació, rebrà un missatge amb la confirmació.')
-                    return render(
-                        request,
-                        'resultat.html', 
-                        {'msgs': {'errors': [], 'warnings': [], 'infos': infos} },
-                        )
-                pagament=QuotaPagament.objects.filter(alumne=p.alumne, quota=p.quota).order_by('dataLimit')
-                if pagament:
-                    pagid=pagament[0].pk
+                        pagid=''
+                    
+                    if p.dades:
+                        item=p.dades
+                    else:
+                        item=dadesAntigues(p.alumne)
+                        item.rp1_correu=p.email
+                    nomAlumne=(item.nom+" "+item.cognoms) if item.nom and item.cognoms else p.idAlumne
+                    torn=Preinscripcio.objects.get(ralc=p.alumne.ralc).torn
+                    titol="Dades de matrícula de "+nomAlumne+" a "+p.curs.nom_curs_complert+"("+torn+")"
+                    #get the initial data to include in the form
+                    fields0 = ['nom','cognoms','centre_de_procedencia','data_naixement','alumne_correu','adreca','localitat','cp',]
+                    fields1 = ['rp1_nom','rp1_telefon1','rp1_correu','rp2_nom','rp2_telefon1','rp2_correu',]
+                    fields2 = ['curs_complet', 'quantitat_ufs', 'bonificacio', 'llistaufs',]
+                    fields3 = ['fracciona_taxes', 'acceptar_condicions','files',]
+                    initial = {'0': dict([(f,getattr(item,f)) for f in fields0]),
+                               '1': dict([(f,getattr(item,f)) for f in fields1]),
+                               '2': dict([(f,getattr(item,f)) for f in fields2]),
+                               '3': dict([(f,getattr(item,f)) for f in fields3]),
+                    }
+                    initial['3']['acceptar_condicions']=False
+                    if item.pk:
+                        return DadesView.as_view(initial_dict=initial)(request, pk=item.pk, titol=titol, pagid=pagid)
+                    else:
+                        return DadesView.as_view(initial_dict=initial)(request, titol=titol, pagid=pagid)
                 else:
-                    pagid=''
-                
+                    if p.estat=='F':
+                        infos.append('Matrícula finalitzada. No fan falta més dades.')
+                    else:
+                        infos.append('Petició pendent de verificació.')
+            else:
+                infos.append('Sense dades necessàries')
+        else:
+            infos.append('Sense dades necessàries')
+    except Exception as e:
+        print(str(e))
+        infos.append('Error a l\'accedir a les dades de matrícula: '+str(e))
+        
+    return render(
+                request,
+                'resultat.html', 
+                {'msgs': {'errors': [], 'warnings': [], 'infos': infos} },
+             )
+
+@login_required
+def AcceptaCondicions(request):
+    from aula.apps.usuaris.tools import testEmail
+    
+    user=request.user
+    infos=[]
+    try:
+        if user.alumne:
+            p=Peticio.objects.filter(alumne=user.alumne, any=django.utils.timezone.now().year).exclude(estat='D')
+            if not p:
+                p=Peticio()
+                p.idAlumne=user.alumne.ralc
+                p.tipusIdent='R'
+                p.email=user.alumne.correu_relacio_familia_pare
+                p.any=django.utils.timezone.now().year
+                p.estat='A'
+                p.curs = user.alumne.grup.curs
+                p.quota=None
+                p.alumne=user.alumne
+                dades=dadesAntigues(user.alumne)
+                if not dades.acceptar_condicions: 
+                    dades.acceptar_condicions=False
+                dades.save()
+                p.dades=dades
+                p.save()
+            else:
+                p=p[0]
+            if p.estat=='A':
                 if p.dades:
                     item=p.dades
                 else:
                     item=dadesAntigues(p.alumne)
                     item.rp1_correu=p.email
-                nomAlumne=(item.nom+" "+item.cognoms) if item.nom and item.cognoms else p.idAlumne
-                torn=Preinscripcio.objects.get(ralc=p.alumne.ralc).torn
-                titol="Dades de matrícula de "+nomAlumne+" a "+p.curs.nom_curs_complert+"("+torn+")"
-                #get the initial data to include in the form
-                fields0 = ['nom','cognoms','centre_de_procedencia','data_naixement','alumne_correu','adreca','localitat','cp',]
-                fields1 = ['rp1_nom','rp1_telefon1','rp1_correu','rp2_nom','rp2_telefon1','rp2_correu',]
-                fields2 = ['curs_complet', 'quantitat_ufs', 'bonificacio', 'llistaufs',]
-                fields3 = ['fracciona_taxes', 'acceptar_condicions','files',]
-                initial = {'0': dict([(f,getattr(item,f)) for f in fields0]),
-                           '1': dict([(f,getattr(item,f)) for f in fields1]),
-                           '2': dict([(f,getattr(item,f)) for f in fields2]),
-                           '3': dict([(f,getattr(item,f)) for f in fields3]),
-                }
-                initial['3']['acceptar_condicions']=False
-                if item.pk:
-                    return DadesView.as_view(initial_dict=initial)(request, pk=item.pk, titol=titol, pagid=pagid)
+                    item.save()
+                    p.dades=item
+                    p.save()
+                
+                if request.method == 'POST':
+                    form = AcceptaCond(request.user, request.POST)
+                    if form.is_valid():
+                        errors = {}
+                        email=form.cleaned_data['alumne_correu']
+                        res, email = testEmail(email, False)
+                        if res<-1:
+                            errors.setdefault('alumne_correu', []).append(u'''Adreça no vàlida''')
+                        if len(errors)>0:
+                            form._errors.update(errors)
+                        else:
+                            infos=[]
+                            item.acceptar_condicions=form.cleaned_data['acceptar_condicions']
+                            item.alumne_correu=email
+                            item.save()
+                            p.alumne.correu=email
+                            p.alumne.save()
+                            p.estat='F'
+                            p.save()
+                            infos.append('Dades guardades correctament')
+                            return render(
+                                        request,
+                                        'resultat.html', 
+                                        {'msgs': {'errors': [], 'warnings': [], 'infos': infos} },
+                                     )
                 else:
-                    return DadesView.as_view(initial_dict=initial)(request, titol=titol, pagid=pagid)
-            else:
-                if p.estat=='F':
-                    infos.append('Matrícula finalitzada. No fan falta més dades.')
-                else:
-                    infos.append('Petició pendent de verificació.')
-        else:
-            infos.append('Sense dades necessàries')
-    else:
-        infos.append('Sense dades necessàries')
-    #except Exception as e:
-    #    print(str(e))
-    #    infos.append('Error a l\'accedir a les dades de matrícula: '+str(e))
+                    form = AcceptaCond(request.user)
+                return render(request, 'accepta_form.html', {'form': form})
+    
+    except Exception as e:
+        print(str(e))
+        infos.append('Error en l\'acceptació de condicions: '+str(e))
         
     return render(
                 request,

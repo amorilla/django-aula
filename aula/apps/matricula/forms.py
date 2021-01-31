@@ -124,6 +124,20 @@ class DadesForm3(forms.ModelForm):
         model=Dades
         fields = ['quotaMat', 'importTaxes', 'fracciona_taxes', 'files', 'acceptar_condicions',]
 
+class AcceptaCond(forms.ModelForm):
+    
+    def __init__(self, user, *args, **kwargs):
+        super(AcceptaCond, self).__init__(*args, **kwargs)
+        self.fields['acceptar_condicions'].required=True
+        self.fields['acceptar_condicions'].label=""
+        self.fields['alumne_correu'].required=True
+        self.fields['alumne_correu'].label="Correu per notificacions"
+        self.fields['alumne_correu'].initial=user.alumne.correu
+    
+    class Meta:
+        model=Dades
+        fields = ['alumne_correu', 'acceptar_condicions',]
+
 class MatriculaForm(forms.ModelForm):
     
     class Meta:
