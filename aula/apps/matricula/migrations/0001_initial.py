@@ -12,9 +12,6 @@ class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
-        ('alumnes', '0014_auto_20210124_0032'),
-        ('sortides', '0024_auto_20210123_2043'),
-        ('assignatures', '0004_auto_20190922_2001'),
     ]
 
     operations = [
