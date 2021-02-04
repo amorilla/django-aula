@@ -381,10 +381,14 @@ def elsMeusAlumnesAndAssignatures( request ):
         capcelera_nFaltes.contingut = u' ({0}h impartides / {1}h)'.format( nClassesImpartides, nClasses)            
 
         capcelera_contacte = tools.classebuida()
-        capcelera_contacte.amplade = 35
-        capcelera_contacte.contingut = u'Dades de contacte Tutors.'
+        capcelera_contacte.amplade = 20
+        capcelera_contacte.contingut = u'Informació dels Responsables'
+
+        capcelera_observacions = tools.classebuida()
+        capcelera_observacions.amplade = 15
+        capcelera_observacions.contingut = u'Observacions'
         
-        taula.capceleres = [capcelera_foto, capcelera_nom, capcelera_nIncidencies, capcelera_assistencia, capcelera_nFaltes, capcelera_contacte]
+        taula.capceleres = [capcelera_foto, capcelera_nom, capcelera_nIncidencies, capcelera_assistencia, capcelera_nFaltes, capcelera_contacte, capcelera_observacions]
         
         taula.fileres = []
         for alumne in Alumne.objects.filter( 
@@ -486,6 +490,13 @@ def elsMeusAlumnesAndAssignatures( request ):
                                                                         alumne.rp2_mobil,
                                                                         alumne.rp2_correu ), None,)]
             filera.append(camp)
+
+            # -observacions--------------------------------------------
+            camp_observacions = tools.classebuida()
+            camp_observacions.enllac = None
+            camp_observacions.contingut = u'{0}'.format(alumne.observacions) if alumne.observacions else ''
+            filera.append(camp_observacions)
+
             taula.fileres.append( filera )
         
         report.append(taula)
@@ -725,21 +736,30 @@ def llistaAlumnescsv( request ):
     """
     Generates an Excel spreadsheet for review by a staff member.
     """
-    llistaAlumnes = Alumne.objects.order_by('cognoms','nom')
+    ara = datetime.now()
+    q_no_es_baixa = Q(data_baixa__gt = ara ) | Q(data_baixa__isnull = True )
+  
+    llistaAlumnes = Alumne.objects.filter(q_no_es_baixa).order_by('grup__descripcio_grup','cognoms','nom')
     
     dades = [ [e.ralc, 
                (unicode( e.grup ) + ' - ' + e.cognoms + ', ' + e.nom) , 
                e.grup, 
+               e.cognoms,
+               e.nom, 
                e.user_associat.username, 
                e.correu,
                e.rp1_correu, 
                e.rp2_correu,
                e.correu_relacio_familia_mare,
                e.correu_relacio_familia_pare,
-               e.correu_tutors ] for e in llistaAlumnes]
+               e.correu_tutors,
+               e.user_associat.last_login,
+               e.user_associat.is_active,
+               (bool(e.correu_relacio_familia_pare) or bool(e.correu_relacio_familia_mare)) ] for e in llistaAlumnes]
     
-    capcelera = [ 'ralc', 'alumne', 'grup', 'username', 'correu', 'rp1_correu', 'rp2_correu', 
-                 'correu_relacio_mare', 'correu_relacio_pare', 'correu_tutors' ]
+    capcelera = [ 'ralc', 'alumne', 'grup', 'cognoms', 'nom', 'username', 'correu', 'rp1_correu', 'rp2_correu', 
+                 'correu_relacio_mare', 'correu_relacio_pare', 'correu_tutors',
+                 'last_login', 'usuari actiu', 'correus OK' ]
 
     template = loader.get_template("export.csv")
     context = {

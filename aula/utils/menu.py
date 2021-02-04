@@ -13,13 +13,18 @@ from django.template.defaultfilters import safe
 from django.conf import settings
 from aula.apps.sortides.models import Sortida
 
-def calcula_menu( user , path ):
-    
+def calcula_menu( user , path, sessioImpersonada ):
+
     if not user.is_authenticated:
+        return
+    
+    # No permet impersonació com a administrador
+    if sessioImpersonada and Group.objects.get_or_create(name= 'administradors' )[0] in user.groups.all():
         return
 
     #mire a quins grups està aquest usuari:
     al = Group.objects.get_or_create(name= 'alumne' )[0] in user.groups.all()
+    ad = not al and Group.objects.get_or_create(name= 'administradors' )[0] in user.groups.all()
     di = not al and Group.objects.get_or_create(name= 'direcció' )[0] in user.groups.all()
     pr = not al and Group.objects.get_or_create(name= 'professors' )[0] in user.groups.all()
     pl = not al and Group.objects.get_or_create(name= 'professional' )[0] in user.groups.all()
@@ -27,7 +32,7 @@ def calcula_menu( user , path ):
     pg = not al and Group.objects.get_or_create(name= 'psicopedagog' )[0] in user.groups.all()
     so = not al and Group.objects.get_or_create(name= 'sortides' )[0] in user.groups.all()
     tu = not al and pr and ( User2Professor( user).tutor_set.exists() or User2Professor( user).tutorindividualitzat_set.exists() )    
-    tots = di or pr or pl or co or al or pg
+    tots = al or ad or di or pr or pl or co or pg or so
     
     #Comprovar si té missatges sense llegir
     nMissatges = user.destinatari_set.filter( moment_lectura__isnull = True ).count()
@@ -171,7 +176,8 @@ def calcula_menu( user , path ):
                #--Gestió--------------------------------------------------------------------------
                ('gestio', 'Gestió', 'gestio__reserva_aula__list', co or pl, None,
                   (
-                      ("Reserva Aula", 'gestio__reserva_aula__list', co or pl, None, None),                                        
+                      ("Reserva Aula", 'gestio__reserva_aula__list', co or pl, None, None),
+                      ("Reserva Material", 'gestio__reserva_recurs__list', co or pl, None, None),
                       ("Cerca Alumne", 'gestio__usuari__cerca', co or pl, None, None),
                       ("Cerca Professor", 'gestio__professor__cerca', co or pl, None, None),  
                       ("iCal", 'gestio__calendari__integra', pl, None, None),  
@@ -245,12 +251,14 @@ def calcula_menu( user , path ):
                           ("HorarisKronowin", 'administracio__sincronitza__kronowin', di , None  ),
                           ("HorarisUntis", 'administracio__sincronitza__Untis', di , None  ),
                           ("Aules", 'gestio__aula__assignacomentari', di, None),
+                          ("Material", 'gestio__recurs__assignacomentari', di, None),
                           ("Reprograma", 'administracio__sincronitza__regenerar_horaris', di , None  ),
                         ),
                       ),
                       ("Reset Passwd", 'administracio__professorat__reset_passwd', di, None, None ),
                       ("Càrrega Inicial", 'administracio__configuracio__carrega_inicial', di, None, None ),
                       ("Promocions", 'administracio__promocions__llista', di, None, None),
+                      ("Inicialitza", 'administracio__init__inicialitzaDB', ad, None, None),
 #                      ("Nou Alumne", 'administracio__alumnes__noualumne', di, None, None),
 # Aquesta pantalla encara no té implementada la seva funcionalitat.
 # Queda pendent acabar-la, o eliminar-la de l'aplicació.
@@ -275,6 +283,7 @@ def calcula_menu( user , path ):
                       ("Missatge a professorat o PAS", 'varis__prof_i_pas__envia_professors_i_pas', pr or pl or co, None, None ),
                       ("Avisos de Seguretat", 'varis__avisos__envia_avis_administradors', tots, None, None ),
                       ("Email a les famílies", 'varis__mail__enviaEmailFamilies', di, None, None ),
+                      ("Estadístiques", 'varis__estadistiques__estadistiques', pr, None, None),
                       ("About", 'varis__about__about', tots, None, None ),
                       ("Pagament Online", 'varis__pagament__pagament_online', al if CUSTOM_SORTIDES_PAGAMENT_ONLINE else None, None, None),
                    )
@@ -402,6 +411,8 @@ coordinacio_alumnes__llistaAlumnescsv__llistat
 administracio__configuracio__assigna_franges_kronowin
 administracio__configuracio__assigna_grups
 administracio__configuracio__assigna_grups_kronowin
+administracio__configuracio__carrega_inicial
+administracio__init__inicialitzaDB
 administracio__professorat__reset_passwd
 administracio__sincronitza__duplicats
 administracio__sincronitza__fusiona

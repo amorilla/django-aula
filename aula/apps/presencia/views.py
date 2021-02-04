@@ -59,7 +59,7 @@ from django.urls import reverse
   
 #vistes -----------------------------------------------------------------------------------
 @login_required
-@group_required(['direcció'])
+@group_required(['direcció','administradors'])
 def regeneraImpartir(request):
     
     head=u'Reprogramar classes segons horari actual' 
@@ -191,7 +191,24 @@ def mostraImpartir( request, year=None, month=None, day=None ):
                 impartir_pendents.append( impartir_franja ) #franges buides que potser caldrà afegir a l'horari
         
     nomProfessor = unicode( professor )
-    
+
+    qProfessor = Q(horari__professor=professor)
+    qFinsAra = Q(dia_impartir__lt=datetime.today())
+    qTeGrup = Q(horari__grup__isnull=False)
+    imparticions = Impartir.objects.filter(qProfessor & qFinsAra & qTeGrup)
+    nImparticios = imparticions.count()
+    qSenseAlumnes = Q(controlassistencia__isnull=True)
+    qProfeHaPassatLlista = Q(professor_passa_llista__isnull=False)
+    nImparticionsLlistaPassada = \
+        imparticions \
+            .filter(qProfeHaPassatLlista | qSenseAlumnes) \
+            .order_by()\
+            .distinct()\
+            .count()
+    pct = ('{0:.1f}'.format(nImparticionsLlistaPassada * 100 / nImparticios) if nImparticios > 0 else 'N/A')
+    msg = u'Has controlat presència en un {0}% de les teves classes'.format(pct)
+    percentatgeProfessor = msg
+
     #navegacio pel calencari:
     altres_moments = [
            # text a mostrar, data de l'enllaç, mostrar-ho a mòbil, mostrar-ho a tablet&desktop
@@ -233,6 +250,7 @@ def mostraImpartir( request, year=None, month=None, day=None ):
                  'calendari': calendari,
                  'impartir_tot': impartir_tot, 
                  'professor': nomProfessor,
+                 'percentatge': percentatgeProfessor,
                  'altres_moments': altres_moments,
                  } ,
                 )
@@ -286,7 +304,7 @@ def passaLlista(request, pk):
     if ultimaReserva is not None:
         esUltimaHora = impartir.reserva_id == ultimaReserva.id
         if esUltimaHora:
-            msg = u" Atenció: És última hora en aquesta aula. Recorda't de tancar finestres, baixar persianes, pujar cadires, etc."
+            msg = u"ATENCIÓ: és l'última hora en aquesta aula. Recorda't de tancar finestres, baixar persianes i deixar l'aula ordenada. Per facilitar la desinfecció NO s'han de pujar les cadires"
             messages.error(request, SafeText(msg))
 
     url_next = '/presencia/mostraImpartir/%d/%d/%d/' % (
@@ -381,7 +399,9 @@ def passaLlista(request, pk):
             # 0 = present #1 = Falta
             d = dades_dissociades(form.instance)
             form.hora_anterior = (0 if d['assistenciaaHoraAnterior'] == 'Present' else
-                                  1 if d['assistenciaaHoraAnterior'] == 'Absent' else None)
+                                  1 if d['assistenciaaHoraAnterior'] == 'Absent' else
+                                  2 if d['assistenciaaHoraAnterior'] == 'Online' else None)
+            print (form.hora_anterior)
             prediccio, pct = predictTreeModel(d)
             form.prediccio = (0 if prediccio == 'Present' else
                               1 if prediccio == 'Absent' else  None)

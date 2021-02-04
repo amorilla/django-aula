@@ -181,15 +181,15 @@ def configuraConnexio( request , pk ):
 
     imageUrl = alumne.get_foto_or_default
 
+    telefons_alumne = [alumne.rp1_telefon, alumne.rp1_mobil, alumne.rp2_telefon, alumne.rp2_mobil, alumne.altres_telefons]
+    noms_responsables = [alumne.rp1_nom, alumne.rp2_nom]
+    correus_responsables_saga = [alumne.rp1_correu, alumne.rp2_correu]
     infoForm = [
           ('Alumne',unicode( alumne) ),
-          #( 'Telèfon Alumne', alumne.telefons),
-          ('Telèfon Alumne', alumne.rp1_telefon + u', ' + alumne.rp2_telefon + u', ' + alumne.altres_telefons),
-          #( 'Nom tutors', alumne.tutors),
-          ('Nom tutors', alumne.rp1_nom +  u', ' + alumne.rp2_nom),
-          #('Correu tutors (Saga)', alumne.correu_tutors),
-          ('Correu tutors (Saga)', alumne.rp1_correu + u', ' + alumne.rp2_correu),
-          ( 'Edat alumne', edatAlumne ),
+          ('Edat alumne', edatAlumne),
+          ('Telèfons Alumne', ','.join(filter(None,telefons_alumne))),
+          ('Noms responsables', ' / '.join(filter(None,noms_responsables))),
+          ('Correus responsables (Esfer@/Saga)', ','.join(filter(None,correus_responsables_saga))),
                 ]
     
     AlumneFormSet = modelform_factory(Alumne,
@@ -459,7 +459,7 @@ def elMeuInforme( request, pk = None ):
 
     #----Assistencia --------------------------------------------------------------------
     if detall in ['all', 'assistencia']:
-        controls = alumne.controlassistencia_set.exclude( estat__codi_estat = 'P' 
+        controls = alumne.controlassistencia_set.exclude( estat__codi_estat__in = ['P','O']
                                                               ).filter(  
                                                         estat__isnull=False                                                          
                                                             )
@@ -986,6 +986,15 @@ def elMeuInforme( request, pk = None ):
     #----Sortides -----------------------------------------------------------------------------   
     if detall in ['all', 'sortides'] and settings.CUSTOM_MODUL_SORTIDES_ACTIU:
         sortides = alumne.notificasortida_set.all()
+        
+        # sortides a on s'ha convocat a l'alumne
+        sortidesnotificat = Sortida.objects.filter(notificasortida__alumne=alumne)
+        # sortides pagades a les que ja no s'ha convocat a l'alumne
+        sortidespagadesperalumne = Pagament.objects.filter(alumne=alumne, pagament_realitzat=True).values_list('sortida', flat=True).distinct()
+        sortidespagadesnonotificades = Sortida.objects.filter(id__in=sortidespagadesperalumne, pagaments__pagament__alumne=alumne, pagaments__pagament__pagament_realitzat=True).exclude(notificasortida__alumne=alumne)
+        # totes les sortides relacionades amb l'alumne
+        activitats=sortidesnotificat.union(sortidespagadesnonotificades)
+        
         sortidesNoves = sortides.filter(  relacio_familia_revisada__isnull = True )
         sortides_on_no_assistira = alumne.sortides_on_ha_faltat.values_list( 'id', flat=True ).distinct()           
         sortides_justificades = alumne.sortides_falta_justificat.values_list( 'id', flat=True ).distinct()           
@@ -1034,74 +1043,83 @@ def elMeuInforme( request, pk = None ):
                 
         taula.fileres = []
             
-        for sortida in sortides.order_by( '-sortida__calendari_desde' ):
+        for act in activitats.order_by( '-calendari_desde' ):
+            # notifica és la notificació a l'alumne
+            notifica=act.notificasortida_set.filter(alumne=alumne)
+            if notifica:
+                notifica=notifica[0]
+            else:
+                notifica=None
+            
             filera = []
+            revisada_per_la_familia = not notifica or bool( notifica.relacio_familia_revisada )
+            negreta = not revisada_per_la_familia
             #----------------------------------------------
             camp = tools.classebuida()
             camp.enllac = None
-            camp.contingut = naturalday(sortida.sortida.calendari_desde)       
-            camp.negreta = False if bool( sortida.relacio_familia_revisada ) else True                
+            camp.contingut = naturalday(act.calendari_desde)       
+            camp.negreta = negreta
             filera.append(camp)
             
             #----------------------------------------------
             #  NO INSCRIT A L’ACTIVITAT. L'alumne ha d'assistir al centre excepte si són de viatge de final de curs. 
             comentari_no_ve = u""            
-            if sortida.sortida.pk in sortides_on_no_assistira:
+            if act.pk in sortides_on_no_assistira:
                 comentari_no_ve = u"NO INSCRIT A L’ACTIVITAT."
-                if sortida.sortida.pk in sortides_justificades:
+                if act.pk in sortides_justificades:
                     comentari_no_ve += u"NO INSCRIT A L’ACTIVITAT. Té justificada l'absència."
 
             camp = tools.classebuida()
             camp.enllac = None
             camp.contingut = comentari_no_ve       
-            camp.negreta = False if bool( sortida.relacio_familia_revisada ) else True                
+            camp.negreta = negreta
             filera.append(camp)
             
             #----------------------------------------------
             camp = tools.classebuida()
             camp.enllac = None
-            camp.contingut = u'{0}'.format( sortida.sortida.titol_de_la_sortida )        
-            camp.negreta = False if sortida.relacio_familia_revisada else True
+            camp.contingut = u'{0}'.format( act.titol_de_la_sortida )        
+            camp.negreta = negreta
             filera.append(camp)
             # ----------------------------------------------
             camp = tools.classebuida()
             camp.enllac = None
-            camp.contingut = u'{0}'.format(sortida.relacio_familia_notificada.strftime('%d/%m/%Y %H:%M')) if sortida.relacio_familia_notificada else ''
-            camp.negreta = False if bool(sortida.relacio_familia_revisada) else True
+            camp.contingut = u'{0}'.format(notifica.relacio_familia_notificada.strftime('%d/%m/%Y %H:%M')) if notifica and notifica.relacio_familia_notificada else ''
+            camp.negreta = negreta
             filera.append(camp)
             # ----------------------------------------------
             camp = tools.classebuida()
             camp.enllac = None
-            camp.contingut = u'{0}'.format(sortida.relacio_familia_revisada.strftime('%d/%m/%Y %H:%M')) if sortida.relacio_familia_revisada else ''
-            camp.negreta = False if bool(sortida.relacio_familia_revisada) else True
+            camp.contingut = u'{0}'.format(notifica.relacio_familia_revisada.strftime('%d/%m/%Y %H:%M')) if notifica and notifica.relacio_familia_revisada else ''
+            camp.negreta = negreta
             filera.append(camp)
             
             #----------------------------------------------
             camp = tools.classebuida()
             camp.enllac = None
             camp.modal = {}
-            camp.modal['id'] = sortida.id 
+            camp.modal['id'] = act.id
             camp.modal['txtboto'] = u'Detalls' 
             camp.modal['tittle'] =  u"{0} ({1})".format( 
-                                        sortida.sortida.titol_de_la_sortida,
-                                        naturalday(sortida.sortida.calendari_desde),
+                                        act.titol_de_la_sortida,
+                                        naturalday(act.calendari_desde),
                                         )
             camp.modal['body'] =  u'Del {0} al {1} \n\n{2}\n{3}\n{4}\n{5}\n{6}'.format(
-                                        sortida.sortida.calendari_desde.strftime( '%d/%m/%Y %H:%M' ),  
-                                        sortida.sortida.calendari_finsa.strftime( '%d/%m/%Y %H:%M' ),                                        
-                                        sortida.sortida.programa_de_la_sortida,
-                                        sortida.sortida.condicions_generals,
-                                        sortida.sortida.informacio_pagament,
-                                        u'Preu: {0} €'.format(str(sortida.sortida.preu_per_alumne)) if sortida.sortida.preu_per_alumne else u'Preu: 0 €',
-                                        u'Data límit pagament: {0}'.format(str(sortida.sortida.termini_pagament)) if sortida.sortida.termini_pagament else ''
+                                        act.calendari_desde.strftime( '%d/%m/%Y %H:%M' ),  
+                                        act.calendari_finsa.strftime( '%d/%m/%Y %H:%M' ),                                        
+                                        act.programa_de_la_sortida,
+                                        act.condicions_generals,
+                                        act.informacio_pagament,
+                                        u'Preu: {0} €'.format(str(act.preu_per_alumne)) if act.preu_per_alumne else u'Preu: 0 €',
+                                        u'Data límit pagament: {0}'.format(str(act.termini_pagament)) if act.termini_pagament else ''
                                         )
             filera.append(camp)
 
             # ----------------------------------------------
-            if sortida.sortida.tipus_de_pagament == 'ON' and sortida.sortida.termini_pagament >= datetime.now():
+            if act.tipus_de_pagament == 'ON' and act.termini_pagament >= datetime.now():
                 camp = tools.classebuida()
                 #pagament corresponent a una sortida i un alumne
-                pagament_sortida_alumne = get_object_or_404(Pagament, alumne=alumne, sortida=sortida.sortida)
+                pagament_sortida_alumne = get_object_or_404(Pagament, alumne=alumne, sortida=act)
                 camp.id = pagament_sortida_alumne.id
 
                 if pagament_sortida_alumne.pagament_realitzat:
@@ -1114,7 +1132,7 @@ def elMeuInforme( request, pk = None ):
 
             #--
             taula.fileres.append( filera )
-    
+
         report.append(taula)
         if not semiImpersonat:
             sortidesNoves.update( relacio_familia_notificada = ara, relacio_familia_revisada = ara)

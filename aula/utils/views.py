@@ -22,14 +22,17 @@ from aula.utils import tools
 from aula.apps.usuaris.models import User2Professor
 from aula.apps.presencia.models import Impartir
 from django.utils.datetime_safe import datetime
+from datetime import timedelta
 from django.db.models import Q
 
 from django.conf import settings
 from django.urls import reverse
 
-from aula.utils.tools import calculate_my_time_off
+from aula.utils.tools import calculate_my_time_off, processInitComplet, executaAmbOSenseThread
+from aula.utils.forms import initDBForm
 
 from django.views.decorators.csrf import ensure_csrf_cookie
+from aula.apps.alumnes.models import Curs
 
 
 def keepalive(request):
@@ -201,7 +204,7 @@ def about(request):
         filera = []
         
         camp = tools.classebuida()
-        camp.contingut = u'Percentatge de passar llista:'
+        camp.contingut = u'Percentatge de passar llista a les teves imparticions:'
         filera.append(camp) 
         
         camp = tools.classebuida()
@@ -212,9 +215,20 @@ def about(request):
         qFinsAhir = Q( dia_impartir__lt = datetime.today() )
         qFinsAra  = qFinsAhir | qAvui
         qTeGrup = Q( horari__grup__isnull = False)
-        imparticions = Impartir.objects.filter(qProfessor & qFinsAra & qTeGrup )    
-        nImparticios = imparticions.count()
-        nImparticionsLlistaPassada = imparticions.filter( professor_passa_llista__isnull = False ).count()
+        imparticions = Impartir.objects.filter(qProfessor & qFinsAra & qTeGrup )
+        nImparticionsLlistaPassada = \
+            imparticions \
+                .filter(professor_passa_llista__isnull=False) \
+                .order_by() \
+                .distinct() \
+                .count()
+        nImparticionsLlistaPendent = \
+            imparticions \
+                .filter(professor_passa_llista__isnull=True) \
+                .order_by() \
+                .distinct() \
+                .count()
+        nImparticios = nImparticionsLlistaPassada + nImparticionsLlistaPendent
 
         pct = ('{0:.0f}'.format(nImparticionsLlistaPassada * 100 / nImparticios) if nImparticios > 0 else 'N/A')
         estadistica1 = u'{0}% ({1} classes impartides, {2} controls)'.format(pct, nImparticios, nImparticionsLlistaPassada)
@@ -222,15 +236,8 @@ def about(request):
             #---hores de classe
         nProfessor = Impartir.objects.filter( horari__professor = professor, horari__grup__isnull = False ).count()
         nTotal = Impartir.objects.filter( horari__grup__isnull = False).count()
-        import re
-        nProfessor = re.sub(r'(\d{3})(?=\d)', r'\1,', str(nProfessor)[::-1])[::-1]
-        nTotal = re.sub(r'(\d{3})(?=\d)', r'\1,', str(nTotal)[::-1])[::-1]
-        estadistica2 = u'''Aquest curs impartirem {0} hores de classe, d'aquestes, {1} les imparteixes tu.'''.format(
-                                    nTotal,
-                                    nProfessor
-                                     )
-        
-        
+        estadistica2 = f"Aquest curs impartirem {nTotal:,} hores de classe; d'aquestes, {nProfessor:,} les imparteixes tu."
+
         camp.contingut = u'{0}. {1}'.format(estadistica1, estadistica2)
         filera.append(camp)    
         
@@ -245,6 +252,110 @@ def about(request):
                      'head': 'About' ,
                     },
                 )
+
+@login_required
+@group_required(['professors'])
+def estadistiques(request):
+    credentials = tools.getImpersonateUser(request)
+    (user, _) = credentials
+
+    professor = User2Professor(user)
+    report = []
+
+    # --Estadistiques Professor.....................
+    if professor:
+        taula = tools.classebuida()
+        taula.titol = tools.classebuida()
+        taula.titol.contingut = ''
+        taula.titol.enllac = None
+        taula.capceleres = []
+        capcelera = tools.classebuida()
+        capcelera.amplade = 20
+        capcelera.contingut = u'Estadístiques'
+        capcelera.enllac = None
+        taula.capceleres.append(capcelera)
+        capcelera = tools.classebuida()
+        capcelera.amplade = 80
+        capcelera.contingut = u''
+        taula.capceleres.append(capcelera)
+        taula.fileres = []
+        filera = []
+        camp = tools.classebuida()
+        camp.contingut = u'Percentatge de passar llista a les teves imparticions:'
+        filera.append(camp)
+        camp = tools.classebuida()
+        camp.enllac = None
+        qProfessor = Q(horari__professor=professor)
+        qFinsAra = Q(dia_impartir__lt=datetime.today())
+        qTeGrup = Q(horari__grup__isnull=False)
+        imparticions = Impartir.objects.filter(qProfessor & qFinsAra & qTeGrup)
+        qSenseAlumnes = Q(controlassistencia__isnull=True)
+        qProfeHaPassatLlista = Q(professor_passa_llista__isnull=False)
+        nImparticionsLlistaPassada = \
+            imparticions\
+                .filter(qProfeHaPassatLlista | qSenseAlumnes)\
+                .order_by()\
+                .distinct()\
+                .count()
+        nImparticionsLlistaPendent = \
+            imparticions \
+                .filter(professor_passa_llista__isnull=True).exclude(controlassistencia__isnull=True) \
+                .order_by() \
+                .distinct() \
+                .count()
+        nImparticios = nImparticionsLlistaPassada + nImparticionsLlistaPendent
+        pct = ('{0:.1f}'.format(nImparticionsLlistaPassada * 100 / nImparticios) if nImparticios > 0 else 'N/A')
+        estadistica1 = u'{0}% ({1} classes impartides, {2} controls, falten {3} controls)'.format(pct, nImparticios,
+                                                                                                  nImparticionsLlistaPassada,
+                                                                                                  nImparticionsLlistaPendent)
+
+        # ---hores de classe
+        nProfessor = Impartir.objects.filter(horari__professor=professor, horari__grup__isnull=False).count()
+        nTotal = Impartir.objects.filter(horari__grup__isnull=False).count()
+        estadistica2 = f"Aquest curs impartirem {nTotal:,} hores de classe; d'aquestes, {nProfessor:,} les imparteixes tu."
+
+        camp.contingut = u'{0}. {1}'.format(estadistica1, estadistica2)
+        filera.append(camp)
+
+        taula.fileres.append(filera)
+
+        report.append(taula)
+
+        taula = tools.classebuida()
+
+        taula.titol = tools.classebuida()
+        taula.titol.contingut = ''
+        taula.titol.enllac = None
+
+        taula.capceleres = []
+
+        capcelera = tools.classebuida()
+        capcelera.amplade = 100
+        capcelera.contingut = u'Imparticions pendents passar llista'
+        capcelera.enllac = None
+        taula.capceleres.append(capcelera)
+
+        taula.fileres = []
+
+        for imparticio in imparticions.filter(professor_passa_llista__isnull=True).exclude(controlassistencia__isnull=True):
+            filera = []
+            # ----------------------------------------------
+            camp = tools.classebuida()
+            camp.enllac = '/presencia/passaLlista/{0}'.format(imparticio.pk)
+            camp.contingut = u'{0} - {1}'.format(imparticio.dia_impartir, imparticio.horari)
+            camp.negreta = True
+            filera.append(camp)
+            taula.fileres.append(filera)
+
+        report.append(taula)
+
+    return render(
+        request,
+        'report.html',
+        {'report': report,
+         'head': 'Estadistiques',
+         },
+    )
 
 
 @login_required
@@ -365,3 +476,49 @@ def allow_foto(private_file):
                               .exists()
                               )
     return (request.user.is_authenticated and pertany_al_grup_permes)
+
+@login_required
+@group_required(['administradors'])
+def initDB(request):
+
+    head=u'Inicialitza base de dades per començar nou curs' 
+
+    if request.method == 'POST':
+        form = initDBForm(request.POST)
+        if form.is_valid():
+
+            data_fi=Curs.objects.exclude(data_fi_curs__isnull=True).order_by( '-data_fi_curs' )
+            if data_fi.exists():
+                data_fi=data_fi[0].data_fi_curs
+            else:
+                data_fi=None
+            
+            if data_fi is None or data_fi + timedelta( days=30 )<datetime.now().date():
+                # Ha passat un mes des del final de curs o no n'hi ha cap data de final de curs
+                r=processInitComplet(user = request.user)
+                executaAmbOSenseThread(r)
+                
+                errors=[]
+                warnings=[]
+                infos=[u'Iniciat procés d\'inicialització']
+            else:
+                # Encara no ha passat un mes des de final de curs
+                errors=[]
+                warnings=[]
+                infos=[u'No es pot fer la inicialització fins un mes després del final de curs']
+                
+            resultat = {   'errors': errors, 'warnings':  warnings, 'infos':  infos }
+            return render(
+                    request,
+                    'resultat.html', 
+                    {'head': head ,
+                     'msgs': resultat },
+            )
+    else:
+        form = initDBForm()
+    return render(
+                request,
+                'form.html', 
+                {'form': form, 
+                 'head': head},
+                )

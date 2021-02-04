@@ -129,7 +129,9 @@ def sincronitza(f, user = None):
                     a.rp2_mobil = ', '.join(dades_tutor2["mobils"]);
                     a.rp2_correu = ', '.join(dades_tutor2["mails"]);
                 if col_indexs[index].endswith(u"Contacte altres alumne - Valor"):
-                    a.altres_telefons = unicode(cell.value)
+                    telefons_alumne = dades_responsable(unicode(cell.value) if cell.value else "")
+                    a.altres_telefons = ', '.join(telefons_alumne["fixes"]);
+                    a.altres_telefons = a.altres_telefons + ', '.join(telefons_alumne["mobils"]);
                 if col_indexs[index].endswith(u"Tutor 1 - 1r cognom "):
                     a.rp1_nom = unicode(cell.value) if cell.value else ""
                 if col_indexs[index].endswith(u"Tutor 1 - 2n cognom"):
@@ -209,6 +211,8 @@ def sincronitza(f, user = None):
                 a.motiu_bloqueig = u'No sol·licitat'
                 a.tutors_volen_rebre_correu = False
                 a.foto = alumneDadesAnteriors.foto
+                a.primer_responsable = alumneDadesAnteriors.primer_responsable
+                a.observacions = alumneDadesAnteriors.observacions
             else:
                 a.correu_relacio_familia_pare         = alumneDadesAnteriors.correu_relacio_familia_pare
                 a.correu_relacio_familia_mare         = alumneDadesAnteriors.correu_relacio_familia_mare
@@ -218,6 +222,8 @@ def sincronitza(f, user = None):
                 a.periodicitat_incidencies            = alumneDadesAnteriors.periodicitat_incidencies
                 a.tutors_volen_rebre_correu           = alumneDadesAnteriors.tutors_volen_rebre_correu = False
                 a.foto = alumneDadesAnteriors.foto
+                a.primer_responsable = alumneDadesAnteriors.primer_responsable
+                a.observacions = alumneDadesAnteriors.observacions
                 
         a.save()
         nivells.add(a.grup.curs.nivell)
@@ -226,9 +232,10 @@ def sincronitza(f, user = None):
     #
     # Els alumnes de Saga no s'han de tenir en compte per fer les baixes
     AlumnesDeSaga = Alumne.objects.exclude(grup__curs__nivell__in=nivells)
-    AlumnesDeSaga.update(estat_sincronitzacio='')
-
-#     #Els alumnes que hagin quedat a PRC és que s'han donat de baixa:
+    # Es canvia estat PRC a ''. No modifica DEL ni MAN
+    AlumnesDeSaga.filter( estat_sincronitzacio__exact = 'PRC' ).update(estat_sincronitzacio='')
+    
+    #Els alumnes que hagin quedat a PRC és que s'han donat de baixa:
     AlumnesDonatsDeBaixa = Alumne.objects.filter( estat_sincronitzacio__exact = 'PRC' )
     AlumnesDonatsDeBaixa.update(
                             data_baixa = date.today(),

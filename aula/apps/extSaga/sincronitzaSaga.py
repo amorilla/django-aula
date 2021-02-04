@@ -219,6 +219,8 @@ def sincronitza(f, user = None):
                 a.motiu_bloqueig = u'No sol·licitat'
                 a.tutors_volen_rebre_correu = False
                 a.foto = alumneDadesAnteriors.foto
+                a.primer_responsable = alumneDadesAnteriors.primer_responsable
+                a.observacions = alumneDadesAnteriors.observacions
             else:
                 a.correu_relacio_familia_pare         = alumneDadesAnteriors.correu_relacio_familia_pare
                 a.correu_relacio_familia_mare         = alumneDadesAnteriors.correu_relacio_familia_mare
@@ -228,6 +230,8 @@ def sincronitza(f, user = None):
                 a.periodicitat_incidencies            = alumneDadesAnteriors.periodicitat_incidencies
                 a.tutors_volen_rebre_correu           = alumneDadesAnteriors.tutors_volen_rebre_correu = False
                 a.foto = alumneDadesAnteriors.foto
+                a.primer_responsable = alumneDadesAnteriors.primer_responsable
+                a.observacions = alumneDadesAnteriors.observacions
 
         a.save()
         nivells.add(a.grup.curs.nivell)
@@ -237,7 +241,9 @@ def sincronitza(f, user = None):
 
     # Els alumnes d'Esfer@ no s'han de tenir en compte per fer les baixes
     AlumnesDeEsfera = Alumne.objects.exclude(grup__curs__nivell__in=nivells)
-    AlumnesDeEsfera.update(estat_sincronitzacio='')
+    # Es canvia estat PRC a ''. No modifica DEL ni MAN
+    AlumnesDeEsfera.filter( estat_sincronitzacio__exact = 'PRC' ).update(estat_sincronitzacio='')
+    
     #Els alumnes que hagin quedat a PRC és que s'han donat de baixa:
     AlumnesDonatsDeBaixa = Alumne.objects.filter( estat_sincronitzacio__exact = 'PRC' )
     AlumnesDonatsDeBaixa.update(
