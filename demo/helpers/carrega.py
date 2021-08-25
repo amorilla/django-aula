@@ -69,8 +69,7 @@ def fesCarrega( ):
     sincronitzaKronowin.creaNivellCursGrupDesDeKronowin( handlerKronowin, inici_curs, fi_curs )
     
     print (u"#Creem correspondències amb horaris")
-    frangesAula = FranjaHoraria.objects.filter( hora_inici__in = ['09:15', '10:30', '11:30' ,'12:45',
-                                                                  '15:45', '16:45', '18:05', '19:00'] ).order_by ( 'hora_inici' )
+    frangesAula = FranjaHoraria.objects.filter( pk__in = list(range(2,6))+list(range(9,13)) ).order_by ( 'hora_inici' )
     frangesKronowin = list(frangesMatins) + list(frangesTardes)
     for frangaAula, franjaKronowin in zip(frangesAula, frangesKronowin  ):
         Franja2Aula.objects.get_or_create( franja_kronowin= franjaKronowin,  franja_aula = frangaAula )

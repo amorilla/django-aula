@@ -36,6 +36,14 @@ def autoRalc(ident):
         return ralc
     return ident
 
+def actualitzaRegistre(ant, nou, camps, manteDades=True):
+    for f in camps:
+        if manteDades and not bool(ant[f]) and bool(nou[f]):
+            ant[f]=nou[f]
+        if not manteDades and bool(nou[f]):
+            ant[f]=nou[f]
+    return ant
+
 def sincronitza(f, user = None):
 
     errors = []
@@ -224,28 +232,30 @@ def sincronitza(f, user = None):
                     AlumnesCanviatsDeGrup.append(a)
 
             a.user_associat = alumneDadesAnteriors.user_associat
+            
+            # amorilla@xtec.cat
+            manteDades, _ = ParametreSaga.objects.get_or_create( nom_parametre = 'mantenirDades' )
+            
+            from django.forms.models import model_to_dict
+            from aula.apps.usuaris.models import AlumneUser
+            nou=model_to_dict(a)
+            ant=model_to_dict(alumneDadesAnteriors)
+            camps=('nom', 'cognoms', 'data_neixement', 'correu_tutors', 'correu_relacio_familia_pare', 'correu_relacio_familia_mare', 
+            'centre_de_procedencia', 'localitat', 'municipi', 'cp', 'telefons', 'tutors', 'adreca', 'correu', 'rp1_nom', 'rp1_telefon', 
+            'rp1_mobil', 'rp1_correu', 'rp2_nom', 'rp2_telefon', 'rp2_mobil', 'rp2_correu', 'altres_telefons')
+            ok=actualitzaRegistre(ant, nou, camps, manteDades.valor_parametre=='True')
+            ok['grup']=a.grup
+            ok['estat_sincronitzacio']=a.estat_sincronitzacio
+            ok['user_associat']=a.user_associat
+            a=Alumne(**ok)
+            
             #el recuperem, havia estat baixa:
             if alumneDadesAnteriors.data_baixa:
                 info_nAlumnesInsertats+=1
                 a.data_alta = date.today()
+                a.data_baixa = None
                 a.motiu_bloqueig = u'No sol·licitat'
                 a.tutors_volen_rebre_correu = False
-                a.foto = alumneDadesAnteriors.foto
-                a.primer_responsable = alumneDadesAnteriors.primer_responsable
-                a.observacions = alumneDadesAnteriors.observacions
-            else:
-                a.correu_relacio_familia_pare         = alumneDadesAnteriors.correu_relacio_familia_pare
-                a.correu_relacio_familia_mare         = alumneDadesAnteriors.correu_relacio_familia_mare
-                a.motiu_bloqueig                      = alumneDadesAnteriors.motiu_bloqueig
-                a.relacio_familia_darrera_notificacio = alumneDadesAnteriors.relacio_familia_darrera_notificacio
-                a.periodicitat_faltes                 = alumneDadesAnteriors.periodicitat_faltes
-                a.periodicitat_incidencies            = alumneDadesAnteriors.periodicitat_incidencies
-                a.tutors_volen_rebre_correu           = alumneDadesAnteriors.tutors_volen_rebre_correu = False
-                a.foto = alumneDadesAnteriors.foto
-                a.primer_responsable = alumneDadesAnteriors.primer_responsable
-                a.observacions = alumneDadesAnteriors.observacions
-                a.data_alta = alumneDadesAnteriors.data_alta
-
 
         a.save()
         nivells.add(a.grup.curs.nivell)
@@ -328,17 +338,20 @@ def sincronitza(f, user = None):
                 impartir__dia_impartir__gte = date.today(),
                 alumne__in = AlumnesDonatsDeBaixa ).delete()
 
-    #Treure'ls de les classes: els canvis de grup   #Todo: només si l'àmbit és grup.
-
-    ambit_no_es_el_grup = Q( impartir__horari__assignatura__tipus_assignatura__ambit_on_prendre_alumnes__in = [ 'C', 'N', 'I' ] )
-    ( ControlAssistencia
-      .objects
-      .filter( ambit_no_es_el_grup )
-      .filter( impartir__dia_impartir__gte = date.today() )
-      .filter( alumne__in = AlumnesCanviatsDeGrup )
-      .delete()
-     )
-
+    # amorilla@xtec.cat
+    manteLlista, _ = ParametreSaga.objects.get_or_create( nom_parametre = 'mantenirLlistes' )
+            
+    if manteLlista.valor_parametre!='True':
+        #Treure'ls de les classes: els canvis de grup   #Todo: només si l'àmbit és grup.
+    
+        ambit_no_es_el_grup = Q( impartir__horari__assignatura__tipus_assignatura__ambit_on_prendre_alumnes__in = [ 'C', 'N', 'I' ] )
+        ( ControlAssistencia
+          .objects
+          .filter( ambit_no_es_el_grup )
+          .filter( impartir__dia_impartir__gte = date.today() )
+          .filter( alumne__in = AlumnesCanviatsDeGrup )
+          .delete()
+         )
 
     #Altes: posar-ho als controls d'assistència de les classes (?????????)
 

@@ -569,7 +569,8 @@ def elMeuInforme( request, pk = None ):
     
         report.append(taula)    
         if not semiImpersonat:
-            controlsNous = controls.update( relacio_familia_notificada = ara, relacio_familia_revisada = ara )
+            controlsNous.filter( relacio_familia_notificada__isnull = True ).update( relacio_familia_notificada = ara )
+            controlsNous.update( relacio_familia_revisada = ara )           
     
 
         
@@ -643,7 +644,8 @@ def elMeuInforme( request, pk = None ):
         
         report.append(taula)
         if not semiImpersonat:
-            observacionsNoves = observacions.update(  relacio_familia_notificada = ara, relacio_familia_revisada = ara)
+            observacionsNoves.filter( relacio_familia_notificada__isnull = True ).update( relacio_familia_notificada = ara )
+            observacionsNoves.update( relacio_familia_revisada = ara )           
                     
     #----incidències --------------------------------------------------------------------
         incidencies = alumne.incidencia_set.filter( tipus__es_informativa = False )
@@ -719,7 +721,8 @@ def elMeuInforme( request, pk = None ):
     
         report.append(taula)
         if not semiImpersonat:
-            incidenciesNoves.update( relacio_familia_notificada =  ara, relacio_familia_revisada = ara )
+            incidenciesNoves.filter( relacio_familia_notificada__isnull = True ).update( relacio_familia_notificada = ara )
+            incidenciesNoves.update( relacio_familia_revisada = ara )           
         
 
     #----Expulsions --------------------------------------------------------------------
@@ -809,7 +812,8 @@ def elMeuInforme( request, pk = None ):
             
         report.append(taula)        
         if not semiImpersonat:
-            expulsionsNoves.update( relacio_familia_notificada =  ara , relacio_familia_revisada = ara)
+            expulsionsNoves.filter( relacio_familia_notificada__isnull = True ).update( relacio_familia_notificada = ara )
+            expulsionsNoves.update( relacio_familia_revisada = ara )           
 
     #----Sancions -----------------------------------------------------------------------------   
     if detall in ['all', 'incidencies']:
@@ -880,7 +884,8 @@ def elMeuInforme( request, pk = None ):
     
         report.append(taula)
         if not semiImpersonat:
-            sancionsNoves.update( relacio_familia_notificada = ara, relacio_familia_revisada = ara)
+            sancionsNoves.filter( relacio_familia_notificada__isnull = True ).update( relacio_familia_notificada = ara )
+            sancionsNoves.update( relacio_familia_revisada = ara )           
 
     #---dades alumne---------------------------------------------------------------------
     if detall in ['all','dades']:
@@ -925,7 +930,7 @@ def elMeuInforme( request, pk = None ):
         filera = []
         camp = tools.classebuida()
         camp.enllac = None
-        camp.contingut = u'Data Neixement'        
+        camp.contingut = u'Data Naixement'        
         filera.append(camp)
     
         camp = tools.classebuida()
@@ -1158,7 +1163,8 @@ def elMeuInforme( request, pk = None ):
         if not infQuota: report.append(taula)
 
         if not semiImpersonat:
-            sortidesNoves.update( relacio_familia_notificada = ara, relacio_familia_revisada = ara)
+            sortidesNoves.filter( relacio_familia_notificada__isnull = True ).update( relacio_familia_notificada = ara )
+            sortidesNoves.update( relacio_familia_revisada = ara )           
 
     #----Quotes -----------------------------------------------------------------------------   
     if infQuota:
@@ -1397,7 +1403,8 @@ def elMeuInforme( request, pk = None ):
     
         report.append(taula)
         if not semiImpersonat:
-            respostesNoves.update( relacio_familia_notificada = ara, relacio_familia_revisada = ara)
+            respostesNoves.filter( relacio_familia_notificada__isnull = True ).update( relacio_familia_notificada = ara )
+            respostesNoves.update( relacio_familia_revisada = ara )           
 
     return render(
                 request,

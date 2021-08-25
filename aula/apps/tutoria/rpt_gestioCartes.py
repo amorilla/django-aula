@@ -174,6 +174,7 @@ def gestioCartesRpt(professor, l4):
             msg = None
             cal_imprimir_carta = False
             try:
+                #  TODO  revisió
                 carta.clean()
                 llindar = settings.CUSTOM_FALTES_ABSENCIA_PER_TIPUS_CARTA.get( carta.tipus_carta, 
                                                                              settings.CUSTOM_FALTES_ABSENCIA_PER_CARTA )

@@ -19,6 +19,9 @@ urlpatterns = [
    url(r'^elsMeusAlumnesAndAssignatures/$', alumnes_views.elsMeusAlumnesAndAssignatures,
        name="aula__alumnes__alumnes_i_assignatures"),
                        
+   url(r'^elsMeusGrups/$', alumnes_views.elsMeusGrupsLlistes,
+       name="aula__alumnes__alumnes_i_grups"),
+                       
    url(r'^llistaTutorsIndividualitzats/$', alumnes_views.llistaTutorsIndividualitzats,
        name="professorat__tutors__tutors_individualitzats"),
                        

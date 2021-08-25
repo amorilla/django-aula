@@ -381,7 +381,7 @@ def sortidaEdit(request, pk=None, clonar=False, origen=False):
                 primeraimparticio = ( 
                     Impartir
                     .objects
-                    .filter(dia_impartir__gte=instance.calendari_desde.date(),
+                    .filter(dia_impartir=instance.calendari_desde.date(),
                             horari__hora__hora_inici__gte=instance.calendari_desde.time()).order_by(
                             'dia_impartir', 'horari__hora__hora_inici')
                     .first() )
@@ -392,7 +392,7 @@ def sortidaEdit(request, pk=None, clonar=False, origen=False):
                         Impartir
                         .objects.filter(
                             dia_impartir__gt=instance.calendari_desde.date()).order_by(
-                            'dia_impartir')
+                            'dia_impartir', 'horari__hora__hora_inici')
                         .first() )
                     primerafranja = primeraimparticio.horari.hora if primeraimparticio else None
 
@@ -405,7 +405,7 @@ def sortidaEdit(request, pk=None, clonar=False, origen=False):
                 darreraimparticio = (
                     Impartir
                     .objects
-                    .filter(dia_impartir__lte=instance.calendari_finsa.date(),
+                    .filter(dia_impartir=instance.calendari_finsa.date(),
                             horari__hora__hora_fi__lte=instance.calendari_finsa.time()).order_by(
                             'dia_impartir', 'horari__hora__hora_fi')
                     .last()
@@ -417,7 +417,7 @@ def sortidaEdit(request, pk=None, clonar=False, origen=False):
                         Impartir
                         .objects
                         .filter(dia_impartir__lt=instance.calendari_finsa.date())
-                        .order_by('dia_impartir')
+                        .order_by('dia_impartir', 'horari__hora__hora_fi')
                         .last()
                     )
                     darrerafranja = darreraimparticio.horari.hora if darreraimparticio else None

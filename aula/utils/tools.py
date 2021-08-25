@@ -33,7 +33,7 @@ def calculate_my_time_off(user):
         return settings.CUSTOM_TIMEOUT
     else:
         m=(settings.CUSTOM_TIMEOUT_GROUP.get(g.name, settings.CUSTOM_TIMEOUT) for g in user.groups.all())
-        if bool(m):
+        if bool(m) and user.groups.all():
             return max(m)
         return settings.CUSTOM_TIMEOUT
 
@@ -230,6 +230,11 @@ def initComplet():
     # Esborra usuaris alumne sense alumne associat
     User.objects.filter(username__startswith='almn',alumne__isnull=True).delete()
 
+    # Activa usuaris alumne no donats de baixa
+    User.objects.filter(username__startswith='almn', alumne__data_baixa__isnull=True).update(is_active=True)
+    # Desactiva usuaris alumne donats de baixa
+    User.objects.filter(username__startswith='almn', alumne__data_baixa__isnull=False).update(is_active=False)
+    
     # Elimina dates d'inici i final de curs
     Curs.objects.all().update(data_inici_curs=None, data_fi_curs=None)
     

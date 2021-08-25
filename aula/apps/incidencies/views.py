@@ -29,6 +29,7 @@ from aula.apps.usuaris.models import  Professor, User2Professor, Professional, U
     Accio, User2ProfessorConserge
 from aula.apps.incidencies.models import Expulsio
 from aula.apps.horaris.models import DiaDeLaSetmana
+from aula.apps.tutoria.models import Tutor
 from aula.utils import tools    
 from aula.utils.tools import unicode    
 
@@ -892,13 +893,22 @@ def llistaIncidenciesProfessional( request ):
     for incidencia in professional.incidencia_set.all():
         alumne_str = unicode ( incidencia.alumne)
         #dia_prescriu_incidencia = date.today() - timedelta( days = settings.CUSTOM_DIES_PRESCRIU_INCIDENCIA )
-        incidenciesAlumne = incidencia.alumne.incidencia_set.filter(
-                                                        professional = professional, 
-                                                        es_vigent = True,
-                                                        tipus__es_informativa = False,
-                                                        gestionada_pel_tutor = False,
-                                                        #dia_incidencia__gte = dia_prescriu_incidencia
-                                                                                   )
+        # amorilla@xtec.cat
+        tutorsa=Tutor.objects.filter(grup=incidencia.alumne.grup)
+        if (professional in tutorsa):
+            incidenciesAlumne = incidencia.alumne.incidencia_set.filter(
+                                                            professional = professional, 
+                                                            es_vigent = True,
+                                                            tipus__es_informativa = False,
+                                                                                       )
+        else:
+            incidenciesAlumne = incidencia.alumne.incidencia_set.filter(
+                                                            professional = professional, 
+                                                            es_vigent = True,
+                                                            tipus__es_informativa = False,
+                                                            gestionada_pel_tutor = False,
+                                                            #dia_incidencia__gte = dia_prescriu_incidencia
+                                                                                       )
         calTramitarExpulsioPerAcumulacio = settings.CUSTOM_INCIDENCIES_PROVOQUEN_EXPULSIO and incidenciesAlumne.count() >= 3
         exempleIncidenciaPerAcumulacio = incidenciesAlumne.order_by( 'dia_incidencia' ).reverse()[0] \
                                             if calTramitarExpulsioPerAcumulacio \
