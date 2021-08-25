@@ -82,7 +82,7 @@ class AbstractActuacio(models.Model):
     moment_actuacio = models.DateTimeField(help_text=u"Data i Hora de l'actuació. Format: 2011-06-01 9:05")
     qui_fa_actuacio = models.CharField(choices = QUI_CHOICES, max_length=1, help_text=u"Qui realitza l'actuació")
     amb_qui_es_actuacio = models.CharField(choices = AMB_QUI_CHOICES, max_length=1, help_text=u"Sobre qui es realitza l'actuació")
-    assumpte = models.CharField(choices = ASSUMPTE_CHOICES, max_length=1, help_text=u"Assumpte")
+    assumpte = models.CharField(choices = ASSUMPTE_CHOICES, max_length=200, help_text=u"Assumpte")
     actuacio = models.TextField(blank=True, help_text=u"Explicació detallada de l'actuació realitzada. No inclogueu dades mèdiques ni diagnòstiques.")
     class Meta:
         abstract = True
