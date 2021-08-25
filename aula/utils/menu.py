@@ -148,6 +148,7 @@ def calcula_menu( user , path, sessioImpersonada ):
                       ("Alumnes", 'aula__alumnes__blanc', pr, None,
                           ( 
                             ("Els meus alumnes", 'aula__alumnes__alumnes_i_assignatures', pr, None),
+                            ("Descàrrega de llistes", 'aula__alumnes__alumnes_i_grups', pr, None),
                           ),                        
                       ),                                                            
 
@@ -430,6 +431,8 @@ coordinacio_pedagogica__qualitativa__report
 
 aula__materies__assistencia_llistat_entre_dates
 aula__materies__calculadora_uf
+
+aula__alumnes__alumnes_i_grups
 
 aula__horari__afegir_alumnes
 aula__horari__afegir_guardia

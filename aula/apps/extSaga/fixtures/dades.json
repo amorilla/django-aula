@@ -1,10 +1,1 @@
-[
-    {
-        "fields": {
-            "nom_parametre": "grups estatics", 
-            "valor_parametre": "UEC"
-        }, 
-        "model": "extSaga.parametresaga", 
-        "pk": 1
-    }
-]
+[{"model": "extSaga.parametresaga", "pk": 2, "fields": {"nom_parametre": "autoRalc", "valor_parametre": "Manual"}}, {"model": "extSaga.parametresaga", "pk": 1, "fields": {"nom_parametre": "grups estatics", "valor_parametre": "UEC"}}, {"model": "extSaga.parametresaga", "pk": 5, "fields": {"nom_parametre": "mantenirCorreus", "valor_parametre": "True"}}, {"model": "extSaga.parametresaga", "pk": 4, "fields": {"nom_parametre": "mantenirLlistes", "valor_parametre": ""}}, {"model": "extSaga.parametresaga", "pk": 3, "fields": {"nom_parametre": "mantenirNom", "valor_parametre": "True"}}]
