@@ -18,7 +18,7 @@ django-appconf
 Pillow
 viivakoodi
 XlsxWriter
-typing
+typing ; python_version < '3.5'
 selenium
 pisa
 pycryptodome
