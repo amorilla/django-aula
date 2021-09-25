@@ -17,8 +17,11 @@ ADMINS = (
 LOGIN_URL="/usuaris/login/"
 
 LICENSE_FILE = location( r'../LICENSE' )
-DADES_FISCALS_FILE = location( r'../customising/docs/DADESFISCALS' )
-POLITICA_VENDA_FILE = location( r'../customising/docs/POLITICAVENDA' )
+DADES_FISCALS_FILE = location( r'../customising/TermesIcondicions/DADESFISCALS.sample' )
+POLITICA_VENDA_FILE = location( r'../customising/TermesIcondicions/POLITICAVENDA.sample' )
+#Fitxer de text amb les condicions de matrícula, es poden fer servir marques HTML 
+#Relacionat amb CUSTOM_MODUL_MATRICULA_ACTIU
+CONDICIONS_MATRICULA = location( r'../customising/TermesIcondicions/MATRICULA.sample' )
 
 MANAGERS = ADMINS
 
@@ -184,6 +187,8 @@ INSTALLED_APPS_DJANGO = [
     'django_extensions',
     'django_tables2',
     'django.contrib.humanize',
+    'formtools',
+    'django.forms',
 ]
     
 INSTALLED_APPS_AULA = [
@@ -211,6 +216,8 @@ INSTALLED_APPS_AULA = [
     'aula.utils',
     'aula.apps.presenciaSetmanal',
     'aula.apps.extUntis',
+    'aula.apps.matricula',
+    'aula.apps.extPreinscripcio',
 ]
 
 #select2
@@ -257,4 +264,4 @@ LOGGING = {
 }
 
 
-PRIVATE_STORAGE_AUTH_FUNCTION = 'aula.utils.views.allow_foto'
+PRIVATE_STORAGE_AUTH_FUNCTION = 'aula.utils.views.allow_private_files'

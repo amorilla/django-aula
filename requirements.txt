@@ -3,11 +3,9 @@ openpyxl
 # Development
 git+https://github.com/lino-framework/appypod.git#egg=appy
 Django
-#django-debug-toolbar
 django-extensions
 lxml
 django-appypod
-#python-dateutil
 six
 django-debug-toolbar
 #python-lxml
@@ -25,3 +23,4 @@ pycryptodome
 xmltodict
 django-private-storage
 dnspython
+django-formtools

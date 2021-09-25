@@ -12,6 +12,8 @@ CUSTOM_DIES_PRESCRIU_INCIDENCIA = 30
 CUSTOM_DIES_PRESCRIU_EXPULSIO = 90
 CUSTOM_NOMES_TUTOR_POT_JUSTIFICAR = True
 CUSTOM_MODUL_SORTIDES_ACTIU = True
+CUSTOM_MODUL_MATRICULA_ACTIU = False
+
 CUSTOM_PERMET_COPIAR_DES_DUNA_ALTRE_HORA = False
 CUSTOM_RETARD_PRIMERA_HORA_GESTIONAT_PEL_TUTOR = False
 CUSTOM_NIVELLS = { u"ESO": [u"ESO"],
@@ -54,6 +56,17 @@ CUSTOM_SORTIDES_INSTRUCCIONS_PAGAMENT_ENTITAT_BANCARIA = u"""El pagament s'ha de
 CUSTOM_SORTIDES_INSTRUCCIONS_PAGAMENT_EFECTIU = u"""El pagament s'ha de realitzar en efectiu al professor organitzador de la sortida o al tutor."""
 CUSTOM_SORTIDES_INSTRUCCIONS_PAGAMENT_ONLINE = u"""El pagament s'ha de realitzar a través d'aquesta mateixa plataforma"""
 CUSTOM_REDSYS_ENTORN_REAL = False
+# Si True permet utilitzar les quotes
+CUSTOM_QUOTES_ACTIVES = False
+CUSTOM_TIPUS_QUOTA_MATRICULA = None
+
+#Fitxer de text amb l'avís sobre el tractament de dades personals, es poden fer servir marques HTML.
+#Es mostra a la part inferior de les pantalles d'entrada de dades com la de "Canvi de paràmetres".
+#INFORGPD = location( r'../customising/TermesIcondicions/INFORGPD.sample' )
+#Política de cookies.
+#POLITICA_COOKIES = location( r'../customising/TermesIcondicions/POLITICACOOKIES.sample' )
+#Informació sobre protecció de dades de caràcter personal.
+#POLITICA_RGPD = location( r'../customising/TermesIcondicions/POLITICARGPD.sample' )
 
 #Si True, permet que els tutors tinguin accés als informes de seguiment de faltes i incidències.
 CUSTOM_TUTORS_INFORME = False
@@ -94,6 +107,44 @@ CUSTOM_TIPUS_MIME_FOTOS = ['image/gif','image/jpeg','image/png']
 PRIVATE_STORAGE_ROOT ='/dades/fitxers_privats_djAu/'
 CUSTOM_CODI_COMERÇ = 'xxxxxx'
 CUSTOM_KEY_COMERÇ = 'xxxxxx'
+
+# Per canvis a Django 3.2
+DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
+
+# Per personalitzar el template del widget aula.apps.matricula.forms.CustomClearableFileInput
+FORM_RENDERER = 'django.forms.renderers.TemplatesSetting'
+
+# Límit de mida per upload
+FILE_UPLOAD_MAX_MEMORY_SIZE=20971520
+DATA_UPLOAD_MAX_MEMORY_SIZE=20971520
+
+CUSTOM_DADES_ADDICIONALS_ALUMNE = [
+    # {
+    #     'label':  'Drets imatge',
+    #     'esautoritzacio': True,
+    #     'visibilitat': ['Familia','Professor'],
+    # },
+    # {
+    #     'label':  'Autorització sortides',
+    #     'esautoritzacio': True,
+    #     'visibilitat': ['Familia','Professor'],
+    # },
+    # {
+    #     'label':  'Salut i Escola',
+    #     'esautoritzacio': True,
+    #     'visibilitat': ['Familia','Professor'],
+    # },
+    # {
+    #     'label':  'Responsable Preferent',
+    #     'esautoritzacio': False,
+    #     'visibilitat': ['Tutor'],
+    # },
+    # {
+    #     'label':  'Dades mèdiques',
+    #     'esautoritzacio': False,
+    #     'visibilitat': ['Familia','Professor'],
+    # },
+    ]
 
 
 try:
