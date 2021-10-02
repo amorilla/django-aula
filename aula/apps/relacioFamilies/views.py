@@ -237,7 +237,7 @@ def configuraConnexio( request , pk ):
                     {'form': form,
                      'image': imageUrl,
                      'infoForm': infoForm,
-                     'head': u'Gestió relació familia' ,
+                     'head': u'Gestió relació família' ,
                      'formSetDelimited':True},
                 )
 

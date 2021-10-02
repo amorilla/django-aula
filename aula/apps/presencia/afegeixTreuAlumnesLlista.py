@@ -6,6 +6,8 @@ from threading import Thread
 #Q
 from django.db.models import Q
 
+from django.db import IntegrityError
+
 #models
 from aula.apps.missatgeria.missatges_a_usuaris import FI_PROCES_AFEGIR_ALUMNES, tipusMissatge, \
     FI_PROCES_AFEGIR_ALUMNES_AMB_ERRORS, FI_PROCES_TREURE_ALUMNES, FI_PROCES_TREURE_ALUMNES_AMB_ERRORS
@@ -76,8 +78,12 @@ class afegeixThread(Thread):
                             if i.dia_passa_llista is not None:
                                 ca.estat = falta
                                 ca.professor = User2Professor( self.usuari )
-                            
-                            ca.save()
+                            try:
+                                ca.save()
+                            except IntegrityError as e:
+                                #errors.append( "afegeixThread - Integrity Error - ControlAssistencia" )
+                                # Threads simultanis, TODO solució millor
+                                pass
                             alumne_afegit = True
                 if i.pot_no_tenir_alumnes:
                     i.pot_no_tenir_alumnes = False
@@ -85,6 +91,8 @@ class afegeixThread(Thread):
                 self.flagPrimerDiaFet = ( i.dia_impartir >= self.impartir.dia_impartir )
 
 
+        except IntegrityError as e:
+            errors.append( "afegeixThread - Integrity Error" )
         except Exception as e:
             errors.append( traceback.format_exc() )
 
@@ -97,7 +105,7 @@ class afegeixThread(Thread):
 
         if len(errors)>0:
             missatge = FI_PROCES_AFEGIR_ALUMNES_AMB_ERRORS
-            msg.afegeix_error([missatge,])
+            msg.afegeix_error([missatge.format( self.impartir ),])
             msg.tipus_de_missatge = tipusMissatge(missatge)
             importancia = 'VI'
             msg.save()
