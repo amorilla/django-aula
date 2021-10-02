@@ -596,7 +596,9 @@ def creaHorari(mat, prof, grup, tipus, dia, hini, hfi, aula, KronowinToUntis, as
                 materia = Assignatura.objects.get(curs=horari.grup.curs, codi_assignatura=mat)#,
                                                 # tipus_assignatura__ambit_on_prendre_alumnes=tipus)
                 materia.nom_assignatura=mat
-                materia.tipus_assignatura=TipusDAssignatura.objects.filter(ambit_on_prendre_alumnes=tipus).first()
+                # Ja existeix, no canvia tipus. Si fa falta es fa manualment des d'admin
+                # TODO  S'hauria de inicialitzar tot al final de curs.
+                #materia.tipus_assignatura=TipusDAssignatura.objects.filter(ambit_on_prendre_alumnes=tipus).first()
                 materia.save()
             except ObjectDoesNotExist:
                 novamat=True
@@ -617,7 +619,9 @@ def creaHorari(mat, prof, grup, tipus, dia, hini, hfi, aula, KronowinToUntis, as
                 materia = Assignatura.objects.get(curs__isnull=True, codi_assignatura=mat)#,
                                                 #tipus_assignatura__ambit_on_prendre_alumnes=tipus)
                 materia.nom_assignatura=mat
-                materia.tipus_assignatura=TipusDAssignatura.objects.filter(ambit_on_prendre_alumnes=tipus).first()
+                # Ja existeix, no canvia tipus. Si fa falta es fa manualment des d'admin
+                # TODO  S'hauria de inicialitzar tot al final de curs.
+                #materia.tipus_assignatura=TipusDAssignatura.objects.filter(ambit_on_prendre_alumnes=tipus).first()
                 materia.save()
             except ObjectDoesNotExist:
                 novamat=True

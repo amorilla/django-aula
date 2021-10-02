@@ -47,6 +47,7 @@ def sincronitza(f, user = None):
         .update( estat_sincronitzacio = 'PRC')
 
     errors_nAlumnesSenseGrup=0
+    errors_nAlumnesFaltenCamps=0
     info_nAlumnesLlegits=0
     info_nAlumnesInsertats=0
     info_nAlumnesEsborrats=0
@@ -165,8 +166,13 @@ def sincronitza(f, user = None):
                 if col_indexs[index].endswith(u"Porta"):
                     a.adreca += " " +   unicode(cell.value) if cell.value else ""
 
+        if not bool(unGrup) or not bool(unGrup.grup_esfera) or unGrup.grup_esfera=='None':
+            errors_nAlumnesSenseGrup=errors_nAlumnesSenseGrup+1
+            continue
         if not (trobatGrupClasse and trobatNom and trobatDataNeixement and trobatRalc):
-            return { 'errors': [ u'Falten camps al fitxer' ], 'warnings': [], 'infos': [] }
+            errors_nAlumnesFaltenCamps=errors_nAlumnesFaltenCamps+1
+            continue
+            #return { 'errors': [ u'Falten camps al fitxer' ], 'warnings': [], 'infos': [] }
 
         alumneDadesAnteriors = None
         try:
@@ -335,7 +341,10 @@ def sincronitza(f, user = None):
     # Tornem a l'estat de sincronització en blanc, excepte els alumnes esborrats DEL i els alumnes entrats manualment MAN.
     Alumne.objects.exclude( estat_sincronitzacio__exact = 'DEL' ).exclude( estat_sincronitzacio__exact = 'MAN') \
         .update( estat_sincronitzacio = '')
-    errors.append( u'%d alumnes sense grup'%errors_nAlumnesSenseGrup )
+    if errors_nAlumnesSenseGrup>0:
+        errors.append( u'{0} alumnes no insertats, sense grup'.format(errors_nAlumnesSenseGrup) )
+    if errors_nAlumnesFaltenCamps>0:
+        errors.append( u'{0} alumnes no insertats, falten camps'.format(errors_nAlumnesFaltenCamps) )
     warnings= [  ]
     infos=    [   ]
     infos.append(u'{0} alumnes llegits'.format(info_nAlumnesLlegits) )
