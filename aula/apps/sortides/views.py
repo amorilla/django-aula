@@ -1190,7 +1190,11 @@ def pagoOnline(request, pk):
 
     potEntrar = (alumne.user_associat.getUser() == user or fEsDireccioOrGrupSortides)
     if not potEntrar:
-        raise Http404
+        return render(
+                    request,
+                    'resultat.html', 
+                    {'msgs': {'errors': [], 'warnings': [], 'infos': ['AQUEST USUARI NO TÉ AUTORITZACIÓ PER ACCEDIR AL PAGAMENT.']} },
+                 )
     
     if not pagament.pagament_realitzat:
         # Pagament pendent
