@@ -456,7 +456,7 @@ def dades_adiccionals (f, user=None):
         nom_llegit = ''
         alumne = None
         for index, cell in enumerate(row):
-            if bool(cell) and bool(cell.value):
+            if bool(cell) and bool(cell.value) and isinstance(cell.value, str):
                 cell.value = cell.value.strip()
             if index in col_indexs:
                 if col_indexs[index].endswith(u"Camps lliures - Nom"):
