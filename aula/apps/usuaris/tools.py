@@ -502,8 +502,8 @@ def controlDSN(dies=15):
 
 
 def enviaOneTimePasswd( email ):
-    q_correu_pare = Q( correu_relacio_familia_pare = email )
-    q_correu_mare = Q( correu_relacio_familia_mare = email )    
+    q_correu_pare = Q( correu_relacio_familia_pare__iexact = email )
+    q_correu_mare = Q( correu_relacio_familia_mare__iexact = email )    
     nUsuaris = 0
     nErrors = 0
     errors = []
@@ -515,7 +515,7 @@ def enviaOneTimePasswd( email ):
             nErrors += 1 
             errors.append( ', '.join( resultat['errors'] ) )
 
-    professors = Professor.objects.filter( email = email )
+    professors = Professor.objects.filter( email__iexact = email )
     for professor in professors:
         resultat = enviaOneTimePasswdProfessor(professor)
         nUsuaris += 1

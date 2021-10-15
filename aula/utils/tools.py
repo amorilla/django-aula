@@ -199,6 +199,7 @@ def initComplet():
     from aula.apps.horaris.models import Horari, Festiu
     from aula.apps.aules.models import ReservaAula
     from aula.apps.tutoria.models import Tutor, TutorIndividualitzat, CartaAbsentisme
+    from aula.apps.usuaris.models import LoginUsuari
 
     from django.db.models import Q
     
@@ -223,6 +224,8 @@ def initComplet():
 
         Tutor.objects.all().delete()
         TutorIndividualitzat.objects.all().delete()
+        
+        LoginUsuari.objects.filter(moment__lt=avui).delete()
 
     except Exception as e:
         return ["Error:"+str(e)]
