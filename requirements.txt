@@ -1,7 +1,8 @@
 wheel
 openpyxl
 # Development
-git+https://github.com/lino-framework/appypod.git#egg=appy
+git+https://github.com/lino-framework/appypod.git#egg=appy ; python_version < '3.9'
+appy ; python_version > '3.8'
 Django
 django-extensions
 lxml
