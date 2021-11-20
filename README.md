@@ -9,6 +9,22 @@ School Attendance Software
 
 **[Llicència i Crèdits](https://github.com/ctrl-alt-d/django-aula/blob/master/LICENSE)**
 
+Using Docker
+============
+
+```
+cp env.example .env
+make build
+make start
+
+# If you want to import demo data
+make load_demo_data
+
+# If you want to clean the DB
+make down
+make start
+```
+
 Quick demo
 =========
 
