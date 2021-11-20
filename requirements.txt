@@ -1,15 +1,13 @@
 wheel
 openpyxl
-# Development
-git+https://github.com/lino-framework/appypod.git#egg=appy ; python_version < '3.9'
-appy ; python_version > '3.8'
+git+https://github.com/lino-framework/appypod.git#egg=appy ; python_version < '3.6'
+appy ; python_version >= '3.6'
 Django
 django-extensions
+django-environ
 lxml
-django-appypod
 six
 django-debug-toolbar
-#python-lxml
 python-dateutil
 django-tables2
 icalendar
@@ -25,3 +23,5 @@ xmltodict
 django-private-storage
 dnspython
 django-formtools
+invoke
+psycopg2-binary

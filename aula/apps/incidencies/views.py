@@ -1447,7 +1447,7 @@ def cartaSancio( request, pk ):
     
     #from django.template import Context                              
     from appy.pod.renderer import Renderer
-    import cgi
+    import html
     import os
     from django import http
     import time
@@ -1480,7 +1480,7 @@ def cartaSancio( request, pk ):
         response['Content-Disposition'] = u'attachment; filename="{0}-{1}.odt"'.format( nom_fitxer, slugify( unicode(sancio.alumne ) ) )
                                                      
     else:
-        response = http.HttpResponse('''Als Gremlin no els ha agradat aquest fitxer! %s''' % cgi.escape(excepcio))
+        response = http.HttpResponse('''Als Gremlin no els ha agradat aquest fitxer! %s''' % html.escape(excepcio))
     
     return response
 
