@@ -991,7 +991,8 @@ def fullLlistes(professor):
                                                        distinct()
         for a in assignatures:
             assignatura=Assignatura.objects.get(id=a[0])
-            worksheet = workbook.add_worksheet(u'{0} - {1}'.format(str( assignatura ) , str( g ) ))
+            nompestanya=(u'{0} - {1}'.format(str( assignatura ) , str( g ) ))[:31]
+            worksheet = workbook.add_worksheet(nompestanya)
             cap=['Cognoms','Nom','email']
             worksheet.set_column(0, 0, 40)
             worksheet.set_column(1, 1, 20)
