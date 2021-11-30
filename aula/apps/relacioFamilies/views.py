@@ -1291,7 +1291,7 @@ def elMeuInforme( request, pk = None ):
                 #pagament corresponent a una sortida i un alumne
                 pagament_sortida_alumne = get_object_or_404(SortidaPagament, alumne=alumne, sortida=act)
                 # Pagaments pendents o ja fets. Si sortida caducada no mostra pagament pendent.
-                if act.termini_pagament >= datetime.now() or pagament_sortida_alumne.pagamentFet:
+                if (act.termini_pagament and act.termini_pagament >= datetime.now()) or not bool(act.termini_pagament) or pagament_sortida_alumne.pagamentFet:
                     camp = tools.classebuida()
                     camp.id = pagament_sortida_alumne.id
                     camp.nexturl = reverse_lazy('relacio_families__informe__el_meu_informe')
