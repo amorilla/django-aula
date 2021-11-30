@@ -174,3 +174,41 @@ def crea_alumne(nom, cognoms, dataNaixement, grup):
     a.tutors_volen_rebre_correu = False
     a.save()
 
+def controlsRang(alumne, datai, horai, dataf, horaf):
+    '''
+      Retorna els controlassistencia de l'alumne en els dates indicades.
+      Des de datai horai fins a dataf horaf
+    '''
+    return alumne.controlassistencia_set.filter(
+        impartir__dia_impartir__gte=datai,
+        impartir__horari__hora__hora_inici__gte=horai,
+        impartir__dia_impartir__lte=dataf,
+        impartir__horari__hora__hora_inici__lte=horaf
+        )
+    
+def ordHores(h):
+    '''
+    Es fa servir a get_hores per ordenar una llista del tipus:
+    [( id, "hh:mm-hh:mm"), ( id, "hh:mm-hh:mm"), ( id, "hh:mm-hh:mm"), ]
+    Retorna el segon element de h = ( id, "hh:mm-hh:mm")
+    '''
+    return h[1]
+
+def get_hores(alumne, dia):
+    from aula.apps.horaris.models import DiaDeLaSetmana
+    
+    if not bool(alumne): return []
+    qdata = Q(impartir__dia_impartir=dia)
+    controlOnEslAlumneData = alumne.controlassistencia_set.filter(qdata)
+    grup = alumne.grup
+    horesDelGrupData = { x for x in grup.horari_set.filter(qdata).filter(es_actiu=True) }
+    horesDeAlumneData = {c.impartir.horari for c in controlOnEslAlumneData}
+    # llistes Horari -->  obtenir hores
+    diaSetmana=DiaDeLaSetmana.objects.get(n_dia_ca=dia.weekday())
+    hores=[ h.hora for h in horesDelGrupData ]
+    hores=hores+[ h.hora for h in horesDeAlumneData ]
+    hores=list(set(hores))
+    hores=[ (str(hora.id), hora.hora_inici.strftime("%H:%M")+"-"+hora.hora_fi.strftime("%H:%M")) for hora in hores ]
+    hores.sort(key=ordHores)
+
+    return hores

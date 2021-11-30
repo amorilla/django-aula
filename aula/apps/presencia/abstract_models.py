@@ -186,6 +186,8 @@ class AbstractControlAssistencia(models.Model):
     relacio_familia_revisada = models.DateTimeField( null=True )    
     relacio_familia_notificada = models.DateTimeField( null=True ) 
     
+    comunicat = models.ForeignKey('missatgeria.Missatge', null=True, blank=True, db_index=True, on_delete=models.PROTECT)
+    
     class Meta:
         abstract = True
         verbose_name = u'Entrada al Control d\'Assistencia'

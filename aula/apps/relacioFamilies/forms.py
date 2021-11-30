@@ -8,6 +8,7 @@ from django.core.files.uploadedfile import InMemoryUploadedFile
 
 from aula.apps.alumnes.models import Alumne
 from aula.settings import CUSTOM_TIPUS_MIME_FOTOS
+from aula.utils.widgets import SelectAjax, DataHoresAlumneAjax
 
 def tipusFotoOK(foto):
     if foto and 'image/{0}'.format(imghdr.what(foto)) not in CUSTOM_TIPUS_MIME_FOTOS:
@@ -66,3 +67,69 @@ class AlumneModelForm(forms.ModelForm):
             self.instance.foto = convertirFoto(self.files['foto'], self.instance.ralc, self.instance.foto)
         except: pass
         super(AlumneModelForm, self).save()
+
+class ChoiceFieldNoValidation(forms.ChoiceField):
+    def validate(self, value):
+        pass
+
+class comunicatForm(forms.Form):
+    MOTIUS = [
+        ('M', 'Malaltia'),
+        ('F', 'Motius familiars'),
+        ('L', 'Motius laborals'),
+        ('T', 'Problemes transport'),
+        ('A', 'Altres'),
+        ]
+    
+    datainici = forms.DateField(label='des de data', required=True)
+    horainici = ChoiceFieldNoValidation(label='primera hora', required=False)
+    datafi = forms.DateField(label='fins data', required=False)
+    horafi = ChoiceFieldNoValidation(label='última hora', required=False)
+    motiu = forms.ChoiceField(label='motiu', required=False, choices=MOTIUS)
+    observ = forms.CharField(widget=forms.Textarea, required=False)
+    
+    def __init__(self, alumne, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if not alumne: return
+        self.fields['datainici'].widget = DataHoresAlumneAjax(id_selhores='horainici', almnid=alumne.id, id_dt_end='datafi')
+        self.fields['datafi'].widget = DataHoresAlumneAjax(id_selhores='horafi', almnid=alumne.id)
+
+    def clean(self):
+        from aula.apps.horaris.models import FranjaHoraria
+        cleaned_data = super().clean()
+        datai=cleaned_data.get('datainici')
+        dataf=cleaned_data.get('datafi')
+        horai=cleaned_data.get('horainici')
+        horaf=cleaned_data.get('horafi')
+        if not bool(dataf):
+            dataf=datai
+            if bool(horai):
+                horaf=horai
+        if dataf<datai:
+            self.add_error('datafi','data final no pot ser anterior a la inicial')
+            return cleaned_data
+        
+        if bool(horai) and horai!="0":
+            franjai=FranjaHoraria.objects.get(id=horai) 
+        else:
+            horai="0"
+            franjai=None
+        if bool(horaf) and horaf!="0":
+            franjaf=FranjaHoraria.objects.get(id=horaf) 
+        else:
+            horaf="0"
+            franjaf=None
+        if dataf==datai and horai!=horaf and franjai and franjaf and franjaf.hora_inici<franjai.hora_inici:
+            self.add_error('horafi','hora final no pot ser anterior a la inicial')
+            return cleaned_data
+        if dataf==datai and horai!=horaf and not franjai:
+            self.add_error('horafi','si dia complet no fa falta hora fi')
+            return cleaned_data
+        if dataf==datai and horai!=horaf and not franjaf:
+            self.add_error('horainici','si dia complet no fa falta hora inici')
+            return cleaned_data
+        cleaned_data['datafi'] = dataf
+        cleaned_data['horainici'] = horai
+        cleaned_data['horafi'] = horaf
+        return cleaned_data
+    

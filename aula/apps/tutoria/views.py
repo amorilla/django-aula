@@ -34,7 +34,7 @@ from datetime import timedelta
 from aula.apps.tutoria.models import Actuacio, Tutor, SeguimentTutorialPreguntes,\
     SeguimentTutorial, SeguimentTutorialRespostes, ResumAnualAlumne,\
     CartaAbsentisme
-from aula.apps.alumnes.models import Alumne, Grup, AlumneGrupNom
+from aula.apps.alumnes.models import Alumne, Grup, AlumneGrupNom, AlumneGrup
 from django.forms.models import modelform_factory, modelformset_factory
 from django import forms
 from django.db.models import Min, Max, Q
@@ -1029,7 +1029,7 @@ def justificaFaltesPre(request):
 
     q_grups_tutorats = Q( grup__in =  [ t.grup for t in professor.tutor_set.all() ] )
     q_alumnes_tutorats = Q( pk__in = [ti.alumne.pk for ti in professor.tutorindividualitzat_set.all() ]  )
-    query = Alumne.objects.filter( q_grups_tutorats | q_alumnes_tutorats )
+    query = AlumneGrup.objects.filter( q_grups_tutorats | q_alumnes_tutorats )
     
     if request.method == "POST":
 

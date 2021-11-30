@@ -440,6 +440,7 @@ def passaLlista(request, pk):
          "feelLuckyEnabled": True,
          "permetCopiarDUnaAltreHoraEnabled": settings.CUSTOM_PERMET_COPIAR_DES_DUNA_ALTRE_HORA,
          "els_meus_tutorats": els_meus_tutorats,
+         "oneline": True,
          },
         )
 
