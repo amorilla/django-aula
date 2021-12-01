@@ -912,7 +912,7 @@ def justificaNext(request, pk):
     resposta = {
         'ok' :  ok,
         'codi': control.estat.codi_estat if control.estat else ' ',
-        'missatge': u'{0}:{1}  Prof.: {2}'.format( control.estat, control.impartir.horari.assignatura,  control.professor ),
+        'missatge': control.descripcio,
         'errors':  errors,
         'swaped' : (control.swaped)
     }
@@ -971,7 +971,7 @@ def faltaNext(request, pk):
     resposta = {
         'ok' :  ok,
         'codi': control.estat.codi_estat if control.estat else ' ',
-        'missatge': u'{0}:{1}  Prof.: {2}'.format( control.estat, control.impartir.horari.assignatura,  control.professor ),
+        'missatge': control.descripcio,
         'errors':  errors,
         'swaped' : (control.swaped)
     }
