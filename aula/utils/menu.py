@@ -289,10 +289,10 @@ def calcula_menu( user , path, sessioImpersonada ):
                       ("Paràmetres", 'relacio_families__configuracio__canvi_parametres', al if settings.CUSTOM_FAMILIA_POT_MODIFICAR_PARAMETRES else None, None, None ),
                       ("Matrícula", 'matricula:relacio_families__matricula__dades', 
                        al if settings.CUSTOM_MODUL_MATRICULA_ACTIU else None, None, None ),
-                      ("Comunicats", 'relacio_families__comunicats__blanc', al, None,
+                      ("Comunicats", 'relacio_families__comunicats__blanc', al if settings.CUSTOM_FAMILIA_POT_COMUNICATS else None, None,
                           (
-                            ("Nou comunicat d'absència", 'relacio_families__comunicats__absencia', al, None ),
-                            ("Anteriors", 'relacio_families__comunicats__anteriors', al, None ),
+                            ("Nou comunicat d'absència", 'relacio_families__comunicats__absencia', al if settings.CUSTOM_FAMILIA_POT_COMUNICATS else None, None ),
+                            ("Anteriors", 'relacio_families__comunicats__anteriors', al if settings.CUSTOM_FAMILIA_POT_COMUNICATS else None, None ),
                           ),                        
                       ),                       
                   )
