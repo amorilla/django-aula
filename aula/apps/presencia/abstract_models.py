@@ -208,6 +208,13 @@ class AbstractControlAssistencia(models.Model):
                      .exists()
                     )
 
+    @property
+    def descripcio(self):
+        text=u'{0}:{1}  Prof.: {2}'.format( self.estat or "", self.impartir.horari.assignatura if self.impartir.horari else "" ,
+                                            self.professor or ( self.impartir.horari.professor if self.impartir.horari else "" ) )
+        if self.comunicat:
+            text=text+". "+self.comunicat.text_missatge
+        return text
 
 
 class AbstractNoHaDeSerALAula(models.Model):
