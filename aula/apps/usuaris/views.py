@@ -106,7 +106,8 @@ def canviDadesUsuari(request):
     head = u'''Dades d'usuari'''
     infoForm = [(u'Codi Usuari', user.username), ]
 
-    formset = [formUsuari, formDadesAddicionals]
+    if formDadesAddicionals: formset = [formUsuari, formDadesAddicionals]
+    else: formset = [formUsuari]
 
     resposta = render(
         request,
