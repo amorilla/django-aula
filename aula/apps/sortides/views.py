@@ -2126,11 +2126,12 @@ def fullcalculQuotes(tpv, nany=None):
         worksheet.write_string(fila, 4, 'SI' if p.fracciona else 'NO' )
         fila=fila+1
     for p in pags:
-        worksheet.write_string(fila, 0, 'activitat: '+p.sortida.titol_de_la_sortida )
-        worksheet.write_string(fila, 1, str(p.alumne) )
-        if p.sortida.preu_per_alumne: worksheet.write_number(fila, 2, p.sortida.preu_per_alumne )
-        worksheet.write_datetime(fila, 3, p.sortida.termini_pagament, date_format )
-        fila=fila+1
+        if bool(p.sortida.preu_per_alumne) and p.sortida.preu_per_alumne>0:
+            worksheet.write_string(fila, 0, 'activitat: '+p.sortida.titol_de_la_sortida )
+            worksheet.write_string(fila, 1, str(p.alumne) )
+            worksheet.write_number(fila, 2, p.sortida.preu_per_alumne )
+            if p.sortida.termini_pagament: worksheet.write_datetime(fila, 3, p.sortida.termini_pagament, date_format )
+            fila=fila+1
     
     if fila>2:
         worksheet.write_formula(fila, 2, '=SUM(C3:C{0})'.format(fila), num_format)
