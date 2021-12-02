@@ -10,6 +10,7 @@ from aula.apps.usuaris.models import Professor
 from django.utils.datetime_safe import datetime
 from aula.apps.alumnes.models import Nivell, Grup
 from aula.utils.widgets import bootStrapButtonSelect
+from django.conf import settings
 
 class ControlAssistenciaForm(ModelForm):
     from aula.utils.widgets import image
@@ -26,7 +27,10 @@ class ControlAssistenciaForm(ModelForm):
     
     class Meta:
         model = ControlAssistencia
-        fields = ('foto', 'estat', 'comunicat', )
+        if settings.CUSTOM_FAMILIA_POT_COMUNICATS:
+            fields = ('foto', 'estat', 'comunicat', )
+        else:
+            fields = ('foto', 'estat', )
 
     def __init__(self, *args, **kwargs):
         from aula.utils.widgets import modalButton
@@ -34,7 +38,7 @@ class ControlAssistenciaForm(ModelForm):
         super(ControlAssistenciaForm, self).__init__(*args, **kwargs)
         self.fields['estat'].queryset = EstatControlAssistencia.objects.all()
         #self.fields['estat'].widget = bootStrapButtonSelect( attrs={'class':'presenciaEstat'}, ),
-        if self.instance.comunicat:
+        if settings.CUSTOM_FAMILIA_POT_COMUNICATS and self.instance.comunicat:
             self.fields['comunicat'].initial = self.instance.comunicat
             self.fields['comunicat'].widget = modalButton(bname='Comunicat', info=self.instance.comunicat.text_missatge)
         else:
