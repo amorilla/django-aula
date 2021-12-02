@@ -23,12 +23,12 @@ class ControlAssistenciaForm(ModelForm):
                         empty_label=None,
                         widget = bootStrapButtonSelect( attrs={'class':'presenciaEstat'}, ),
                     )
-    comunicat=forms.CharField( label='', required=False )
+    boto=forms.CharField( label='', required=False )
     
     class Meta:
         model = ControlAssistencia
         if settings.CUSTOM_FAMILIA_POT_COMUNICATS:
-            fields = ('foto', 'estat', 'comunicat', )
+            fields = ('foto', 'estat', 'boto', )
         else:
             fields = ('foto', 'estat', )
 
@@ -39,10 +39,9 @@ class ControlAssistenciaForm(ModelForm):
         self.fields['estat'].queryset = EstatControlAssistencia.objects.all()
         #self.fields['estat'].widget = bootStrapButtonSelect( attrs={'class':'presenciaEstat'}, ),
         if settings.CUSTOM_FAMILIA_POT_COMUNICATS and self.instance.comunicat:
-            self.fields['comunicat'].initial = self.instance.comunicat
-            self.fields['comunicat'].widget = modalButton(bname='Comunicat', info=self.instance.comunicat.text_missatge)
+            self.fields['boto'].widget = modalButton(bname='Comunicat', info=self.instance.comunicat.text_missatge)
         else:
-            self.fields['comunicat'].widget = forms.HiddenInput()
+            self.fields['boto'].widget = forms.HiddenInput()
         self.fields['foto'].initial=self.instance.alumne.foto
 
 
