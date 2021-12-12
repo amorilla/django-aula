@@ -1283,6 +1283,7 @@ def anularImpartir(request, pk):
         for control in controls.exclude(q_already_anulats).filter(q_sense_passar_llista|q_falta).all():
             control.nohadeseralaula_set.create(motiu=NoHaDeSerALAula.ANULLADA)
             control.estat_backup = control.estat
+            control.professor_backup = control.professor
             control.swaped = True
             control.estat = None
             try:
@@ -1330,6 +1331,7 @@ def desanularImpartir(request, pk):
             control.nohadeseralaula_set.filter(motiu=NoHaDeSerALAula.ANULLADA).delete()
             if control.swaped:
                 control.estat = control.estat_backup
+                control.professor = control.professor_backup
                 control.swaped = False
             try:
                 control.save()

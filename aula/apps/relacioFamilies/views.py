@@ -25,7 +25,7 @@ from aula.settings import CUSTOM_DADES_ADDICIONALS_ALUMNE, CUSTOM_FAMILIA_POT_MO
 from aula.utils import tools
 from aula.utils.tools import unicode
 from aula.apps.alumnes.models import Alumne, DadesAddicionalsAlumne
-from aula.apps.alumnes.tools import get_hores
+from aula.apps.alumnes.tools import get_hores, properdiaclasse, ultimdiaclasse
 
 #qualitativa
 
@@ -448,9 +448,9 @@ def canviParametres( request ):
 
 #--------------------------------------------------------------------------------------------------------
 
-def choices_hores(alumne, dia):
+def choices_hores(alumne, dia, actual=True):
     if not bool(alumne): hores=[]
-    else: hores=get_hores(alumne, dia)
+    else: hores=get_hores(alumne, dia, actual)
     hores=[("0","- dia complet -")]+hores
 
     return hores
@@ -470,20 +470,36 @@ def horesAlumneAjax( request, idalumne, dia ):
 def comunicatAbsencia( request ):
     from aula.apps.missatgeria.views import enviaMsg
     from aula.apps.horaris.models import FranjaHoraria
+    import datetime
     
     credentials = tools.getImpersonateUser(request) 
     (user, l4 ) = credentials
+    
+    diesantelacio = 6
 
     alumne = Alumne.objects.filter( user_associat = user )
     
     if alumne:
         alumne=alumne[0]
     else:
-        messages.info( request, u"No és possible fer avisos." )
+        messages.info( request, u"No és possible fer comunicats." )
         return HttpResponseRedirect('/')
     
+    ara=datetime.datetime.now()
+    primerdia=properdiaclasse(alumne, ara)
+    if not primerdia:
+        messages.info( request, u"No és possible fer comunicats." )
+        return HttpResponseRedirect('/')
+
+    if primerdia > (ara+datetime.timedelta(days=diesantelacio)).date():
+        messages.info( request, 
+                u"Només es poden fer comunicats amb antelació màxima d'una setmana. La propera classe serà el dia {0}."\
+                .format(primerdia.strftime( '%d/%m' )))
+        return HttpResponseRedirect('/')
+    
+    ultimdia=ultimdiaclasse(alumne,primerdia+datetime.timedelta(days=diesantelacio))
     if request.method == 'POST':
-        form = comunicatForm(alumne, request.POST)
+        form = comunicatForm(alumne, primerdia, ultimdia, request.POST)
         if form.is_valid():
             datai=form.cleaned_data['datainici']
             horai=form.cleaned_data['horainici']
@@ -491,7 +507,7 @@ def comunicatAbsencia( request ):
             horaf=form.cleaned_data['horafi']
             motiu = form.cleaned_data['motiu']
             motiu = dict(form.fields['motiu'].choices)[motiu]
-            observ=form.cleaned_data['observ']
+            observ=form.cleaned_data['observacions']
             if int(horai)==0:
                 hores=get_hores(alumne, datai)
                 horai=hores[0][0] if hores and hores[0] else FranjaHoraria.objects.first().id
@@ -507,13 +523,15 @@ def comunicatAbsencia( request ):
         else:
             datai=form.cleaned_data.get('datainici',None)
             if datai:
+                form.initial['datainici']=datai.strftime('%d/%m/%Y')
                 form.fields['horainici'].choices=choices_hores(alumne, datai)
             dataf=form.cleaned_data.get('datafi',None)
             if dataf:
+                form.initial['datafi']=dataf.strftime('%d/%m/%Y')
                 form.fields['horafi'].choices=choices_hores(alumne, dataf)
 
     else:
-        form = comunicatForm(alumne)
+        form = comunicatForm(alumne, primerdia, ultimdia)
 
     return render(
                 request,

@@ -218,68 +218,66 @@ class DateTextImput(DateInput):
 
 
 class DataHoresAlumneAjax(DateInput):
+    '''
+    Widget que fa servir 2 datetimepicker, serveix per escollir dues dates amb hora inicial i final
+    segons horari de l'alumne.
+    id_selhores  select per escollir hora de la data seleccionada
+    almnid       id de l'alumne usuari actual
+    id_dt_end    id del segon datetimepicker per a la data final. Ha de ser None si el widget és el de
+                 la data final.
+    
+    '''
 
-    def __init__(self, attrs=None, format=None, id_selhores='', almnid=0, id_selalumne='', id_dt_end=None):
+    def __init__(self, attrs=None, format=None, id_selhores='', almnid=0, id_dt_end='', pd=None, ud=None):
         self.id_selhores = id_selhores
         self.almnid = str(almnid)
-        self.id_selalumne = id_selalumne
-        self.id_dt_end = id_dt_end if bool(id_dt_end) else ""
+        self.id_dt_end = id_dt_end
+        self.pd=str(pd)
+        self.ud=str(ud)
         super().__init__(attrs, format)
 
     def render(self, name, value, attrs=None, renderer=None):
         pre_html = """
-                    <div class='input-group date' id='datetime_{0}' style="width:300px;" >""".format(attrs['id'])
+                    <div class='input-group date' id='datetime_""" + attrs['id'] + """' style="width:300px;">"""
         post_html = """ <span class="input-group-addon">
                             <span class="glyphicon glyphicon-calendar"></span>
                         </span>
                     </div>
                     """
         dt_end = """
-                       $('#datetime_id_""" + self.id_dt_end + """').data("DateTimePicker").minDate(e.date);
-                       var dmax = new Date(e.date);
-                       dmax.setDate(dmax.getDate() + 7);
-                       $('#datetime_id_""" + self.id_dt_end + """').data("DateTimePicker").maxDate(dmax);
-                       $('#datetime_id_""" + self.id_dt_end + """').data("DateTimePicker").defaultDate(e.date);
-                       //$('#datetime_id_""" + self.id_dt_end + """').data("DateTimePicker").show();
-                """ if bool(self.id_dt_end) else ""
+                        $('#datetime_id_""" + self.id_dt_end + """').data("DateTimePicker").minDate(valor);
+                        $('#datetime_id_""" + self.id_dt_end + """').data("DateTimePicker").defaultDate(valor);
+                 """ if bool(self.id_dt_end) else ""
         javascript = """
             <script type="text/javascript">
-                var nowTemp = new Date();
-                var now = new Date(nowTemp.getFullYear(), nowTemp.getMonth(), nowTemp.getDate(), 0, 0, 0, 0);
-                var limit = new Date(nowTemp.getFullYear(), nowTemp.getMonth(), nowTemp.getDate()+7, 0, 0, 0, 0);
                 $(function () {
                     $('#datetime_""" + attrs['id'] + """').datetimepicker({
-                         useCurrent: """ + ("false" if bool(self.id_dt_end) else "false") + """,
+                         useCurrent: false,
                          locale: 'ca',
                          daysOfWeekDisabled: [0, 6],
-                         minDate: now,
-                         maxDate: limit,
+                         minDate: new Date('""" + self.pd + """'),
+                         maxDate: new Date('""" + self.ud + """'),
                          format: 'DD/MM/YYYY'
                     });
                     $('#datetime_""" + attrs['id'] + """').on("dp.change",function(e){
                         if (!e.date) return;
                         var alumne=\""""+self.almnid+"""\";
-                        if (alumne=="0") {
-                           alumne = $("#id_"""+self.id_selalumne+"""").val()
-                           if (alumne=="") return;
-                        }
                         var valor = new Date(e.date);
-                        var dia = valor.getFullYear()+"-"+valor.getMonth()+"-"+valor.getDate();
+                        var dia = valor.getFullYear()+"-"+(valor.getMonth()+1)+"-"+valor.getDate();
+                        """ + dt_end + """
+                        $('#datetime_""" + attrs['id'] + """').data("DateTimePicker").hide();
                         $.ajax({type: "GET",
                               url:"/open/horesAlumneAjax/"+alumne+"/"+dia,
                               success:function( res, status) {
                                     if (status == "success") {
                                         $("select#id_""" + self.id_selhores + """").html( res );
                                      }
-
                                 },
                               error:function (xhr, ajaxOptions, thrownError){
                                         alert(xhr.status);
                                         alert(thrownError);
                                 } 
                               });
-                        """ + dt_end + """
-                        $('#datetime_""" + attrs['id'] + """').data("DateTimePicker").hide();
                     });
                 });
             </script>"""
@@ -302,7 +300,6 @@ class image(TextInput):
                            <img src="""+"\""+value.url+"\""+""" style="width:60px;">
                        </span>
                     """ if bool(value) else ""
-        super_html = super().render(name, value=value, attrs=attrs, renderer=renderer)
         
         return mark_safe(pre_html + post_html)
     
@@ -338,7 +335,6 @@ class modalButton(TextInput):
             </div>
                     """.format(idfield=attrs['id'], bname=self.bname, title=self.title, info=self.info)
 
-        super_html = super().render(name, value=value, attrs=attrs, renderer=renderer)
-        
+      
         return mark_safe(html)
     

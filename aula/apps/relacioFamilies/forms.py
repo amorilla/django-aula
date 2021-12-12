@@ -75,6 +75,7 @@ class ChoiceFieldNoValidation(forms.ChoiceField):
 class comunicatForm(forms.Form):
     MOTIUS = [
         ('M', 'Malaltia'),
+        ('V', 'Visita mèdica'),
         ('F', 'Motius familiars'),
         ('L', 'Motius laborals'),
         ('T', 'Problemes transport'),
@@ -86,13 +87,22 @@ class comunicatForm(forms.Form):
     datafi = forms.DateField(label='fins data', required=False)
     horafi = ChoiceFieldNoValidation(label='última hora', required=False)
     motiu = forms.ChoiceField(label='motiu', required=False, choices=MOTIUS)
-    observ = forms.CharField(widget=forms.Textarea, required=False)
+    observacions = forms.CharField(label='observacions', widget=forms.Textarea, required=False,
+                                   help_text='obligatori si motiu "Altres".')
     
-    def __init__(self, alumne, *args, **kwargs):
+    def __init__(self, alumne, primerdia, ultimdia, *args, **kwargs):
+        import datetime
+
         super().__init__(*args, **kwargs)
         if not alumne: return
-        self.fields['datainici'].widget = DataHoresAlumneAjax(id_selhores='horainici', almnid=alumne.id, id_dt_end='datafi')
-        self.fields['datafi'].widget = DataHoresAlumneAjax(id_selhores='horafi', almnid=alumne.id)
+        pdia=primerdia
+        udia=ultimdia
+        if self.is_bound and self.data:
+            datai=self.data['datainici']
+            #Modifica límits per al segon widget
+            pdia=datetime.datetime.strptime(datai, '%d/%m/%Y').date()
+        self.fields['datainici'].widget = DataHoresAlumneAjax(id_selhores='horainici', almnid=alumne.id, id_dt_end='datafi', pd=primerdia, ud=ultimdia)
+        self.fields['datafi'].widget = DataHoresAlumneAjax(id_selhores='horafi', almnid=alumne.id, pd=pdia, ud=udia)
 
     def clean(self):
         from aula.apps.horaris.models import FranjaHoraria
@@ -101,10 +111,14 @@ class comunicatForm(forms.Form):
         dataf=cleaned_data.get('datafi')
         horai=cleaned_data.get('horainici')
         horaf=cleaned_data.get('horafi')
+        motiu=cleaned_data.get('motiu')
+        observ=cleaned_data.get('observacions')
         if not bool(dataf):
             dataf=datai
+            cleaned_data['datafi'] = dataf
             if bool(horai):
                 horaf=horai
+                cleaned_data['horafi'] = horaf
         if dataf<datai:
             self.add_error('datafi','data final no pot ser anterior a la inicial')
             return cleaned_data
@@ -113,21 +127,26 @@ class comunicatForm(forms.Form):
             franjai=FranjaHoraria.objects.get(id=horai) 
         else:
             horai="0"
+            cleaned_data['horainici'] = horai
             franjai=None
         if bool(horaf) and horaf!="0":
             franjaf=FranjaHoraria.objects.get(id=horaf) 
         else:
             horaf="0"
+            cleaned_data['horafi'] = horaf
             franjaf=None
         if dataf==datai and horai!=horaf and franjai and franjaf and franjaf.hora_inici<franjai.hora_inici:
             self.add_error('horafi','hora final no pot ser anterior a la inicial')
             return cleaned_data
         if dataf==datai and horai!=horaf and not franjai:
-            self.add_error('horafi','si dia complet no fa falta hora fi')
+            self.add_error('horafi','Si dia complet no fa falta hora fi')
             return cleaned_data
         if dataf==datai and horai!=horaf and not franjaf:
-            self.add_error('horainici','si dia complet no fa falta hora inici')
+            self.add_error('horainici','Si dia complet no fa falta hora inici')
             return cleaned_data
+        if motiu=="A" and not observ:
+            self.add_error('observacions', 'Si "Altres", s\'ha d\'explicar a observacions' )
+        cleaned_data['datainici'] = datai
         cleaned_data['datafi'] = dataf
         cleaned_data['horainici'] = horai
         cleaned_data['horafi'] = horaf

@@ -77,6 +77,7 @@ def enviaMsg(user, credentials, alumne, datai, horai, dataf, horaf, motiu, obser
     from aula.apps.alumnes.tools import controlsRang
     
     msg = Missatge( remitent = user )
+    msg.credentials = credentials
     msg.text_missatge = AVIS_ABSENCIA
     msg.enllac = '/tutoria/justificaFaltes/{0}/{1}/{2}/{3}'.format(alumne.pk, datai.year, datai.month, datai.day)
     msg.tipus_de_missatge = tipusMissatge(msg.text_missatge)
@@ -91,7 +92,6 @@ def enviaMsg(user, credentials, alumne, datai, horai, dataf, horaf, motiu, obser
     ctrlqs=controlsRang(alumne, datai, horai, dataf, horaf)
     # enllaça Missatge amb ControlAssistència
     for c in ctrlqs:
-        print (c)
         c.comunicat=msg
         c.save()
         
