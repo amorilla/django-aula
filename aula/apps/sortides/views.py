@@ -1955,6 +1955,7 @@ def acumulatsQuotesGen(tpv, nany=None):
     
     for p in list(totfet):
         n, x, m, t1, t2 = p
+        if not bool(n): n='Esborrats'
         n=str(n)+'-'+str(x)
         tot=(t1 if t1 else 0) + (t2 if t2 else 0)
         if not n in calcul:
@@ -1996,7 +1997,7 @@ def acumulatsActivitats(tpv, nany=None):
                                         notificasortida__alumne__isnull=False).distinct()
     
     totfet=SortidaPagament.objects.filter(pagament_realitzat=True, sortida__in=llistaSortides,
-                                        alumne__isnull=False,
+                                        #alumne__isnull=False,
                                         data_hora_pagament__year=nany)\
                     .values_list('sortida__id','sortida__titol_de_la_sortida','data_hora_pagament__month')\
                     .annotate(total=Sum('sortida__preu_per_alumne'))
@@ -2064,7 +2065,7 @@ def fullcalculQuotes(tpv, nany=None):
         if q[0] in acumulats:
             a = acumulats[q[0]]
             quota=Quota.objects.get(id=q[0])
-            worksheet.write(fila, 0, quota.descripcio)
+            worksheet.write(fila, 0, quota.descripcio+"("+quota.curs.nom_curs_complert+")")
             for m, v in a.items():
                 if m=='pendent':
                     col=1
