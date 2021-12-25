@@ -6,7 +6,7 @@ from django.forms import ModelForm
 
 from aula.apps.alumnes.models import Nivell, Curs, Grup, Alumne,  AlumneGrup, AlumneNomSentitGrup
 from aula.apps.usuaris.models import Professor
-from aula.django_select2.forms import ModelSelect2Widget
+from django_select2.forms import ModelSelect2Widget
 from django.forms.models import ModelChoiceField
 
 

@@ -39,8 +39,7 @@ $.fn.bootstrapDP = null;
   container { background-color: white; }
   .select2-container {width: 100% !important;}
 </style>
-<link href="{{STATIC_URL}}static-select2/css/select2.min_new.css" type="text/css" media="screen" rel="stylesheet" />	
-	
+{{ form.media.css }}
 </head>
 
 <body {%if l4%}style="background-color:#FF0000;"{%endif%}>
@@ -72,12 +71,9 @@ $.fn.bootstrapDP = null;
   
   </div> <!--container-->
 
-<script type="text/javascript" src="{{STATIC_URL}}static-select2/js/select2.min.js"></script>
-<script type="text/javascript" src="{{STATIC_URL}}static-select2/js/heavy_data.min.js"></script>
 <script src="{{STATIC_URL}}bootstrap/js/bootstrap.min.js"></script>
 <script src="{{STATIC_URL}}eonasdan-dt-picker/js/bootstrap-datetimepicker.min.js"></script>
 <script src="{{STATIC_URL}}eonasdan-dt-picker/js/catala.js"></script>
-<script type="text/javascript" src="{{STATIC_URL}}static-select2/js/select2.min_new.js"></script>	
 <script type="text/javascript">
   $('button[data-toggle=popover]').popover();
 </script>
@@ -105,7 +101,7 @@ $.fn.bootstrapDP = null;
 		</div>
 		</div>
 
-
+{{ form.media.js }}
 </body>
 </html>
 

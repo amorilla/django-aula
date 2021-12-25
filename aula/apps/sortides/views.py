@@ -21,7 +21,7 @@ from aula.utils.decorators import group_required
 #helpers
 from aula.utils import tools
 from aula.utils.tools import unicode
-from aula.apps.usuaris.models import User2Professor, AlumneUser
+from aula.apps.usuaris.models import User2Professor, AlumneUser, Professor
 from aula.apps.presencia.models import Impartir
 from aula.apps.horaris.models import FranjaHoraria
 from django.shortcuts import render, get_object_or_404
@@ -61,6 +61,8 @@ from aula.apps.sortides.utils_sortides import TPVsettings
 import django.utils.timezone
 from dateutil.relativedelta import relativedelta
 from django.urls import reverse_lazy
+from django_select2.forms import ModelSelect2MultipleWidget
+
 
 
 @login_required
@@ -363,7 +365,20 @@ def sortidaEdit(request, pk=None, clonar=False, origen=False):
     else:
         exclude = ('alumnes_convocats', 'alumnes_que_no_vindran', 'alumnes_justificacio', 'pagaments', 'tpv')
 
-    formIncidenciaF = modelform_factory(Sortida, form=SortidaForm, exclude=exclude)
+    formIncidenciaF = modelform_factory(Sortida, form=SortidaForm, exclude=exclude,
+                                        widgets = {
+                                            'professors_responsables': ModelSelect2MultipleWidget(
+                                                queryset=Professor.objects.all(),
+                                                search_fields=('last_name__icontains', 'first_name__icontains',),
+                                                attrs={'style': "'width': '100%'"}
+                                                ),
+                                            'altres_professors_acompanyants': ModelSelect2MultipleWidget(
+                                                queryset=Professor.objects.all(),
+                                                search_fields=('last_name__icontains', 'first_name__icontains',),
+                                                attrs={'style': "'width': '100%'"}
+                                                )
+                                            }
+                                        )
 
     if request.method == "POST":
         post_mutable = request.POST.copy()
@@ -837,8 +852,15 @@ def professorsAcompanyants( request, pk , origen ):
     
     instance.credentials = credentials    
    
-    formIncidenciaF = modelform_factory(Sortida, fields=( 'altres_professors_acompanyants',  ) )
-
+    formIncidenciaF = modelform_factory(Sortida, fields=( 'altres_professors_acompanyants',  ) ,
+                                        widgets = {
+                                            'altres_professors_acompanyants': ModelSelect2MultipleWidget(
+                                                queryset=Professor.objects.all(),
+                                                search_fields=('last_name__icontains', 'first_name__icontains',),
+                                                attrs={'style': "'width': '100%'"}
+                                                )
+                                            }
+                                      )
     if request.method == "POST":
         form = formIncidenciaF(request.POST, instance = instance)
         
