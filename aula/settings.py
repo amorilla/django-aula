@@ -41,13 +41,13 @@ CACHES = {
         'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
     },
     'select2': {
-        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'BACKEND': 'django.core.cache.backends.redis.RedisCache',
         'TIMEOUT': max( CUSTOM_TIMEOUT, *[ CUSTOM_TIMEOUT_GROUP[x] for x in CUSTOM_TIMEOUT_GROUP] ),
-        'OPTIONS': {
-            'MAX_ENTRIES': 200
-        }
-    }
+        'LOCATION': 'redis://127.0.0.1:6379',
+    }    
 }
+
+SELECT2_CACHE_BACKEND = "select2"
 
 CUSTOM_SORTIDES_INSTRUCCIONS_PAGAMENT = u"""Podeu fer el pagament amb targeta de crèdit a qualsevol caixer de CaixaBank, amb el codi de barres o amb el codi entitat: XXXXXXXXXX"""
 CUSTOM_SORTIDES_PAGAMENT_ONLINE = False

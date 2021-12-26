@@ -1,7 +1,7 @@
 import datetime
 from django import forms
 from django.conf import settings
-from aula.django_select2.forms import ModelSelect2Widget
+from django_select2.forms import ModelSelect2Widget
 from django.forms.models import ModelChoiceField
 from aula.apps.alumnes.models import Curs
 from aula.apps.sortides.models import Sortida, Quota, QuotaPagament, TipusQuota, TPV

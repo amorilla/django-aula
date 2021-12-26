@@ -34,7 +34,7 @@ $.fn.bootstrapDP = null;
   container { background-color: white; }
   .select2-container {width: 100% !important;}
 </style>
-<link href="{{STATIC_URL}}static-select2/css/select2.min_new.css" type="text/css" media="screen" rel="stylesheet" />
+{{ form.media.css }}
 </head>
 
 <body {%if l4%}style="background-color:#FF0000;"{%endif%}>
@@ -64,7 +64,6 @@ $.fn.bootstrapDP = null;
 
   </div> <!--container-->
 
-<script type="text/javascript" src="{{STATIC_URL}}static-select2/js/select2.min.js"></script>
 <script src="{{STATIC_URL}}bootstrap/js/bootstrap.min.js"></script>
 <!--
 Es fan servir còpies d'aquests arxius:
@@ -75,8 +74,6 @@ Versió modificada de https://github.com/Eonasdan/tempus-dominus/blob/v4/src/js/
 <link href="{{STATIC_URL}}datetimepicker/css/bootstrap-datetimepicker.css" rel="stylesheet">
 <script type="text/javascript" src="{{STATIC_URL}}datetimepicker/js/moment-with-locales.min.js"></script>
 <script type="text/javascript" src="{{STATIC_URL}}datetimepicker/js/bootstrap-datetimepicker.js"></script>
-
-<script type="text/javascript" src="{{STATIC_URL}}static-select2/js/select2.min_new.js"></script>
 <script type="text/javascript">
   $('button[data-toggle=popover]').popover();
 </script>
@@ -96,6 +93,8 @@ Versió modificada de https://github.com/Eonasdan/tempus-dominus/blob/v4/src/js/
 {% endif %}
 
 {% block afterscripts %} {% endblock %}
+
+{{ form.media.js }}
 
 </body>
 </html>
