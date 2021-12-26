@@ -34,6 +34,7 @@ On Ubuntu Server 18.04 LTS 64 bits:
 sudo apt-get update
 sudo apt-get install python3 python3-venv python-dev git
 sudo apt-get install python3-lxml python3-libxml2 libxml2-dev libxslt-dev lib32z1-dev
+sudo apt-get install redis-server
 mkdir djau
 cd djau
 git clone --single-branch --branch master https://github.com/ctrl-alt-d/django-aula.git django-aula
