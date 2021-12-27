@@ -27,4 +27,4 @@ invoke
 psycopg2-binary
 django_select2
 redis
-
+ipdb
