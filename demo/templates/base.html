@@ -38,7 +38,12 @@ $.fn.bootstrapDP = null;
   container { background-color: white; }
   .select2-container {width: 100% !important;}
 </style>
-{{ form.media.css }}
+<!--
+Es fa servir còpia de:
+https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.12/css/select2.min.css
+-->
+<link href="/site-css/select2/select2.min.css" type="text/css" media="screen" rel="stylesheet">
+<link href="/site-css/django_select2/django_select2.css" type="text/css" media="screen" rel="stylesheet">
 </head>
 
 <body {%if l4%}style="background-color:#FF0000;"{%endif%}>
@@ -80,7 +85,6 @@ Versió modificada de https://github.com/Eonasdan/tempus-dominus/blob/v4/src/js/
 <link href="{{STATIC_URL}}datetimepicker/css/bootstrap-datetimepicker.css" rel="stylesheet">
 <script type="text/javascript" src="{{STATIC_URL}}datetimepicker/js/moment-with-locales.min.js"></script>
 <script type="text/javascript" src="{{STATIC_URL}}datetimepicker/js/bootstrap-datetimepicker.js"></script>
-
 <script type="text/javascript">
   $('button[data-toggle=popover]').popover();
 </script>
@@ -107,7 +111,14 @@ Versió modificada de https://github.com/Eonasdan/tempus-dominus/blob/v4/src/js/
 		</div>
 		</div>
 
-{{ form.media.js }}
+<!--
+Es fan servir còpies de:
+https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.12/js/select2.min.js
+https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.12/js/i18n/ca.js
+-->
+<script src="/site-css/select2/select2.min.js"></script>
+<script src="/site-css/select2/ca.js"></script>
+<script src="/site-css/django_select2/django_select2.js"></script>
 </body>
 </html>
 

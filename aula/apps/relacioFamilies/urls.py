@@ -1,4 +1,4 @@
-from django.urls import path, re_path
+from django.urls import re_path, path
 from aula.apps.relacioFamilies import views as relacioFamilies_views
 
 urlpatterns = [
