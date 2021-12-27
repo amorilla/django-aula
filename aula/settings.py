@@ -45,6 +45,10 @@ CACHES = {
         'LOCATION': 'redis://127.0.0.1:6379',
     }    
 }
+# Es fan servir fitxers guardats a static
+SELECT2_JS = ''
+SELECT2_CSS = ''
+SELECT2_I18N_PATH = ''
 
 SELECT2_CACHE_BACKEND = "select2"
 
