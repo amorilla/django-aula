@@ -16,7 +16,7 @@ from django.forms.models import ModelChoiceField
 class triaAlumneForm(forms.Form):    
     nivell = forms.ModelChoiceField( queryset = Nivell.objects.all(), required = False,
                                      widget = ModelSelect2Widget(
-                                        queryset=Nivell.objects.all(),
+                                        model=Nivell,
                                         search_fields = [
                                             'descripcio_nivell__icontains',
                                             'nom_nivell__icontains',
@@ -28,7 +28,7 @@ class triaAlumneForm(forms.Form):
     
     curs = forms.ModelChoiceField( queryset = Curs.objects.all(),required = False,
                                      widget = ModelSelect2Widget(
-                                        queryset=Curs.objects.all(),
+                                        model=Curs,
                                         search_fields = [
                                             'nom_curs_complert__icontains',
                                             'nom_curs__icontains',
@@ -41,7 +41,7 @@ class triaAlumneForm(forms.Form):
     
     grup = forms.ModelChoiceField( queryset = Grup.objects.all(), required = False,
                                      widget = ModelSelect2Widget(
-                                        queryset=Grup.objects.all(),
+                                        model=Grup,
                                         search_fields = [
                                             'descripcio_grup__icontains',
                                             'nom_grup__icontains',
@@ -52,9 +52,9 @@ class triaAlumneForm(forms.Form):
                                         ),
                                      )
 
-    alumne = forms.ModelChoiceField( queryset = Alumne.objects.all(),
+    alumne = forms.ModelChoiceField( queryset = AlumneGrup.objects.all(),
                                      widget = ModelSelect2Widget(
-                                        queryset=Alumne.objects.all(),
+                                        model=Alumne,
                                         search_fields = [
                                             'cognoms__icontains',
                                             'nom__icontains',

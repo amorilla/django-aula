@@ -36,16 +36,32 @@ DEFAULT_FROM_EMAIL = 'El meu centre <no-reply@el-meu-centre.net>'
 CUSTOM_MAX_EMAIL_RECIPIENTS=100
 EMAIL_HOST_IMAP = "imap.gmail.com"
 
-CACHES = {
-    'default': {
-        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
-    },
-    'select2': {
-        'BACKEND': 'django.core.cache.backends.redis.RedisCache',
-        'TIMEOUT': max( CUSTOM_TIMEOUT, *[ CUSTOM_TIMEOUT_GROUP[x] for x in CUSTOM_TIMEOUT_GROUP] ),
-        'LOCATION': 'redis://127.0.0.1:6379',
-    }    
-}
+import django
+if django.get_version()<'4':
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        },
+        'select2': {
+            'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+            'TIMEOUT': max( CUSTOM_TIMEOUT, *[ CUSTOM_TIMEOUT_GROUP[x] for x in CUSTOM_TIMEOUT_GROUP] ),
+            'OPTIONS': {
+                'MAX_ENTRIES': 200
+            }
+        }
+    }
+else:
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        },
+        'select2': {
+            'BACKEND': 'django.core.cache.backends.redis.RedisCache',
+            'TIMEOUT': max( CUSTOM_TIMEOUT, *[ CUSTOM_TIMEOUT_GROUP[x] for x in CUSTOM_TIMEOUT_GROUP] ),
+            'LOCATION': 'redis://127.0.0.1:6379',
+        }    
+    }
+    
 # Es fan servir fitxers guardats a static
 SELECT2_JS = ''
 SELECT2_CSS = ''
