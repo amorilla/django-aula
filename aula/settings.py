@@ -41,11 +41,14 @@ CACHES = {
         'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
     },
     'select2': {
-        'BACKEND': 'django.core.cache.backends.redis.RedisCache',
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
         'TIMEOUT': max( CUSTOM_TIMEOUT, *[ CUSTOM_TIMEOUT_GROUP[x] for x in CUSTOM_TIMEOUT_GROUP] ),
-        'LOCATION': 'redis://127.0.0.1:6379',
-    }    
+        'OPTIONS': {
+            'MAX_ENTRIES': 200
+        }
+    }
 }
+
 # Es fan servir fitxers guardats a static
 SELECT2_JS = ''
 SELECT2_CSS = ''

@@ -2,7 +2,8 @@ wheel
 openpyxl
 git+https://github.com/lino-framework/appypod.git#egg=appy ; python_version < '3.6'
 appy ; python_version >= '3.6'
-Django
+Django < 4 ; python_version < '3.8'
+Django >= 4 ; python_version >= '3.8'
 django-extensions
 django-environ
 lxml
@@ -26,5 +27,3 @@ django-formtools
 invoke
 psycopg2-binary
 django_select2
-redis
-ipdb
