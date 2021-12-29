@@ -290,7 +290,13 @@ def calcula_menu( user , path, sessioImpersonada ):
                       ("Paràmetres", 'relacio_families__configuracio__canvi_parametres', al if settings.CUSTOM_FAMILIA_POT_MODIFICAR_PARAMETRES else None, None, None ),
                       ("Matrícula", 'matricula:relacio_families__matricula__dades', 
                        al if settings.CUSTOM_MODUL_MATRICULA_ACTIU else None, None, None ),
-                   )
+                      ("Comunicats", 'relacio_families__comunicats__blanc', al if settings.CUSTOM_FAMILIA_POT_COMUNICATS else None, None,
+                          (
+                            ("Nou comunicat d'absència", 'relacio_families__comunicats__absencia', al if settings.CUSTOM_FAMILIA_POT_COMUNICATS else None, None ),
+                            ("Anteriors", 'relacio_families__comunicats__anteriors', al if settings.CUSTOM_FAMILIA_POT_COMUNICATS else None, None ),
+                          ),                        
+                      ),                       
+                  )
                ),
              )
     
@@ -301,7 +307,7 @@ def calcula_menu( user , path, sessioImpersonada ):
                   (
                       ("Notificacions", 'varis__elmur__veure', di or pr or pl or co or pg , ( nMissatgesDelta, 'info' if nMissatgesDelta < 10 else 'danger' ) if nMissatgesDelta >0 else None, None ),
                       ("Missatge a professorat o PAS", 'varis__prof_i_pas__envia_professors_i_pas', pr or pl or co, None, None ),
-                      ("Avisos de Seguretat", 'varis__avisos__envia_avis_administradors', tots, None, None ),
+                      ("Avisos de Seguretat", 'varis__avisos__envia_avis_administradors', ad or di or pr or pl or co or pg, None, None ),
                       ("Email a les famílies", 'varis__mail__enviaEmailFamilies', di, None, None ),
                       ("Estadístiques", 'varis__estadistiques__estadistiques', pr, None, None),
                       ("About", 'varis__about__about', tots, None, None ),
@@ -520,6 +526,9 @@ psico__informes_alumne
 matricula:relacio_families__matricula__dades
 relacio_families__configuracio__canvi_parametres
 relacio_families__informe__el_meu_informe
+relacio_families__comunicats__absencia
+relacio_families__comunicats__anteriors
+relacio_families__horesAlumneAjax
 triaAlumneAlumneAjax
 triaAlumneCursAjax
 triaAlumneGrupAjax
