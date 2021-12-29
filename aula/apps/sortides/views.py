@@ -396,7 +396,7 @@ def sortidaEdit(request, pk=None, clonar=False, origen=False):
                 primeraimparticio = ( 
                     Impartir
                     .objects
-                    .filter(dia_impartir__gte=instance.calendari_desde.date(),
+                    .filter(dia_impartir=instance.calendari_desde.date(),
                             horari__hora__hora_inici__gte=instance.calendari_desde.time()).order_by(
                             'dia_impartir', 'horari__hora__hora_inici')
                     .first() )
@@ -407,7 +407,7 @@ def sortidaEdit(request, pk=None, clonar=False, origen=False):
                         Impartir
                         .objects.filter(
                             dia_impartir__gt=instance.calendari_desde.date()).order_by(
-                            'dia_impartir')
+                            'dia_impartir', 'horari__hora__hora_inici')
                         .first() )
                     primerafranja = primeraimparticio.horari.hora if primeraimparticio else None
 
@@ -420,7 +420,7 @@ def sortidaEdit(request, pk=None, clonar=False, origen=False):
                 darreraimparticio = (
                     Impartir
                     .objects
-                    .filter(dia_impartir__lte=instance.calendari_finsa.date(),
+                    .filter(dia_impartir=instance.calendari_finsa.date(),
                             horari__hora__hora_fi__lte=instance.calendari_finsa.time()).order_by(
                             'dia_impartir', 'horari__hora__hora_fi')
                     .last()
@@ -432,7 +432,7 @@ def sortidaEdit(request, pk=None, clonar=False, origen=False):
                         Impartir
                         .objects
                         .filter(dia_impartir__lt=instance.calendari_finsa.date())
-                        .order_by('dia_impartir')
+                        .order_by('dia_impartir', 'horari__hora__hora_fi')
                         .last()
                     )
                     darrerafranja = darreraimparticio.horari.hora if darreraimparticio else None
@@ -1214,7 +1214,11 @@ def pagoOnline(request, pk):
 
     potEntrar = (alumne.user_associat.getUser() == user or fEsDireccioOrGrupSortides)
     if not potEntrar:
-        raise Http404
+        return render(
+                    request,
+                    'resultat.html', 
+                    {'msgs': {'errors': [], 'warnings': [], 'infos': ['AQUEST USUARI NO TÉ AUTORITZACIÓ PER ACCEDIR AL PAGAMENT.']} },
+                 )
     
     if not pagament.pagament_realitzat:
         # Pagament pendent
@@ -1973,6 +1977,7 @@ def acumulatsQuotesGen(tpv, nany=None):
     
     for p in list(totfet):
         n, x, m, t1, t2 = p
+        if not bool(n): n='Esborrats'
         n=str(n)+'-'+str(x)
         tot=(t1 if t1 else 0) + (t2 if t2 else 0)
         if not n in calcul:
@@ -2014,7 +2019,7 @@ def acumulatsActivitats(tpv, nany=None):
                                         notificasortida__alumne__isnull=False).distinct()
     
     totfet=SortidaPagament.objects.filter(pagament_realitzat=True, sortida__in=llistaSortides,
-                                        alumne__isnull=False,
+                                        #alumne__isnull=False,
                                         data_hora_pagament__year=nany)\
                     .values_list('sortida__id','sortida__titol_de_la_sortida','data_hora_pagament__month')\
                     .annotate(total=Sum('sortida__preu_per_alumne'))
@@ -2082,7 +2087,7 @@ def fullcalculQuotes(tpv, nany=None):
         if q[0] in acumulats:
             a = acumulats[q[0]]
             quota=Quota.objects.get(id=q[0])
-            worksheet.write(fila, 0, quota.descripcio)
+            worksheet.write(fila, 0, quota.descripcio+"("+quota.curs.nom_curs_complert+")")
             for m, v in a.items():
                 if m=='pendent':
                     col=1
@@ -2144,11 +2149,12 @@ def fullcalculQuotes(tpv, nany=None):
         worksheet.write_string(fila, 4, 'SI' if p.fracciona else 'NO' )
         fila=fila+1
     for p in pags:
-        worksheet.write_string(fila, 0, 'activitat: '+p.sortida.titol_de_la_sortida )
-        worksheet.write_string(fila, 1, str(p.alumne) )
-        if p.sortida.preu_per_alumne: worksheet.write_number(fila, 2, p.sortida.preu_per_alumne )
-        worksheet.write_datetime(fila, 3, p.sortida.termini_pagament, date_format )
-        fila=fila+1
+        if bool(p.sortida.preu_per_alumne) and p.sortida.preu_per_alumne>0:
+            worksheet.write_string(fila, 0, 'activitat: '+p.sortida.titol_de_la_sortida )
+            worksheet.write_string(fila, 1, str(p.alumne) )
+            worksheet.write_number(fila, 2, p.sortida.preu_per_alumne )
+            if p.sortida.termini_pagament: worksheet.write_datetime(fila, 3, p.sortida.termini_pagament, date_format )
+            fila=fila+1
     
     if fila>2:
         worksheet.write_formula(fila, 2, '=SUM(C3:C{0})'.format(fila), num_format)
