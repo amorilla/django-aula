@@ -46,7 +46,6 @@ class justificaFaltesW1Form(forms.Form):
                                      ),        
                 queryset= AlumneGrup.objects.all(),
                 required = False, 
-                #empty_label="(Justificador)",
                 help_text=u"""Alumne al que vols justificar faltes.(Justificador per tot el grup)"""  )
 
     data = forms.DateField(label=u'Data faltes a justificar', 

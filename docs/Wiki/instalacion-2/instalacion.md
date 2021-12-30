@@ -206,7 +206,7 @@ CUSTOM_RESERVES_API_KEY = 'sxxxxxxm'
 SESSION_SERIALIZER='django.contrib.sessions.serializers.PickleSerializer'
 
 # Path de datos privados
-PRIVATE_STORAGE_ROOT ='/dades/fitxers_privats_djAu/'
+PRIVATE_STORAGE_ROOT ='/opt/djau-dades-privades-2022/'
 CUSTOM_CODI_COMERÇ = 'xxxxxx'
 CUSTOM_KEY_COMERÇ = 'xxxxxx'
 

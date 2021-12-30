@@ -49,7 +49,8 @@ CACHES = {
     }
 }
 
-# Es fan servir fitxers guardats a static
+# Es fan servir els fitxers indicats a base.html
+# És l'única manera de que funcioni amb els formset.
 SELECT2_JS = ''
 SELECT2_CSS = ''
 SELECT2_I18N_PATH = ''
