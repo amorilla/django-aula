@@ -1,7 +1,7 @@
 import datetime
 from django import forms
 from django.conf import settings
-from aula.django_select2.forms import ModelSelect2Widget
+from django_select2.forms import ModelSelect2Widget
 from django.forms.models import ModelChoiceField
 from aula.apps.alumnes.models import Curs
 from aula.apps.sortides.models import Sortida, Quota, QuotaPagament, TipusQuota, TPV
@@ -127,8 +127,9 @@ class PagQuotesForm(forms.Form):
 
     quota = ModelChoiceField(
         widget=ModelSelect2Widget(
-            queryset=Quota.objects.all(),
+            model=Quota,
             search_fields=('importQuota__icontains', 'descripcio__icontains',),
+            attrs={'data-minimum-input-length':0},
         ),
         queryset=Quota.objects.all(),
         required=False,

@@ -1180,7 +1180,7 @@ def elMeuInforme( request, pk = None ):
     pagquotesNoves = pagquotes.filter(pagament_realitzat=False)
     infQuota=detall in ['all', 'sortides'] and pagquotes and settings.CUSTOM_QUOTES_ACTIVES
 
-    if settings.CUSTOM_QUOTES_ACTIVES:
+    if settings.CUSTOM_MODUL_MATRICULA_ACTIU or settings.CUSTOM_QUOTES_ACTIVES:
         titol_sortides = 'Activitats/Pagaments'
     else:
         titol_sortides = 'Activitats/Sortides'
