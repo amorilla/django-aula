@@ -5,7 +5,7 @@ Gestió de presència, incidències i més per a Instituts, Escoles i Acadèmies
 
 School Attendance Software
 
-![django](https://img.shields.io/badge/django-3.x-green?style=plastic) ![django](https://img.shields.io/badge/django-4.x-green?style=plastic) ![python](https://img.shields.io/badge/python-3.x-blue?style=plastic)
+![django](https://img.shields.io/badge/django-3.x%204.x-green?style=plastic) ![python](https://img.shields.io/badge/python-3.x-blue?style=plastic)
 
 ![Imgur](http://i.imgur.com/YlCRTap.png)
 
