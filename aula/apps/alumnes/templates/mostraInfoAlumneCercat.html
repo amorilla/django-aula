@@ -1,5 +1,6 @@
 {% extends "table2.html" %}
 {% load static %}
+{% load detalls %}
 
 {% block pretaula %}
 
@@ -46,7 +47,7 @@
     Documents aportats: 
     <br>
 	{% for f in documents %}
-		<a href="{{ f.fitxer.url|urlencode }}" target="_blank">{{ f.fitxer }}</a>
+		<a href="{{ f.fitxer.url|urldecode }}" target="_blank">{{ f.fitxer }}</a>
 		<br>
 	{% endfor %}
 	<br>
