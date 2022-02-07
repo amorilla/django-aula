@@ -38,7 +38,7 @@
 			{%if dades|documents %}
                 <td>
 				{% for d in dades|documents %}
-				    <a href="{{ d.fitxer.url|urlencode }}" target="_blank">Fitxer{{ forloop.counter }}</a>
+				    <a href="{{ d.fitxer.url|urldecode }}" target="_blank">Fitxer{{ forloop.counter }}</a>
 				{% endfor %}
 				</td>         
             {% else %}
