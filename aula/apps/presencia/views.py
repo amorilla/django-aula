@@ -1134,7 +1134,7 @@ def copiarAlumnesLlista(request, pk):
     credentials = getImpersonateUser(request) 
     (user, l4) = credentials   
     
-    head=u'Copiar alumnes a la llista a partir d\'una altre hora' 
+    head=u'Copiar alumnes a la llista a partir d\'una altra hora' 
 
     pk = int(pk)
     impartir = Impartir.objects.get ( pk = pk )
