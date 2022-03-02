@@ -860,11 +860,17 @@ class DadesView(LoginRequiredMixin, SessionWizardView):
         This method is used to postprocess the form files. By default, it
         returns the raw `form.files` dictionary.
         """
+        import unicodedata
+        
         files = form.files
         pk = self.kwargs.get('pk', None)
         mat=Matricula.objects.get(pk=pk)
         for key in files.keys():
             for value in files.getlist(key):
+                # Elimina accents
+                newname=unicodedata.normalize('NFKD',value.name).encode('ascii','ignore').decode('UTF-8')
+                if value.name!=newname:
+                    value.name=newname
                 file_instance = Document(fitxer=value)
                 file_instance.matricula=mat
                 file_instance.save()
