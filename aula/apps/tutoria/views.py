@@ -68,6 +68,7 @@ from aula.apps.tutoria.table2_models import Table2_Actuacions
 
 from django.contrib import messages
 from django.conf import settings
+from aula.apps.presenciaSetmanal.views import ProfeNoPot
 
 @login_required
 @group_required(['professors'] )
@@ -916,7 +917,7 @@ def justificaNext(request, pk):
                         impersonated_from = request.user if request.user != user else None,
                         text = u"""Justificades faltes de l'alumne {0} del dia {1}. """.format( control.alumne, control.impartir.dia_impartir )
                     )                
-            except ValidationError as e:
+            except (ProfeNoPot, ValidationError) as e:
                 ok=False
                 import itertools
                 errors = list( itertools.chain( *e.message_dict.values() )  )        
@@ -987,7 +988,7 @@ def faltaNext(request, pk):
                         impersonated_from = request.user if request.user != user else None,
                         text = u"""Correcció de presència de l'alumne {0} del dia {1}. """.format( control.alumne, control.impartir.dia_impartir )
                     )                
-            except ValidationError as e:
+            except (ProfeNoPot, ValidationError) as e:
                 ok=False
                 import itertools
                 errors = list( itertools.chain( *e.message_dict.values() )  )        
@@ -2419,7 +2420,7 @@ def justificarSortidaAlumne(request, pk ):
                     
                 nexturl =  r'/tutoria/justificarSortida/'
                 return HttpResponseRedirect( nexturl )
-            except ValidationError as e:
+            except (ProfeNoPot, ValidationError) as e:
                 form._errors.setdefault(NON_FIELD_ERRORS, []).extend(  e.messages )
 
 
