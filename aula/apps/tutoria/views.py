@@ -2420,7 +2420,7 @@ def justificarSortidaAlumne(request, pk ):
                     
                 nexturl =  r'/tutoria/justificarSortida/'
                 return HttpResponseRedirect( nexturl )
-            except (ProfeNoPot, ValidationError) as e:
+            except ValidationError as e:
                 form._errors.setdefault(NON_FIELD_ERRORS, []).extend(  e.messages )
 
 
