@@ -101,7 +101,7 @@ def controlAssistencia_clean( instance ):
                                                             ''' )         
     
     if len( errors ) > 0:
-        raise ProfeNoPot(errors)
+        raise ValidationError(errors)
 
     #Justificada: si el tutor l'havia justificat deixo al tutor com el que ha desat la falta:
     if justificadaDB and posat_pel_tutor:

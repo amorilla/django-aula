@@ -268,7 +268,7 @@ def modificaEstatControlAssistencia(request, codiEstat, idAlumne, idImpartir):
         cadenaError = u''
         for v in e.message_dict[NON_FIELD_ERRORS]:
             cadenaError += str(v) + u"<br>"
-        return HttpResponse(CONST_ERROR_CODE + cadenaError, status=500)
+        return HttpResponse(CONST_ERROR_CODE + cadenaError, status=200)
     except ProfeNoPot as e:
         cadenaError = u''
         for v in e.message_dict[NON_FIELD_ERRORS]:
@@ -328,7 +328,7 @@ def modificaEstatControlAssistenciaGrup(request, codiEstat, idImpartir):
         cadenaError = u''
         for v in e.message_dict[NON_FIELD_ERRORS]:
             cadenaError += str(v) + u"<br>"
-        return HttpResponse(CONST_ERROR_CODE + cadenaError, status=500)
+        return HttpResponse(CONST_ERROR_CODE + cadenaError, status=200)
     except ProfeNoPot as e:
         cadenaError = u''
         for v in e.message_dict[NON_FIELD_ERRORS]:
