@@ -312,6 +312,8 @@ class ActivaMatsForm(forms.Form):
                                          ('C','Confirmacions'),
                                          ('A','Altres'),
                                          ])
+    ultimCursNoEmail=forms.BooleanField(label=u'No envia emails a alumnes d\'últim curs',required = False,
+                                help_text=u'Sense emails a alumnes d\'últim curs, segurament ja tenen el títol.')
     
     def __init__(self, user, *args, **kwargs):
         super(ActivaMatsForm, self).__init__(*args, **kwargs)

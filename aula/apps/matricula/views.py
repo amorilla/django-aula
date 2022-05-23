@@ -1070,9 +1070,17 @@ def taxesPagades(matricula):
                                      quota__tipus=taxes, pagament_realitzat=True)
     return pag.exists()
 
-def enviaIniciMat(nivell, tipus, nany):
+def enviaIniciMat(nivell, tipus, nany, ultimCursNoEmail=False):
     '''
     Envia emails als alumnes amb instruccions de matrícula
+    nivell  dels alumnes escollits
+    tipus matrícula
+        P  matrícula amb Preinscripció
+        A  Altres matrícules
+        C  Confirmació de matrícula
+    nany any inici curs
+    ultimCursNoEmail si True NO envia mail als alumnes d'últim curs. 
+            Djau no té les qualificacions i no podem saber si l'alumne ha obtingut títol.
     '''
     
     from django.core import mail
@@ -1105,7 +1113,8 @@ def enviaIniciMat(nivell, tipus, nany):
                     correus=a.get_correus_relacio_familia()
                     if not correus:
                         correus=a.get_correus_tots()
-                    mailMatricula(tipus, correus, a, connection)
+                    if següentCurs(a) or not ultimCursNoEmail:
+                        mailMatricula(tipus, correus, a, connection)
     # tanca la connexió
     if connection: connection.close()
 
@@ -1124,6 +1133,7 @@ def ActivaMatricula(request):
             nivell=form.cleaned_data['nivell']
             datalimit=form.cleaned_data['datalimit']
             tipus=form.cleaned_data['tipus']
+            ultimCursNoEmail=form.cleaned_data['ultimCursNoEmail']
             nany=django.utils.timezone.now().year
             if tipus=='P':
                 llista = Preinscripcio.objects.filter(codiestudis=nivell.nom_nivell, any=nany, estat='Assignada', naixement__isnull=False)
@@ -1140,7 +1150,7 @@ def ActivaMatricula(request):
                 nivell.limit_matricula=datalimit
                 nivell.matricula_oberta=True
                 nivell.save()
-            enviaIniciMat(nivell, tipus, nany)
+            enviaIniciMat(nivell, tipus, nany, ultimCursNoEmail)
             infos.append('Matrícula activada, emails enviats.')
             return render(
                         request,
