@@ -735,7 +735,8 @@ def Confirma(request, nany):
                                        initial={'acceptar_condicions':False,
                                                 'opcions':mat.confirma_matricula,
                                                 })
-                return render(request, 'confirma_form.html', {'form': form, 'curs':mat.curs, 'quota':mat.quota})
+                return render(request, 'confirma_form.html', {'form': form, 'curs':mat.curs, 'quota':mat.quota, 
+                                                              'rgpd':inforgpd(), })
 
         else:
             if user.alumne:
