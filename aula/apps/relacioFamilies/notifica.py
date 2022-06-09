@@ -23,7 +23,7 @@ def notifica_pendents():
             continue
         fitxers=DocAttach.objects.filter(email=ep.id)
         _, errors, pendents=enviaEmail(subject=ep.subject, body=ep.message, from_email=ep.fromemail, 
-                                               bcc=eval(ep.toemail), connection=connection, attachments=fitxers)
+                                               bcc=list(eval(ep.toemail)), connection=connection, attachments=fitxers)
         if errors>0:
             ep.toemail=pendents
             ep.save()
@@ -251,10 +251,10 @@ def enviaEmail(subject, body, from_email, bcc, connection=None, attachments=None
                 print (u'Enviant mail a {0} adreces'.format(len(destinataris)))
             if email.send()==1: correctes=correctes + len(destinataris)
             else:
-                errors = total-cont;
+                errors = total-cont
                 return correctes, errors, bcc[cont:total]
         except:
-            errors = total-cont;
+            errors = total-cont
             return correctes, errors, bcc[cont:total]
         
         cont=cont+maxdest    
