@@ -99,8 +99,9 @@ def alumneExisteix(idalum):
 def enviamail(subject, message, from_email, to_email, connection=None):
     from aula.apps.relacioFamilies.models import EmailPendent
     r=0
-    if isinstance(to_email,list): to_email=tuple(to_email)
-    if not isinstance(to_email,tuple): to_email=(to_email,)
+    if isinstance(to_email,str): to_email=[to_email,]
+    if isinstance(to_email,tuple): to_email=list(to_email)
+    if not isinstance(to_email,list): to_email=[to_email,]
     try:
         if to_email:
             email=EmailMessage(subject, message, from_email, bcc=to_email, connection=connection)
