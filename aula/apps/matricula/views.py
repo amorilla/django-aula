@@ -1234,7 +1234,7 @@ def ResumLlistat(nany):
     cursos=Curs.objects.filter(confirmacio_oberta=True).distinct().order_by('nom_curs_complert')
     for c in cursos:
         worksheet = workbook.add_worksheet((u'{0}-Confirmades'.format( str( c ) ))[:31])
-        cap=['Cognoms','Nom', 'Grup actual', 'Resposta']
+        cap=['RALC', 'Cognoms', 'Nom', 'Grup actual', 'Curs Mat.', 'Resposta']  # TODO
         worksheet.set_column(0, 0, 25)
         worksheet.set_column(1, 3, 15)
         worksheet.write_row(0,0,cap)
@@ -1242,26 +1242,30 @@ def ResumLlistat(nany):
                 .order_by('grup__nom_grup', 'cognoms', 'nom')
         fila=1
         for a in alumConf:
-            worksheet.write_string(fila,0,a.cognoms)
-            worksheet.write_string(fila,1,a.nom)
-            worksheet.write_string(fila,2,str(a.grup))
-            worksheet.write_string(fila,3,a.matricula.get(any=nany).get_confirma_matricula_display() if MatContestada(a,nany) else 'Sense resposta')
+            worksheet.write_string(fila,0,a.ralc)
+            worksheet.write_string(fila,1,a.cognoms)
+            worksheet.write_string(fila,2,a.nom)
+            worksheet.write_string(fila,3,str(a.grup))
+            worksheet.write_string(fila,4,str(a.matricula.get(any=nany).curs) if MatContestada(a,nany) else '')
+            worksheet.write_string(fila,5,a.matricula.get(any=nany).get_confirma_matricula_display() if MatContestada(a,nany) else 'Sense resposta')
             fila=fila+1
         
         worksheet = workbook.add_worksheet((u'{0}-No confirmades'.format( str( c ) ))[:31])
-        cap=['Cognoms','Nom', 'Grup actual', 'Resposta']
+        cap=['RALC', 'Cognoms', 'Nom', 'Grup actual', 'Curs Mat.', 'Resposta']  # TODO
         worksheet.set_column(0, 0, 25)
         worksheet.set_column(1, 3, 15)
         worksheet.write_row(0,0,cap)
-        alumNoConf=Alumne.objects.filter(grup__curs=c, data_baixa__isnull=True).exclude(matricula__any=nany, matricula__confirma_matricula='C')\
-                .order_by('grup__nom_grup', 'cognoms', 'nom')
+        alumNoConf=Alumne.objects.filter(grup__curs=c, data_baixa__isnull=True).order_by('grup__nom_grup', 'cognoms', 'nom')
         fila=1
         for a in alumNoConf:
-            worksheet.write_string(fila,0,a.cognoms)
-            worksheet.write_string(fila,1,a.nom)
-            worksheet.write_string(fila,2,str(a.grup))
-            worksheet.write_string(fila,3,a.matricula.get(any=nany).get_confirma_matricula_display() if MatContestada(a,nany) else 'Sense resposta')
-            fila=fila+1
+            if not MatContestada(a,nany) or a.matricula.get(any=nany).confirma_matricula!='C':
+                worksheet.write_string(fila,0,a.ralc)
+                worksheet.write_string(fila,1,a.cognoms)
+                worksheet.write_string(fila,2,a.nom)
+                worksheet.write_string(fila,3,str(a.grup))
+                worksheet.write_string(fila,4,str(a.matricula.get(any=nany).curs) if MatContestada(a,nany) else '')
+                worksheet.write_string(fila,5,a.matricula.get(any=nany).get_confirma_matricula_display() if MatContestada(a,nany) else 'Sense resposta')
+                fila=fila+1
         
     workbook.close()
     return output
