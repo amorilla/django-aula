@@ -137,9 +137,9 @@ class DadesForm3(forms.ModelForm):
         self.fields['acceptar_condicions'].required=True
         mat=kwargs['initial'].get('matricula')
         if mat.curs.nivell.nom_nivell=='ESO':
-            self.fields['fitxers'].help_text="Carnet de vacunes, targeta sanitària, documents identificació."
+            self.fields['fitxers'].help_text="Targeta sanitària, carnet de vacunacions, llibre de família, documents identificació ..."
         else:
-            self.fields['fitxers'].help_text="Targeta sanitària, documents identificació, titulació aportada (ESO, Batxillerat, ...), compliment de les bonificacions."
+            self.fields['fitxers'].help_text="Targeta sanitària, documents identificació, titulació aportada (ESO, Batxillerat, ...), compliment de les bonificacions ..."
         importTaxes = kwargs['initial'].get('importTaxes')
         docs=kwargs['initial'].get('documents')
         self.fields['fitxers'].widget.clear_checkbox_label='Esborra'

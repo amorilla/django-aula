@@ -214,8 +214,12 @@ def sincronitza(f, user = None):
             preinscripcio['naixement'] = datetime.strptime(preinscripcio['naixement'], '%d/%m/%Y')
         #if 'cp' in preinscripcio and preinscripcio['cp'].startswith("="): 
         #    preinscripcio['cp']=preinscripcio['cp'][2:7] # '="NNNNN"'
-        if 'any' in preinscripcio and preinscripcio['any'].find("/")!=-1: 
-            preinscripcio['any']=int(preinscripcio['any'][-9:-5])  # 'XXXXXXXXXXXX 20xx/20yy'
+        if 'any' in preinscripcio and not isinstance(preinscripcio['any'],int):
+            try:
+                nany=int(preinscripcio['any'][-9:-5])  # 'XXXXXXXXXXXX 20xx/20yy'
+            except Exception as e:
+                nany=datetime.date.today().year
+            preinscripcio['any']=nany
         #if 'centreassignat' in preinscripcio and preinscripcio['centreassignat'].startswith("="): 
         #    preinscripcio['centreassignat']=preinscripcio['centreassignat'][2:10]  # '="NNNNNNNN"'
         if 'adreça' in preinscripcio:
