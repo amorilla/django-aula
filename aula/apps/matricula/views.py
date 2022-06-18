@@ -189,6 +189,7 @@ def mailMatricula(tipus, email, alumne, connection=None):
             cos="\n".join([cos,"Durant el procés de matrícula serà necessari pujar la documentació requerida:",
             "      DNI alumne/a (si el té)",
             "      DNI del pare, mare o tutors legals",
+            "      Llibre de família (pàgina dels pares i pàgina de l’alumne/a)",
             "      Carnet de vacunacions",
             "      Targeta sanitària",
             ])
@@ -196,8 +197,12 @@ def mailMatricula(tipus, email, alumne, connection=None):
             cos="\n".join([cos,"Durant el procés de matrícula serà necessari pujar la documentació requerida:",
             "      DNI alumne/a",
             "      DNI del pare, mare o tutors legals (si alumnat menor d'edat)",
-            "      Titulació aportada",
+            "      Titulació aportada per accedir als estudis",
+            "      Llibre de família (si alumnat menor d'edat)",
             "      Targeta sanitària",
+            "      Carnet família nombrosa/monoparental si s’escau",
+            "      Carnet discapacitat si s’escau",
+            "      Credencial de beca si s’escau",
             ])
     if tipus!='F':
         cos="\n".join([cos,"","Si encara no ha obtingut la contrasenya, entreu a {0} per escollir-la.".format(url), ])
