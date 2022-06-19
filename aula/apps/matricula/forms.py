@@ -110,9 +110,11 @@ class DadesForm2b(forms.ModelForm):
 
 
 class CustomClearableFileInput(forms.ClearableFileInput):
+    from django.utils.safestring import mark_safe
+    
     template_name = 'widgets/uploadfiles.html'
     eliminaFitxers = []
-    input_text = 'Selecciona els arxius necessaris'
+    input_text = mark_safe('<b>Selecciona TOTS els arxius necessaris</b>')
 
     def value_from_datadict(self, data, files, name):
         upload = super().value_from_datadict(data, files, name)
@@ -133,13 +135,17 @@ class DadesForm3(forms.ModelForm):
     fitxers = forms.FileField(widget=CustomClearableFileInput(attrs={'multiple': True}))
 
     def __init__(self, *args, **kwargs):
+        from django.utils.safestring import mark_safe
+
         super(DadesForm3, self).__init__(*args, **kwargs)
         self.fields['acceptar_condicions'].required=True
         mat=kwargs['initial'].get('matricula')
         if mat.curs.nivell.nom_nivell=='ESO':
-            self.fields['fitxers'].help_text="Targeta sanitària, carnet de vacunacions, llibre de família, documents identificació ..."
+            self.fields['fitxers'].help_text=mark_safe('<b style="color:darkgreen">Targeta sanitària, carnet de vacunacions, \
+                            llibre de família, documents identificació ...</b>')
         else:
-            self.fields['fitxers'].help_text="Targeta sanitària, documents identificació, titulació aportada (ESO, Batxillerat, ...), compliment de les bonificacions ..."
+            self.fields['fitxers'].help_text=mark_safe('<b style="color:darkgreen">Targeta sanitària, documents identificació, \
+                            titulació aportada (ESO, Batxillerat, ...), compliment de les bonificacions ...</b>')
         importTaxes = kwargs['initial'].get('importTaxes')
         docs=kwargs['initial'].get('documents')
         self.fields['fitxers'].widget.clear_checkbox_label='Esborra'
