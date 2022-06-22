@@ -1091,6 +1091,7 @@ def enviaIniciMat(nivell, tipus, nany, ultimCursNoEmail=False):
     '''
     
     from django.core import mail
+    from django.db.models import Q
     
     connection = mail.get_connection()
     # Obre la connexió
@@ -1109,10 +1110,13 @@ def enviaIniciMat(nivell, tipus, nany, ultimCursNoEmail=False):
                     or mat[0].curs!=curs)) or not mat:
                     alumne=creaAlumne(m)
                     mailMatricula(tipus, m.correu, alumne, connection)
+                    m.estat='Enviada'
+                    m.save()
     if tipus=='A' or tipus=='C':
         for a in Alumne.objects.filter(grup__curs__nivell=nivell, data_baixa__isnull=True):
             if tipus=='C' and ConfirmacioActivada(a) or tipus=='A':
-                pr=Preinscripcio.objects.filter(ralc=a.ralc, any=nany, estat='Assignada', naixement__isnull=False)
+                pr=Preinscripcio.objects.filter(ralc=a.ralc, any=nany, naixement__isnull=False)
+                pr=pr.filter(Q(estat='Assignada') | Q(estat='Enviada'))
                 mat=Matricula.objects.filter(idAlumne=a.ralc, any=nany)
                 if not pr and ((mat and not mat[0].confirma_matricula and not mat[0].acceptar_condicions) or not mat):
                     # Si no té preinscripció i tampoc matrícula confirmada
