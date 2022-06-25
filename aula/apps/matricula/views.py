@@ -1077,7 +1077,7 @@ def taxesPagades(matricula):
                                      quota__tipus=taxes, pagament_realitzat=True)
     return pag.exists()
 
-def enviaIniciMat(nivell, tipus, nany, ultimCursNoEmail=False):
+def enviaIniciMat(nivell, tipus, nany, ultimCursNoEmail=False, senseEmails=False):
     '''
     Envia emails als alumnes amb instruccions de matrícula
     nivell  dels alumnes escollits
@@ -1088,6 +1088,8 @@ def enviaIniciMat(nivell, tipus, nany, ultimCursNoEmail=False):
     nany any inici curs
     ultimCursNoEmail si True NO envia mail als alumnes d'últim curs. 
             Djau no té les qualificacions i no podem saber si l'alumne ha obtingut títol.
+    senseEmails si True NO envia mail a cap alumne. 
+            Adequat si alguns alumnes continuen, altres abandonen, altres obtenen el títol.
     '''
     
     from django.core import mail
@@ -1109,7 +1111,7 @@ def enviaIniciMat(nivell, tipus, nany, ultimCursNoEmail=False):
                 if (mat and (not mat[0].acceptar_condicions or mat[0].confirma_matricula=='N' \
                     or mat[0].curs!=curs)) or not mat:
                     alumne=creaAlumne(m)
-                    mailMatricula(tipus, m.correu, alumne, connection)
+                    if not senseEmails: mailMatricula(tipus, m.correu, alumne, connection)
                     m.estat='Enviada'
                     m.save()
     if tipus=='A' or tipus=='C':
@@ -1125,7 +1127,7 @@ def enviaIniciMat(nivell, tipus, nany, ultimCursNoEmail=False):
                     if not correus:
                         correus=a.get_correus_tots()
                     if següentCurs(a) or not ultimCursNoEmail:
-                        mailMatricula(tipus, correus, a, connection)
+                        if not senseEmails: mailMatricula(tipus, correus, a, connection)
     # tanca la connexió
     if connection: connection.close()
 
@@ -1145,6 +1147,7 @@ def ActivaMatricula(request):
             datalimit=form.cleaned_data['datalimit']
             tipus=form.cleaned_data['tipus']
             ultimCursNoEmail=form.cleaned_data['ultimCursNoEmail']
+            senseEmails=form.cleaned_data['senseEmails']
             nany=django.utils.timezone.now().year
             if tipus=='P':
                 llista = Preinscripcio.objects.filter(codiestudis=nivell.nom_nivell, any=nany, estat='Assignada', naixement__isnull=False)
@@ -1161,8 +1164,11 @@ def ActivaMatricula(request):
                 nivell.limit_matricula=datalimit
                 nivell.matricula_oberta=True
                 nivell.save()
-            enviaIniciMat(nivell, tipus, nany, ultimCursNoEmail)
-            infos.append('Matrícula activada, emails enviats.')
+            enviaIniciMat(nivell, tipus, nany, ultimCursNoEmail, senseEmails)
+            if senseEmails:
+                infos.append('Matrícula activada.')
+            else:
+                infos.append('Matrícula activada, emails enviats.')
             return render(
                         request,
                         'resultat.html', 

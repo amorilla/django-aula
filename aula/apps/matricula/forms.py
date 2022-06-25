@@ -320,6 +320,9 @@ class ActivaMatsForm(forms.Form):
                                          ])
     ultimCursNoEmail=forms.BooleanField(label=u'No envia emails a alumnes d\'últim curs',required = False,
                                 help_text=u'Sense emails a alumnes d\'últim curs, segurament ja tenen el títol.')
+    senseEmails=forms.BooleanField(label=u'No envia emails',required = False,
+                                help_text=u'Ja s\'ha donat la informació directament als alumnes. \
+                                Opció adequada si no es pot concretar qui continua, canvia de centre o obté el títol.')
     
     def __init__(self, user, *args, **kwargs):
         super(ActivaMatsForm, self).__init__(*args, **kwargs)
