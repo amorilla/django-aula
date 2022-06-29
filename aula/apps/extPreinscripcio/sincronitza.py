@@ -206,6 +206,11 @@ def sincronitza(f, user = None):
     else:
         peticions=True
     
+    #TODO
+    # Abans de començar fer marca a les actuals preinscripcions 'Validada' 'Assignada' -->  'Marca especial'
+    Preinscripcio.objects.filter(estat='Validada').update(estat='MarcaValidada')
+    Preinscripcio.objects.filter(estat='Assignada').update(estat='MarcaAssignada')
+    totsCodiEstudis=set()
     for row in rows[1:]:
        
         preinscripcio=creaPreins(row, col_indexs)
@@ -254,10 +259,20 @@ def sincronitza(f, user = None):
                     for field, value in iter(preinscripcio.items()):
                         setattr(p, field, value)
                 p.codiestudis=convertirCodiEstudis(p.codiestudis)
+                #TODO
+                #guarda el conjunt de tots els codiestudis
+                totsCodiEstudis.add(p.codiestudis)
                 p.save()
                 info_nAlumnesLlegits += 1
             except Exception as e:
                 errors.append(str(e)+": "+str(preinscripcio))
+                
+    #TODO
+    # Delete els marcats 'Marca especial' dels mateixos codiestudis
+    Preinscripcio.objects.filter(estat__in=['MarcaValidada','MarcaAssignada',], codi_estudis__in=totsCodiEstudis).delete()
+    # Elimina 'Marca especial' de la resta
+    Preinscripcio.objects.filter(estat='MarcaValidada').update(estat='Validada')
+    Preinscripcio.objects.filter(estat='MarcaAssignada').update(estat='Assignada')
     
     infos.append(u'{0} alumnes llegits'.format(info_nAlumnesLlegits) )
 

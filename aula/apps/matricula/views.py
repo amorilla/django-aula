@@ -445,20 +445,8 @@ def alumne2Mat(alumne, nany=None):
     if not nany:
         nany=django.utils.timezone.now().year
     mat=Matricula.objects.filter(alumne=alumne, any=nany)
-    p=Preinscripcio.objects.filter(ralc=alumne.ralc, any=nany)
     if mat:
         mat=mat[0]
-        if mat.curs!=alumne.grup.curs:
-            if p: mat.preinscripcio=p[0]
-            else: mat.preinscripcio=None
-            mat.curs=alumne.grup.curs
-            mat.confirma_matricula=None
-            mat.estat='A'
-            mat.acceptar_condicions=False
-            mat.acceptacio_en=None
-            mat.curs_complet=False
-            mat.quantitat_ufs=0
-            mat.llistaufs=None
     else:
         mat=Matricula()
         mat.alumne=alumne
@@ -466,6 +454,7 @@ def alumne2Mat(alumne, nany=None):
         mat.any=nany
         mat.estat='A'
         mat.acceptar_condicions=False
+        p=Preinscripcio.objects.filter(ralc=alumne.ralc, any=nany)
         if p:
             p=p[0]
             mat.nom=p.nom
@@ -1000,9 +989,9 @@ def OmpleDades(request):
     try:
         if user.alumne:
             nany=django.utils.timezone.now().year
-            if MatriculaOberta(user.alumne):
+            p=Preinscripcio.objects.filter(ralc=user.alumne.ralc, any=nany)
+            if (p and p[0].estat!='Caducada' or not p) and MatriculaOberta(user.alumne):
                 # Matrícula oberta per al nivell de l'alumne
-                p=Preinscripcio.objects.filter(ralc=user.alumne.ralc, any=nany)
                 if p or (not ConfirmacioActivada(user.alumne) and not MatContestada(user.alumne, nany)):
                     # Matrícula segons preinscripcio o de continuitat
                     mat=alumne2Mat(user.alumne, nany)
@@ -1093,7 +1082,6 @@ def enviaIniciMat(nivell, tipus, nany, ultimCursNoEmail=False, senseEmails=False
     '''
     
     from django.core import mail
-    from django.db.models import Q
     
     connection = mail.get_connection()
     # Obre la connexió
@@ -1117,8 +1105,8 @@ def enviaIniciMat(nivell, tipus, nany, ultimCursNoEmail=False, senseEmails=False
     if tipus=='A' or tipus=='C':
         for a in Alumne.objects.filter(grup__curs__nivell=nivell, data_baixa__isnull=True):
             if tipus=='C' and ConfirmacioActivada(a) or tipus=='A':
-                pr=Preinscripcio.objects.filter(ralc=a.ralc, any=nany, naixement__isnull=False)
-                pr=pr.filter(Q(estat='Assignada') | Q(estat='Enviada'))
+                pr=Preinscripcio.objects.filter(ralc=a.ralc, any=nany, naixement__isnull=False, 
+                                                estat__in=['Assignada','Enviada',])
                 mat=Matricula.objects.filter(idAlumne=a.ralc, any=nany)
                 if not pr and ((mat and not mat[0].confirma_matricula and not mat[0].acceptar_condicions) or not mat):
                     # Si no té preinscripció i tampoc matrícula confirmada
@@ -1164,6 +1152,10 @@ def ActivaMatricula(request):
                 nivell.limit_matricula=datalimit
                 nivell.matricula_oberta=True
                 nivell.save()
+                
+            # Marca Preinscripcions 'Enviada' del mateix nivell com a 'Caducada'
+            # Així s'evita que preinscripcions anteriors puguin continuar la matrícula
+            Preinscripcio.objects.filter(estat='Enviada', codiestudis=nivell.nom_nivell, any=nany).update(estat='Caducada')
             enviaIniciMat(nivell, tipus, nany, ultimCursNoEmail, senseEmails)
             if senseEmails:
                 infos.append('Matrícula activada.')
