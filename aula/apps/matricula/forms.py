@@ -88,7 +88,7 @@ class DadesForm2b(forms.ModelForm):
             self.fields['bonificacio'].help_text='No s\'apliquen taxes en aquest curs'
             self.fields['bonificacio'].disabled=True
         pag=QuotaPagament.objects.filter(alumne=mat.alumne, quota__any=mat.any, quota__tipus=taxes, pagament_realitzat=True)
-        if pag:
+        if pag and mat.acceptar_condicions:
             self.fields['curs_complet'].disabled=True
             self.fields['quantitat_ufs'].disabled=True
             self.fields['llistaufs'].disabled=True
