@@ -83,7 +83,7 @@ class DadesForm2b(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super(DadesForm2b, self).__init__(*args, **kwargs)
         mat=kwargs['initial'].get('matricula')
-        taxes=mat.curs.nivell.taxes
+        taxes=mat.curs.nivell.taxes   # TODO hauria de ser el curs escollit a la 1a pàg.
         if not taxes:
             self.fields['bonificacio'].help_text='No s\'apliquen taxes en aquest curs'
             self.fields['bonificacio'].disabled=True
