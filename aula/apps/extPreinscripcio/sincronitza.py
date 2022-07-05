@@ -256,6 +256,9 @@ def sincronitza(f, user = None):
                     p=query[0]
                     estat=preinscripcio.pop('estat','')
                     if estat=='Assignada': preinscripcio.update({'estat':estat})
+                    else:
+                        if p.estat.startswith('Marca'):
+                            preinscripcio.update({'estat': p.estat[5:]})
                     for field, value in iter(preinscripcio.items()):
                         setattr(p, field, value)
                 p.codiestudis=convertirCodiEstudis(p.codiestudis)
@@ -269,7 +272,7 @@ def sincronitza(f, user = None):
                 
     #TODO
     # Delete els marcats 'Marca especial' dels mateixos codiestudis
-    Preinscripcio.objects.filter(estat__in=['MarcaValidada','MarcaAssignada',], codi_estudis__in=totsCodiEstudis).delete()
+    Preinscripcio.objects.filter(matricula__isnull=True, estat__in=['MarcaValidada','MarcaAssignada',], codiestudis__in=totsCodiEstudis).delete()
     # Elimina 'Marca especial' de la resta
     Preinscripcio.objects.filter(estat='MarcaValidada').update(estat='Validada')
     Preinscripcio.objects.filter(estat='MarcaAssignada').update(estat='Assignada')
