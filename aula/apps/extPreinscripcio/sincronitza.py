@@ -206,10 +206,6 @@ def sincronitza(f, user = None):
     else:
         peticions=True
     
-    #TODO
-    # Abans de començar fer marca a les actuals preinscripcions 'Validada' 'Assignada' -->  'Marca especial'
-    Preinscripcio.objects.filter(estat='Validada').update(estat='MarcaValidada')
-    Preinscripcio.objects.filter(estat='Assignada').update(estat='MarcaAssignada')
     totsCodiEstudis=set()
     for row in rows[1:]:
        
@@ -223,7 +219,7 @@ def sincronitza(f, user = None):
             try:
                 nany=int(preinscripcio['any'][-9:-5])  # 'XXXXXXXXXXXX 20xx/20yy'
             except Exception as e:
-                nany=datetime.date.today().year
+                nany=datetime.today().year
             preinscripcio['any']=nany
         #if 'centreassignat' in preinscripcio and preinscripcio['centreassignat'].startswith("="): 
         #    preinscripcio['centreassignat']=preinscripcio['centreassignat'][2:10]  # '="NNNNNNNN"'
@@ -261,8 +257,8 @@ def sincronitza(f, user = None):
                             preinscripcio.update({'estat': p.estat[5:]})
                     for field, value in iter(preinscripcio.items()):
                         setattr(p, field, value)
+                p.estat='Marca'+p.estat
                 p.codiestudis=convertirCodiEstudis(p.codiestudis)
-                #TODO
                 #guarda el conjunt de tots els codiestudis
                 totsCodiEstudis.add(p.codiestudis)
                 p.save()
@@ -270,9 +266,13 @@ def sincronitza(f, user = None):
             except Exception as e:
                 errors.append(str(e)+": "+str(preinscripcio))
                 
-    #TODO
-    # Delete els marcats 'Marca especial' dels mateixos codiestudis
-    Preinscripcio.objects.filter(matricula__isnull=True, estat__in=['MarcaValidada','MarcaAssignada',], codiestudis__in=totsCodiEstudis).delete()
+    # Delete preinscripcions sense matrícula dels mateixos estudis, què no apareixen ara al fitxer
+    llp=Preinscripcio.objects.filter(estat__startswith='Marca')
+    if llp:
+        nany=llp[0].any
+    else:
+        nany=datetime.today().year
+    Preinscripcio.objects.filter(any=nany, matricula__isnull=True, estat__in=['Validada','Assignada',], codiestudis__in=totsCodiEstudis).delete()
     # Elimina 'Marca especial' de la resta
     Preinscripcio.objects.filter(estat='MarcaValidada').update(estat='Validada')
     Preinscripcio.objects.filter(estat='MarcaAssignada').update(estat='Assignada')

@@ -323,6 +323,8 @@ class ActivaMatsForm(forms.Form):
     senseEmails=forms.BooleanField(label=u'No envia emails',required = False,
                                 help_text=u'Si ja s\'ha donat la informació directament als alumnes. \
                                 Opció adequada si no es pot concretar qui continua, canvia de centre o obté el títol.')
+    exclusiu=forms.BooleanField(label=u'Exclusiu',required = False,
+                                help_text=u'')
     
     def __init__(self, user, *args, **kwargs):
         super(ActivaMatsForm, self).__init__(*args, **kwargs)
