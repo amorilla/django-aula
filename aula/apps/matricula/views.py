@@ -990,7 +990,7 @@ def OmpleDades(request):
         if user.alumne:
             nany=django.utils.timezone.now().year
             p=Preinscripcio.objects.filter(ralc=user.alumne.ralc, any=nany)
-            if (p and p[0].estat!='Caducada' or not p) and MatriculaOberta(user.alumne):
+            if (p and p[0].estat!='Caducada') and MatriculaOberta(user.alumne):  # TODO nou mètode tipusactuació
                 # Matrícula oberta per al nivell de l'alumne
                 if p or (not ConfirmacioActivada(user.alumne) and not MatContestada(user.alumne, nany)):
                     # Matrícula segons preinscripcio o de continuitat
@@ -1106,7 +1106,7 @@ def enviaIniciMat(nivell, tipus, nany, ultimCursNoEmail=False, senseEmails=False
         for a in Alumne.objects.filter(grup__curs__nivell=nivell, data_baixa__isnull=True):
             if tipus=='C' and ConfirmacioActivada(a) or tipus=='A':
                 pr=Preinscripcio.objects.filter(ralc=a.ralc, any=nany, naixement__isnull=False, 
-                                                estat__in=['Assignada','Enviada',])
+                                                estat__in=['Assignada','Enviada',])  # TODO Caducada ??
                 mat=Matricula.objects.filter(idAlumne=a.ralc, any=nany)
                 if not pr and ((mat and not mat[0].confirma_matricula and not mat[0].acceptar_condicions) or not mat):
                     # Si no té preinscripció i tampoc matrícula confirmada
