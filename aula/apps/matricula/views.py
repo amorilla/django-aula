@@ -97,9 +97,9 @@ def get_url_alumne(usuari):
             # situacioMat determina el pas a fer de la matrícula
             info = situacioMat(usuari.alumne, nany)
             if info=='M' and not MatContestada(usuari.alumne, nany):
-                reverse_lazy('matricula:relacio_families__matricula__dades')
+                return reverse_lazy('matricula:relacio_families__matricula__dades')
             if info=='C' and not ConfContestada(usuari.alumne, nany):
-                reverse_lazy('matricula:relacio_families__matricula__confirma', kwargs={"nany": nany})
+                return reverse_lazy('matricula:relacio_families__matricula__confirma', kwargs={"nany": nany})
         return None
     except Exception:
         return None
