@@ -47,7 +47,7 @@ def notifica():
     from aula.apps.presencia.models import ControlAssistencia
     from django.core.mail import send_mail, EmailMessage
     from aula.apps.usuaris.models import Accio
-        
+    
     urlDjangoAula = settings.URL_DJANGO_AULA
     textTutorial = settings.CUSTOM_PORTAL_FAMILIES_TUTORIAL
     
