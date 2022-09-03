@@ -924,7 +924,7 @@ def llistaAlumnescsv( request ):
     """
     Generates an Excel spreadsheet for review by a staff member.
     """
-    from aula.apps.matricula.views import acceptaCondicions
+    from aula.apps.matricula.viewshelper import acceptaCondicions
     ara = datetime.now()
     q_no_es_baixa = Q(data_baixa__gt = ara ) | Q(data_baixa__isnull = True )
   
