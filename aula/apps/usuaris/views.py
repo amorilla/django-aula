@@ -237,7 +237,7 @@ def elsProfessors( request ):
     taula.capceleres.append( capcelera )
        
     taula.fileres = []
-    for professor in  Professor.objects.all():
+    for professor in  Professor.objects.filter(horari__isnull=False, horari__es_actiu=True).distinct().order_by('username'):
         
         filera = []
         
