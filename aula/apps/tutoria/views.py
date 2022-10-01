@@ -250,7 +250,7 @@ def lesMevesActuacions(request):
                   )
 
     table = Table2_Actuacions( list( actuacions ) ) 
-    table.order_by = '-moment_actuacio' 
+    table.order_by = 'moment_actuacio' 
     
     RequestConfig(request, paginate={"paginator_class":DiggPaginator , "per_page": 20}).configure(table)
         
