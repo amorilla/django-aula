@@ -1,1 +1,87 @@
-[{"model": "incidencies.frassesincidenciaaula", "pk": 5, "fields": {"tipus": 3, "frase": "No treballar i parlar durant la classe"}}, {"model": "incidencies.frassesincidenciaaula", "pk": 6, "fields": {"tipus": 3, "frase": "Respondre inadequadament el professorat"}}, {"model": "incidencies.frassesincidenciaaula", "pk": 12, "fields": {"tipus": 3, "frase": "Menjar o beure a l\u2019aula"}}, {"model": "incidencies.frassesincidenciaaula", "pk": 13, "fields": {"tipus": 3, "frase": "No portar el material per poder fer classe"}}, {"model": "incidencies.frassesincidenciaaula", "pk": 14, "fields": {"tipus": 3, "frase": "Portar gorra a classe"}}, {"model": "incidencies.frassesincidenciaaula", "pk": 15, "fields": {"tipus": 3, "frase": "Aixecar-se sense perm\u00eds"}}, {"model": "incidencies.frassesincidenciaaula", "pk": 16, "fields": {"tipus": 3, "frase": "Embrutar les depend\u00e8ncies del centre"}}, {"model": "incidencies.frassesincidenciaaula", "pk": 17, "fields": {"tipus": 3, "frase": "No lliurar comunicats del centre als pares"}}, {"model": "incidencies.frassesincidenciaaula", "pk": 18, "fields": {"tipus": 3, "frase": "Fer \u00fas de la bicicleta, el monopat\u00ed o d\u2019altres dins el centre"}}, {"model": "incidencies.frassesincidenciaaula", "pk": 19, "fields": {"tipus": 4, "frase": "Reiteraci\u00f3 de conductes que suposen una falta lleu"}}, {"model": "incidencies.frassesincidenciaaula", "pk": 20, "fields": {"tipus": 4, "frase": "Faltar el respecte als companys o a qualsevol altre membre de la comunitat educativa"}}, {"model": "incidencies.frassesincidenciaaula", "pk": 21, "fields": {"tipus": 4, "frase": "Desobeir o faltar el respecte al professorat"}}, {"model": "incidencies.frassesincidenciaaula", "pk": 22, "fields": {"tipus": 4, "frase": "Marxar de classe sense el perm\u00eds del professorat"}}, {"model": "incidencies.frassesincidenciaaula", "pk": 23, "fields": {"tipus": 4, "frase": "Estar fora de l\u2019aula sense el perm\u00eds del professorat"}}, {"model": "incidencies.frassesincidenciaaula", "pk": 24, "fields": {"tipus": 4, "frase": "Sortir del centre sense perm\u00eds en horari lectiu"}}, {"model": "incidencies.frassesincidenciaaula", "pk": 25, "fields": {"tipus": 4, "frase": "Entrar o sortir del centre per llocs no autoritzats"}}, {"model": "incidencies.frassesincidenciaaula", "pk": 26, "fields": {"tipus": 4, "frase": "Posar en marxa o jugar amb el material del centre (projectors, etc.) sense el perm\u00eds expl\u00edcit del professorat"}}, {"model": "incidencies.frassesincidenciaaula", "pk": 27, "fields": {"tipus": 4, "frase": "Connectar-se a xarxes socials durant la classe"}}, {"model": "incidencies.frassesincidenciaaula", "pk": 28, "fields": {"tipus": 4, "frase": "Malmetre el material o les instal\u00b7lacions del centre"}}, {"model": "incidencies.frassesincidenciaaula", "pk": 29, "fields": {"tipus": 4, "frase": "Malmetre les feines dels companys"}}, {"model": "incidencies.frassesincidenciaaula", "pk": 30, "fields": {"tipus": 4, "frase": "No complir un c\u00e0stig"}}, {"model": "incidencies.frassesincidenciaaula", "pk": 31, "fields": {"tipus": 4, "frase": "Falsificar la signatura en un document"}}, {"model": "incidencies.frassesincidenciaaula", "pk": 32, "fields": {"tipus": 4, "frase": "Donar una identificaci\u00f3 falsa a qualsevol membre de la comunitat educativa"}}, {"model": "incidencies.frassesincidenciaaula", "pk": 33, "fields": {"tipus": 4, "frase": "Negar-se a lliurar el m\u00f2bil a petici\u00f3 del professorat"}}, {"model": "incidencies.frassesincidenciaaula", "pk": 34, "fields": {"tipus": 6, "frase": "Malmetre greument el material o les instal\u00b7lacions del centre"}}, {"model": "incidencies.frassesincidenciaaula", "pk": 35, "fields": {"tipus": 6, "frase": "Amena\u00e7ar o agredir f\u00edsicament o verbalment el professorat, l\u2019alumnat o qualsevol altre membre de la comunitat educativa"}}, {"model": "incidencies.frassesincidenciaaula", "pk": 36, "fields": {"tipus": 6, "frase": "Realitzar fotografies, v\u00eddeos o altres arxius multim\u00e8dia dins el centre sense el consentiment dels membres de la comunitat educativa que hi participen"}}, {"model": "incidencies.frassesincidenciaaula", "pk": 37, "fields": {"tipus": 6, "frase": "Penjar a la xarxa fotografies, v\u00eddeos o altres arxius multim\u00e8dia sense el consentiment dels membres de la comunitat educativa que hi participen"}}, {"model": "incidencies.frassesincidenciaaula", "pk": 38, "fields": {"tipus": 6, "frase": "Acumular faltes greus"}}, {"model": "incidencies.frassesincidenciaaula", "pk": 39, "fields": {"tipus": 6, "frase": "Suplantar la identitat digital"}}, {"model": "incidencies.frassesincidenciaaula", "pk": 40, "fields": {"tipus": 6, "frase": "Fer servir el tel\u00e8fon m\u00f2bil als vestidors o als lavabos del centre"}}, {"model": "incidencies.frassesincidenciaaula", "pk": 41, "fields": {"tipus": 6, "frase": "Sostreure alguna cosa a qualsevol altre membre de la comunitat educativa"}}, {"model": "incidencies.frassesincidenciaaula", "pk": 42, "fields": {"tipus": 6, "frase": "For\u00e7ar la taquilla d\u2019un altre company"}}, {"model": "incidencies.frassesincidenciaaula", "pk": 43, "fields": {"tipus": 6, "frase": "Fumar dins el centre o davant la porta"}}, {"model": "incidencies.frassesincidenciaaula", "pk": 44, "fields": {"tipus": 6, "frase": "Posseir, consumir o incitar al consum de drogues o alcohol"}}, {"model": "incidencies.frassesincidenciaaula", "pk": 45, "fields": {"tipus": 2, "frase": "No porta el material"}}, {"model": "incidencies.frassesincidenciaaula", "pk": 46, "fields": {"tipus": 2, "frase": "No fa els deures"}}, {"model": "incidencies.frassesincidenciaaula", "pk": 47, "fields": {"tipus": 2, "frase": "No duu a terme les tasques encomanades"}}, {"model": "incidencies.frassesincidenciaaula", "pk": 48, "fields": {"tipus": 2, "frase": "Ha dut a terme una bona feina a l\u2019aula"}}, {"model": "incidencies.frassesincidenciaaula", "pk": 49, "fields": {"tipus": 2, "frase": "Participa activament i amb educaci\u00f3 a l\u2019aula"}}, {"model": "incidencies.frassesincidenciaaula", "pk": 51, "fields": {"tipus": 3, "frase": "No s\u2019ha dutxat despr\u00e9s d\u2019educaci\u00f3 f\u00edsica"}},{"model": "incidencies.tipussancio", "pk": 2, "fields": {"tipus": "Serveis a la comunitat", "carta_slug": "serveis", "justificar": false}}, {"model": "incidencies.tipussancio", "pk": 3, "fields": {"tipus": "Tasques educatives", "carta_slug": "tasques", "justificar": false}},{"model": "incidencies.tipusincidencia", "pk": 6, "fields": {"tipus": "Molt Greus (Av\u00eds a l'Equip Directiu)", "es_informativa": false, "notificar_equip_directiu": true}}, {"model": "incidencies.tipusincidencia", "pk": 4, "fields": {"tipus": "Greu (Implica expulsi\u00f3 de l'aula)", "es_informativa": false, "notificar_equip_directiu": false}}, {"model": "incidencies.tipusincidencia", "pk": 2, "fields": {"tipus": "Acad\u00e8mica (Bona o dolenta)", "es_informativa": true, "notificar_equip_directiu": false}}, {"model": "incidencies.tipusincidencia", "pk": 3, "fields": {"tipus": "Lleu (No implica expulsi\u00f3 de l'aula)", "es_informativa": false, "notificar_equip_directiu": false}}]
+[
+    {
+      "model": "incidencies.frassesincidenciaaula",
+      "pk": 1,
+      "fields": {
+        "tipus": 2,
+        "frase": "Ha millorat el seu rendiment."
+      }
+    },
+    {
+      "model": "incidencies.frassesincidenciaaula",
+      "pk": 2,
+      "fields": {
+        "tipus": 2,
+        "frase": "No porta el material."
+      }
+    },
+    {
+      "model": "incidencies.frassesincidenciaaula",
+      "pk": 3,
+      "fields": {
+        "tipus": 2,
+        "frase": "No ha fet els deures."
+      }
+    },
+    {
+      "model": "incidencies.frassesincidenciaaula",
+      "pk": 4,
+      "fields": {
+        "tipus": 2,
+        "frase": "No realitza les tasques encomanades."
+      }
+    },
+    {
+      "model": "incidencies.frassesincidenciaaula",
+      "pk": 7,
+      "fields": {
+        "tipus": 5,
+        "frase": "Parla, molesta i no deixa treballar als companys."
+      }
+    },
+    {
+      "model": "incidencies.frassesincidenciaaula",
+      "pk": 8,
+      "fields": {
+        "tipus": 5,
+        "frase": "Interromp reiteradament la explicació del professor."
+      }
+    },
+    {
+      "model": "incidencies.tipussancio",
+      "pk": 2,
+      "fields": {
+        "tipus": "Serveis a la comunitat",
+        "carta_slug": "serveis",
+        "justificar": false
+      }
+    },
+    {
+      "model": "incidencies.tipussancio",
+      "pk": 3,
+      "fields": {
+        "tipus": "Tasques educatives",
+        "carta_slug": "tasques",
+        "justificar": false
+      }
+    },
+    {
+      "model": "incidencies.tipusincidencia",
+      "pk": 2,
+      "fields": {
+        "tipus": "Informativa",
+        "es_informativa": true,
+        "notificar_equip_directiu": false
+      }
+    },
+    {
+      "model": "incidencies.tipusincidencia",
+      "pk": 5,
+      "fields": {
+        "tipus": "Incidència",
+        "es_informativa": false,
+        "notificar_equip_directiu": false
+      }
+    }
+    ]
+    
