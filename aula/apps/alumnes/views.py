@@ -7,7 +7,7 @@ from django.template import RequestContext, loader
 #tables
 from django.utils.safestring import mark_safe
 
-from aula.apps.alumnes.tables2_models import HorariAlumneTable
+from aula.apps.alumnes.tables2_models import AlumneNomSentitTable, HorariAlumneTable
 from django_tables2 import RequestConfig
 
 #from django import forms as forms
@@ -116,7 +116,7 @@ def assignaTutors( request ):
     if request.method == "POST":
         #un formulari per cada grup
         #totBe = True
-        parellesProfessorGrup=set()
+        parellesProfessorGrup=list()
         for grup in Grup.objects.filter(alumne__isnull = False).distinct().order_by("descripcio_grup"):
             form=tutorsForm(
                                     request.POST,
@@ -127,9 +127,9 @@ def assignaTutors( request ):
                 tutor1 = form.cleaned_data['tutor1']
                 tutor2 = form.cleaned_data['tutor2']
                 tutor3 = form.cleaned_data['tutor3']
-                if tutor1:  parellesProfessorGrup.add( (tutor1.pk, grup)  )
-                if tutor2:  parellesProfessorGrup.add( (tutor2.pk, grup)  )
-                if tutor3:  parellesProfessorGrup.add( (tutor3.pk, grup)  )
+                if tutor1:  parellesProfessorGrup.append( (tutor1.pk, grup)  )
+                if tutor2:  parellesProfessorGrup.append( (tutor2.pk, grup)  )
+                if tutor3:  parellesProfessorGrup.append( (tutor3.pk, grup)  )
             else:
                 pass
                 #totBe = False
@@ -214,6 +214,37 @@ def informePsicopedagoc( request  ):
                      'head': 'Triar alumne'
                     }
                 )
+
+
+@login_required
+@group_required(['direcció','psicopedagog'])
+def canviarNomSentitW0( request  ):
+
+    alumnes = list(
+        Alumne
+        .objects
+        .exclude(nom_sentit="")
+        .values('id', 'cognoms', 'nom', 'nom_sentit')
+        .order_by('nom_sentit')
+    )
+    for a in alumnes:
+        a['cognom_nom'] = a['cognoms'] + ", " + a['nom']
+
+    table=AlumneNomSentitTable(alumnes)
+    table.order_by = 'nom_sentit'
+
+    RequestConfig(request).configure(table)
+
+    return render(
+        request,
+        'table2.html',
+        {
+            'table': table,
+            'urladd': reverse( 'psico__nomsentit__w1' ),
+            'txtadd': "Nou alumne amb nom sentit",
+            'titol_formulari': u"Alumnes amb Nom Sentit",
+         },
+    )    
 
 
 @login_required
