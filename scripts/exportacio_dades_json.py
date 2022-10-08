@@ -33,9 +33,5 @@ dades=serialize('json', EstatControlAssistencia.objects.all())
 exportJson(dades,'presencia')
 dades=serialize('json', Group.objects.all())
 exportJson(dades,'usuaris')
-dades=serialize('json', TPV.objects.all())
-dades=dades[:len(dades)-1]+","+serialize('json', Quota.objects.all())[1:]
-exportJson(dades,'sortides')
-
 
 quit()
