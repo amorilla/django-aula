@@ -1,1 +1,22 @@
-[{"model": "assignatures.tipusdassignatura", "pk": 2, "fields": {"tipus_assignatura": "Aula Oberta", "ambit_on_prendre_alumnes": "N", "capcelera": "Mat\u00e8ria"}}, {"model": "assignatures.tipusdassignatura", "pk": 3, "fields": {"tipus_assignatura": "Opcional", "ambit_on_prendre_alumnes": "C", "capcelera": "Mat\u00e8ria"}}, {"model": "assignatures.tipusdassignatura", "pk": 5, "fields": {"tipus_assignatura": "TotsElsNivells", "ambit_on_prendre_alumnes": "I", "capcelera": "Mat\u00e8ria"}}, {"model": "assignatures.tipusdassignatura", "pk": 6, "fields": {"tipus_assignatura": "Agrupament", "ambit_on_prendre_alumnes": "A", "capcelera": "Mat\u00e8ria"}}, {"model": "assignatures.tipusdassignatura", "pk": 7, "fields": {"tipus_assignatura": "Agrupament amb nivells", "ambit_on_prendre_alumnes": "AN", "capcelera": "Mat\u00e8ria"}}, {"model": "assignatures.tipusdassignatura", "pk": 4, "fields": {"tipus_assignatura": "Regular", "ambit_on_prendre_alumnes": "G", "capcelera": "Mat\u00e8ria"}}, {"model": "assignatures.tipusdassignatura", "pk": 1, "fields": {"tipus_assignatura": "Unitat Formativa", "ambit_on_prendre_alumnes": "N", "capcelera": "M\u00f2dul professional"}}]
+[ {"pk": 1, 
+   "model": "assignatures.tipusdassignatura", 
+   "fields": {"tipus_assignatura": "Unitat Formativa", 
+              "ambit_on_prendre_alumnes": "N",
+              "capcelera": "Mòdul professional"}}, 
+   {"pk": 2, 
+   "model": "assignatures.tipusdassignatura", 
+   "fields": {"tipus_assignatura": "Aula Oberta", 
+              "ambit_on_prendre_alumnes": "N"}}, 
+   {"pk": 3, 
+   "model": "assignatures.tipusdassignatura", 
+   "fields": {"tipus_assignatura": "Opcional", 
+              "ambit_on_prendre_alumnes": "C"}}, 
+   {"pk": 4, 
+   "model": "assignatures.tipusdassignatura", 
+   "fields": {"tipus_assignatura": "Regular", 
+              "ambit_on_prendre_alumnes": "G"}}, 
+   {"pk": 5, 
+   "model": "assignatures.tipusdassignatura", 
+   "fields": {"tipus_assignatura": "Menjador", 
+              "ambit_on_prendre_alumnes": "I"}}
+]

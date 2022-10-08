@@ -1,1 +1,4 @@
-[{"model": "presencia.estatcontrolassistencia", "pk": 2, "fields": {"codi_estat": "P", "nom_estat": "Present", "pct_ausencia": 0}}, {"model": "presencia.estatcontrolassistencia", "pk": 3, "fields": {"codi_estat": "F", "nom_estat": "Falta", "pct_ausencia": 0}}, {"model": "presencia.estatcontrolassistencia", "pk": 4, "fields": {"codi_estat": "J", "nom_estat": "Justificada", "pct_ausencia": 0}}, {"model": "presencia.estatcontrolassistencia", "pk": 5, "fields": {"codi_estat": "R", "nom_estat": "Retard", "pct_ausencia": 0}}]
+[{"pk": 2, "model": "presencia.estatcontrolassistencia", "fields": {"nom_estat": "Present", "codi_estat": "P"}},
+ {"pk": 3, "model": "presencia.estatcontrolassistencia", "fields": {"nom_estat": "Falta", "codi_estat": "F"}},
+ {"pk": 4, "model": "presencia.estatcontrolassistencia", "fields": {"nom_estat": "Justificada", "codi_estat": "J"}},
+ {"pk": 5, "model": "presencia.estatcontrolassistencia", "fields": {"nom_estat": "Retard", "codi_estat": "R"}}]
