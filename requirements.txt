@@ -1,16 +1,14 @@
 wheel
 openpyxl
-# Development
-git+https://github.com/lino-framework/appypod.git#egg=appy
-Django
-#django-debug-toolbar
+git+https://github.com/lino-framework/appypod.git#egg=appy ; python_version < '3.6'
+appy ; python_version >= '3.6'
+Django < 4 ; python_version < '3.8.10'
+Django >= 4 ; python_version >= '3.8.10'
 django-extensions
+django-environ
 lxml
-django-appypod
-#python-dateutil
 six
 django-debug-toolbar
-#python-lxml
 python-dateutil
 django-tables2
 icalendar
@@ -18,10 +16,14 @@ django-appconf
 Pillow
 viivakoodi
 XlsxWriter
-typing
+typing ; python_version < '3.5'
 selenium
 pisa
 pycryptodome
 xmltodict
 django-private-storage
 dnspython
+django-formtools
+invoke
+psycopg2-binary
+django_select2

@@ -7,11 +7,11 @@ from django.template import RequestContext, loader
 #tables
 from django.utils.safestring import mark_safe
 
-from .tables2_models import HorariAlumneTable
+from aula.apps.alumnes.tables2_models import AlumneNomSentitTable, HorariAlumneTable
 from django_tables2 import RequestConfig
 
 #from django import forms as forms
-from aula.apps.alumnes.models import Alumne,  Curs, Grup
+from aula.apps.alumnes.models import Alumne, Curs, Grup, DadesAddicionalsAlumne
 from aula.apps.usuaris.models import Professor, Accio
 from aula.apps.assignatures.models import Assignatura
 from aula.apps.presencia.models import Impartir, EstatControlAssistencia
@@ -38,7 +38,7 @@ from aula.apps.presencia.models import Impartir
 from django.utils.datetime_safe import  date, datetime
 from datetime import timedelta
 from django.db.models import Q
-from django.forms.models import modelformset_factory
+from django.forms.models import modelformset_factory, modelform_factory
 from aula.apps.alumnes.reports import reportLlistaTutorsIndividualitzats
 from aula.apps.avaluacioQualitativa.forms import alumnesGrupForm
 from aula.apps.tutoria.models import TutorIndividualitzat
@@ -47,8 +47,20 @@ from aula.apps.alumnes.tools import fusiona_alumnes_by_pk
 from aula.apps.alumnes.forms import promoForm, newAlumne
 from django.conf import settings
 from aula.apps.alumnes.gestioGrups import grupsPromocionar
+from django.urls import reverse
+
+# missatgeria
+from aula.apps.missatgeria.models import Missatge
+from aula.apps.missatgeria.missatges_a_usuaris import (
+    ALUMNES_ASSIGNAR_NOMSENTIT,
+    ALUMNES_ESBORRAR_NOMSENTIT,
+    tipusMissatge
+)
 
 #duplicats
+from ...settings import CUSTOM_DADES_ADDICIONALS_ALUMNE
+
+
 @login_required
 @group_required(['direcció'])
 def duplicats(request):
@@ -205,6 +217,139 @@ def informePsicopedagoc( request  ):
 
 
 @login_required
+@group_required(['direcció','psicopedagog'])
+def canviarNomSentitW0( request  ):
+
+    alumnes = list(
+        Alumne
+        .objects
+        .exclude(nom_sentit="")
+        .values('id', 'cognoms', 'nom', 'nom_sentit')
+        .order_by('nom_sentit')
+    )
+    for a in alumnes:
+        a['cognom_nom'] = a['cognoms'] + ", " + a['nom']
+
+    table=AlumneNomSentitTable(alumnes)
+    table.order_by = 'nom_sentit'
+
+    RequestConfig(request).configure(table)
+
+    return render(
+        request,
+        'table2.html',
+        {
+            'table': table,
+            'urladd': reverse( 'psico__nomsentit__w1' ),
+            'txtadd': "Nou alumne amb nom sentit",
+            'titol_formulari': u"Alumnes amb Nom Sentit",
+         },
+    )    
+
+
+@login_required
+@group_required(['direcció','psicopedagog'])
+def canviarNomSentitW1( request  ):
+
+    credentials = tools.getImpersonateUser(request) 
+    (user, l4 ) = credentials
+
+    if request.method == 'POST':
+        
+        formAlumne = triaAlumneSelect2Form(request.POST )
+        if formAlumne.is_valid():            
+            alumne = formAlumne.cleaned_data['alumne']
+            url_next = reverse( 'psico__nomsentit__w2' , kwargs={'pk': alumne.pk ,})
+            return HttpResponseRedirect( url_next )
+        
+    else:
+
+        formAlumne = triaAlumneSelect2Form( )         
+        
+    return render(
+                request,
+                'form.html',
+                    {'form': formAlumne,
+                     'head': 'Triar alumne'
+                    }
+                )
+
+@login_required
+@group_required(['direcció','psicopedagog'])
+def canviarNomSentitW2( request, pk ):
+
+    credentials = tools.getImpersonateUser(request) 
+    (user, l4 ) = credentials
+
+    alumne = get_object_or_404(Alumne,pk=pk)
+    formF=modelform_factory( Alumne, fields=[ 'nom_sentit' ]  )
+    if request.method == 'POST':
+        
+        formAlumne = formF(request.POST, instance=alumne )
+        if formAlumne.is_valid():            
+            formAlumne.save()
+
+            # modificar o esborrar?
+            esborrat = not alumne.nom_sentit
+
+            # missatge a tutors i professors
+            qElTenenALHorari = Q( horari__impartir__controlassistencia__alumne = alumne   )            
+            qImparteixDocenciaAlNouGrup = Q(horari__grup =  alumne.grup)
+            qEsTutor = Q(pk__in=[p.pk for p in alumne.tutorsDeLAlumne()])
+            professors = Professor.objects.filter(qElTenenALHorari | qImparteixDocenciaAlNouGrup | qEsTutor).distinct()
+
+            if esborrat:
+                missatge = ALUMNES_ESBORRAR_NOMSENTIT
+                tipus_de_missatge = tipusMissatge(missatge)
+                missatge_txt =  missatge.format(
+                    alumne
+                )
+            else:
+                missatge = ALUMNES_ASSIGNAR_NOMSENTIT
+                tipus_de_missatge = tipusMissatge(missatge)
+                missatge_txt = missatge.format(
+                    alumne,
+                    alumne.nom_sentit,
+                )
+
+            for professor in professors:
+                msg = Missatge( remitent = user, text_missatge = missatge_txt,tipus_de_missatge = tipus_de_missatge  )
+                msg.envia_a_usuari( professor, 'IN')
+
+            # missatge per pantalla            
+            professors_txt = ", ".join([unicode(professor) for professor in professors])
+            msg = "El nom sentit de l'alumne {0} és: {1}. Els professors {2} han estat notificats.".format(
+                alumne,
+                alumne.nom_sentit,
+                professors_txt,
+            )
+            if esborrat:
+                msg =  "Eliminat el nom sentit de l'alumne {0}. Els professors {1} han estat notificats.".format(
+                    alumne,
+                    professors_txt
+                )
+            messages.success(request, msg)
+
+            # fi
+            url_next = reverse("psico__informes_alumne__list")
+            return HttpResponseRedirect( url_next )
+        
+    else:
+
+        formAlumne = formF( instance=alumne )         
+        
+    return render(
+                request,
+                'form.html',
+                    {'form': formAlumne,
+                     'head': 'Canviar el nom sentit a {0}'.format(alumne)
+                    }
+                )
+
+
+
+
+@login_required
 @group_required(['direcció'])
 def gestionaAlumnesTutor( request , pk ):
     credentials = tools.getImpersonateUser(request) 
@@ -351,14 +496,14 @@ def elsMeusAlumnesAndAssignatures( request ):
         taula.titol.contingut = ""
 
         capcelera_foto = tools.classebuida()
-        capcelera_foto.amplade = 10
+        capcelera_foto.amplade = 5
 
         capcelera_nom = tools.classebuida()
         capcelera_nom.amplade = 25
         capcelera_nom.contingut = u'{0} - {1}'.format(unicode( assignatura ) , unicode( grup ) )
 
         capcelera_nIncidencies = tools.classebuida()
-        capcelera_nIncidencies.amplade = 10
+        capcelera_nIncidencies.amplade = 5
         capcelera_nIncidencies.contingut = u'Incidències'
 
         capcelera_assistencia = tools.classebuida()
@@ -381,15 +526,33 @@ def elsMeusAlumnesAndAssignatures( request ):
         capcelera_nFaltes.contingut = u' ({0}h impartides / {1}h)'.format( nClassesImpartides, nClasses)            
 
         capcelera_contacte = tools.classebuida()
-        capcelera_contacte.amplade = 20
-        capcelera_contacte.contingut = u'Informació dels Responsables'
+        capcelera_contacte.amplade = 10
+        capcelera_contacte.contingut = u'Responsables'
 
         capcelera_observacions = tools.classebuida()
-        capcelera_observacions.amplade = 15
+        capcelera_observacions.amplade = 10
         capcelera_observacions.contingut = u'Observacions'
         
-        taula.capceleres = [capcelera_foto, capcelera_nom, capcelera_nIncidencies, capcelera_assistencia, capcelera_nFaltes, capcelera_contacte, capcelera_observacions]
-        
+        taula.capceleres = [capcelera_foto, capcelera_nom, capcelera_nIncidencies, capcelera_assistencia,
+                            capcelera_nFaltes, capcelera_contacte]
+
+
+        hi_ha_autoritzacions=[]
+        for value in CUSTOM_DADES_ADDICIONALS_ALUMNE:
+            hi_ha_autoritzacions.append(value['esautoritzacio'])
+        if True in hi_ha_autoritzacions:
+            capcelera_autoritzacio = tools.classebuida()
+            capcelera_autoritzacio.amplade = 15
+            capcelera_autoritzacio.contingut = u'Autorització'
+            taula.capceleres.append(capcelera_autoritzacio)
+
+        for dada in CUSTOM_DADES_ADDICIONALS_ALUMNE:
+            if (not dada['esautoritzacio'] and 'Professor' in dada['visibilitat']): #camp no agrupable en una sóla columna i visible al professorat
+                capcelera_nova = tools.classebuida()
+                capcelera_nova.contingut = dada['label']
+                taula.capceleres.append(capcelera_nova)
+        taula.capceleres.append(capcelera_observacions)
+
         taula.fileres = []
         for alumne in Alumne.objects.filter( 
                             controlassistencia__impartir__horari__grup = grup,
@@ -435,8 +598,8 @@ def elsMeusAlumnesAndAssignatures( request ):
                                                     ).exclude(
                                                         estat = 'ES'
                                                     ).count()
-            camp_nIncidencies.multipleContingut = [ ( u'Incid: {0}'.format( nIncidencies ), None, ), 
-                                                    ( u'Expul: {0}'.format( nExpulsions), None,  ) ]
+            camp_nIncidencies.multipleContingut = [ ( u'Incid:\xa0{0}'.format( nIncidencies ), None, ),
+                                                    ( u'Expul:\xa0{0}'.format( nExpulsions), None,  ) ]
             filera.append(camp_nIncidencies)
 
             #-Assistencia--------------------------------------------
@@ -490,6 +653,38 @@ def elsMeusAlumnesAndAssignatures( request ):
                                                                         alumne.rp2_mobil,
                                                                         alumne.rp2_correu ), None,)]
             filera.append(camp)
+
+            labels = [x['label'] for x in CUSTOM_DADES_ADDICIONALS_ALUMNE]
+            # -Camps addicionals agrupables en una columna (autoritzacions)--------------------
+            if CUSTOM_DADES_ADDICIONALS_ALUMNE and hi_ha_autoritzacions:
+                camp_autoritzacio = tools.classebuida()
+                camp_autoritzacio.enllac = None
+                camp_autoritzacio.multipleContingut = []
+                dades_addicionals_alumne = DadesAddicionalsAlumne.objects.filter(alumne=alumne)
+                for dada_addicional in dades_addicionals_alumne:
+                    if dada_addicional.label in labels:
+                        element = next(item for item in CUSTOM_DADES_ADDICIONALS_ALUMNE if item["label"] == dada_addicional.label)
+                        agrupable = element['esautoritzacio']
+                        visible_al_professorat = 'Professor' in element['visibilitat']
+                        if visible_al_professorat and agrupable:
+                                camp_autoritzacio.multipleContingut.append((u'{0}: {1}'.format(dada_addicional.label, dada_addicional.value), None,))
+                filera.append(camp_autoritzacio)
+
+
+            # -Camps addicionals no agrupables en una columna --------------------
+            if CUSTOM_DADES_ADDICIONALS_ALUMNE:
+                camp_nou = tools.classebuida()
+                camp_nou.enllac = None
+                dades_addicionals_alumne = DadesAddicionalsAlumne.objects.filter(alumne=alumne)
+                for dada_addicional in dades_addicionals_alumne:
+                    if dada_addicional.label in labels:
+                        element = next((item for item in CUSTOM_DADES_ADDICIONALS_ALUMNE if item["label"] == dada_addicional.label), None)
+                        agrupable = element['esautoritzacio'] if element else True
+                        visible_al_professorat = 'Professor' in element['visibilitat'] if element else False
+                        if visible_al_professorat and not agrupable:
+                            camp_nou.contingut = dada_addicional.value
+                filera.append(camp_nou)
+
 
             # -observacions--------------------------------------------
             camp_observacions = tools.classebuida()
@@ -567,7 +762,7 @@ def mostraGrupPromocionar(request, grup=""):
                     alumne.save()
 
 
-                if (decisio == "0"):
+                if (decisio == "0" and curs_vinent):
 
                     id = form.cleaned_data['id'].id
                     alumne = Alumne.objects.get(id = id)
@@ -594,12 +789,30 @@ def mostraGrupPromocionar(request, grup=""):
 @login_required
 @group_required(['consergeria','professors'])
 def detallAlumneHorari(request, pk, detall='all'):
+    from aula.apps.matricula.models import Document
+    
     credentials = tools.getImpersonateUser(request)
     (user, l4) = credentials
 
+    alumne = get_object_or_404( Alumne, pk=pk)
+    professor = User2Professor(user)
+    assignatura_grup = set()
+    for ca in Impartir.objects.filter(horari__professor=professor):
+        if ca.horari.grup is not None:
+            assignatura_grup.add((ca.horari.assignatura, ca.horari.grup))
+    alumnes_del_profe = set()
+    for (assignatura, grup,) in assignatura_grup:
+        for alumn in Alumne.objects.filter(
+                controlassistencia__impartir__horari__grup=grup,
+                controlassistencia__impartir__horari__assignatura=assignatura,
+                controlassistencia__impartir__horari__professor=professor).distinct().order_by('cognoms'):
+            alumnes_del_profe.add(alumn)
+    es_alumne_del_profe = alumne in alumnes_del_profe
+    tutors_de_lalumne = alumne.tutorsDeLAlumne()
+    es_tutor_de_lalumne = professor in tutors_de_lalumne
     grups_poden_veure_detalls = [u"sortides",u"consergeria",u"direcció",]
 
-    mostra_detalls = user.groups.filter(name__in=grups_poden_veure_detalls).exists()
+    mostra_detalls = es_tutor_de_lalumne or user.groups.filter(name__in=grups_poden_veure_detalls).exists()
 
     data_txt = request.GET.get( 'data', '' )
     try:
@@ -608,7 +821,6 @@ def detallAlumneHorari(request, pk, detall='all'):
         data = datetime.today()    
 
     qAvui = Q(impartir__dia_impartir=data)
-    alumne = get_object_or_404( Alumne, pk=pk)
     controlOnEslAlumneAvui = alumne.controlassistencia_set.filter(qAvui)
 
     grup = alumne.grup
@@ -692,6 +904,11 @@ def detallAlumneHorari(request, pk, detall='all'):
             text=u"""Accés a dades sensibles de l'alumne {0} per part de l'usuari {1}.""".format(alumne, user)
         )
 
+    if user.groups.filter(name__in=['direcció']).exists():
+        documents=Document.objects.filter(matricula__alumne=alumne).order_by('pk')
+    else:
+        documents=[]
+
     return render(
         request,
         'mostraInfoAlumneCercat.html',
@@ -703,6 +920,8 @@ def detallAlumneHorari(request, pk, detall='all'):
          'avui': datetime.today().date().strftime(r'%Y-%m-%d'),
          'diaabans': (data + timedelta( days = -1 )).strftime(r'%Y-%m-%d'),
          'ruta_fotos': settings.PRIVATE_STORAGE_ROOT,
+         'es_professor': es_alumne_del_profe,
+         'documents':documents,
          },
     )
 

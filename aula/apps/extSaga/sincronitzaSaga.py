@@ -18,9 +18,22 @@ import csv, time
 from aula.apps.extSaga.models import Grup2Aula
 
 from django.conf import settings
-from appy.pod.buffers import ELSE_WITHOUT_IF
 
 from aula.utils.tools import unicode
+
+def autoRalc(ident):
+    '''
+    Calcula Ralc per a alumnes que no tenen.
+    ident identificador de l'alumne, normalment DNI
+    Utilitza el paràmetre autoRalc de paràmetres Saga, crea un identificador 
+    format per parametre + ident
+    Retorna el ralc calculat 
+    '''
+    autoRalc, _ = ParametreSaga.objects.get_or_create( nom_parametre = 'autoRalc' )
+    if bool(autoRalc.valor_parametre):
+        ralc= autoRalc.valor_parametre + ident[-9:]
+        return ralc
+    return ident
 
 def sincronitza(f, user = None):
 
@@ -72,7 +85,7 @@ def sincronitza(f, user = None):
         #a.correu_tutors = ''
 
         for columnName, value in iter(row.items()):
-            if bool(value):
+            if bool(value) and isinstance(value, str):
                 value=value.strip()
             columnName = unicode(columnName,'iso-8859-1')
             #columnName = unicode( rawColumnName, 'iso-8859-1'  )
@@ -142,9 +155,7 @@ def sincronitza(f, user = None):
 
         alumneDadesAnteriors = None
         if not bool(a.ralc) or a.ralc=='':
-            autoRalc, _ = ParametreSaga.objects.get_or_create( nom_parametre = 'autoRalc' )
-            if bool(autoRalc.valor_parametre):
-                a.ralc= autoRalc.valor_parametre + dni[-9:]
+            a.ralc=autoRalc(dni)
 
         try:
             q_mateix_ralc = Q( ralc = a.ralc ) # & Q(  grup__curs__nivell = a.grup.curs.nivell )
@@ -194,6 +205,7 @@ def sincronitza(f, user = None):
             #TODO: si canvien dades importants avisar al tutor.
             a.pk = alumneDadesAnteriors.pk
             a.estat_sincronitzacio = 'S-U'
+            a.nom_sentit = alumneDadesAnteriors.nom_sentit
             info_nAlumnesModificats+=1
 
             # En cas que l'alumne pertanyi a un dels grups parametritzat com a estàtic,
@@ -232,6 +244,8 @@ def sincronitza(f, user = None):
                 a.foto = alumneDadesAnteriors.foto
                 a.primer_responsable = alumneDadesAnteriors.primer_responsable
                 a.observacions = alumneDadesAnteriors.observacions
+                a.data_alta = alumneDadesAnteriors.data_alta
+
 
         a.save()
         nivells.add(a.grup.curs.nivell)

@@ -1,4 +1,4 @@
-from django.contrib.auth.models import Group
+from django.contrib.auth.models import Group, User
 from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned
 from aula.apps.missatgeria.missatges_a_usuaris import RECORDA_REPROGRAMAR_CLASSES, tipusMissatge
 from aula.apps.usuaris.models import Professor
@@ -73,7 +73,7 @@ def creaAgrupaments(gruph, llista, di, df, senseGrups):
     for nomg in llista:
         nomg=nomg[3:]
         galum, n, c, g = esGrupAlumnes(nomg,senseGrups)
-
+        
         if (galum):
             # Si és un grup d'alumnes el crea
             grupnomg, warn=creaGrup(n,c,g,di,df)
@@ -81,13 +81,13 @@ def creaAgrupaments(gruph, llista, di, df, senseGrups):
         else:
             warnings.append(u'No es crea Agrupament, grup erroni: \'%s\' --> \'%s\'' % (nomg, str(gruph)) )
             continue
-
+        
         c_agrup=Agrupament.objects.filter(grup_alumnes=grupnomg, grup_horari=gruph)
         if not c_agrup.exists():
             agrup=Agrupament.objects.create(grup_alumnes=grupnomg, grup_horari=gruph)
             agrup.save()
             warnings.append(u'Nou agrupament: \'%s\'' % (agrup))
-            
+    
     return warnings
 
 def fusionaGrups(llgrup, di, df, senseGrups):
@@ -213,7 +213,7 @@ def fusionaGrups(llgrup, di, df, senseGrups):
                 except ObjectDoesNotExist:
                     pass
                 return grupc, tipus, warnings            
-
+            
             grups=''
             for g in llista:
                 grups=grups+g[3:]
@@ -228,7 +228,7 @@ def fusionaGrups(llgrup, di, df, senseGrups):
 def creaGrup(n, c, g, di, df):
     '''
     Crea el grup.
-
+    
     n nivell
     c curs
     g grup (i subgrup)
@@ -273,7 +273,7 @@ def creaGrup(n, c, g, di, df):
                 grup.descripcio_grup=g
         warnings.append(u'Nou grup: \'%s\'' % (grup))
         grup.save()
-
+    
     return grup, warnings
 
 def sincronitza(xml, usuari):
@@ -362,6 +362,12 @@ def sincronitza(xml, usuari):
     for p in dades['document']['teachers']['teacher']:
         codiProfessor = p['@id'][3:]
         nom=p.get('surname','')
+        # Podria existir l'usuari i no ser Professor
+        # Missatge d'avís i finalitza
+        usu=User.objects.filter(username=codiProfessor)
+        if usu and grupProfessors not in usu[0].groups.all():
+            errors.append('Usuari duplicat: '+codiProfessor)
+            continue
         profe, nouProfessor = Professor.objects.get_or_create(username=codiProfessor)
         if nouProfessor:
             profe.set_password(passwd)
@@ -370,6 +376,10 @@ def sincronitza(xml, usuari):
             profe.groups.add(grupProfessors)
             profe.groups.add(grupProfessionals)
             warnings.append(u'Nou usuari: \'%s\'. Passwd: \'%s\'' % (codiProfessor, passwd))
+    
+    if errors:
+        errors.append('Error en usuaris')
+        return {'errors': errors, 'warnings': warnings, 'infos': infos}
         
     #
     # Grups
@@ -382,7 +392,9 @@ def sincronitza(xml, usuari):
     for gr in dades['document']['classes']['class']:
         nomgrup=gr['@id'][3:]
         tut=gr.get('class_teacher','') # tutor. De moment no es fa servir
-        
+        if ' ' in nomgrup:
+            errors.append('Nom de grup "'+nomgrup+'" inadequat, consulta manual')
+            return {'errors': errors, 'warnings': warnings, 'infos': infos}
         galum, n, c, g = esGrupAlumnes(nomgrup,False)
         if (galum):
             grupc, warn=creaGrup(n,c,g,inicurs,ficurs)
@@ -445,18 +457,23 @@ def sincronitza(xml, usuari):
     
     for l in dades['document']['lessons']['lesson']:
         mat=l.get('lesson_subject','')
-        if (mat!=''):
+        if bool(mat):
             mat=mat['@id'][3:]
         prof=l.get('lesson_teacher','')
-        if (prof!=''):
+        if bool(prof):
             prof=prof['@id'][3:]
         # Fusiona grups si n'hi ha varis
         ngrup=l.get('lesson_classes','')
-        if (ngrup!=''):
+        grup=None
+        if bool(ngrup):
             ngrup=ngrup['@id']
             #  Crear grupo xxxxxNABCD... 
-            grup, tipus, warn=fusionaGrups(ngrup, inicurs, ficurs, senseGrups)
-            warnings.extend(warn)  
+            try:
+                grup, tipus, warn=fusionaGrups(ngrup, inicurs, ficurs, senseGrups)
+                warnings.extend(warn)  
+            except:
+                errors.append('Noms de grup inadequats, consulta manual')
+                return {'errors': errors, 'warnings': warnings, 'infos': infos}
         if 'times' in l and l['times'] and 'time' in l['times'] and l['times']['time']:
             cl=l.get('times').get('time')
             if type(cl)!=list:
@@ -468,9 +485,14 @@ def sincronitza(xml, usuari):
                 aula=h.get('assigned_room','')
                 if aula!='':
                     aula=aula['@id'][3:]
-                canvia, warn, compAssig = creaHorari(mat, prof, grup, tipus, dia, hini, hfi, aula, 
+                if prof:
+                    canvia, warn, compAssig = creaHorari(mat, prof, grup, tipus, dia, hini, hfi, aula, 
                                                  KronowinToUntis, assignatures_amb_professor)
-                warnings.extend(warn)  
+                else:
+                    warn=[]
+                    warn.append('Horari no importat: ' + mat + ',' + prof + ',' + str(grup) + ',' + dia + ',' + 
+                        str(hini) + ',' + str(hfi) + ',' + str(aula))
+                warnings.extend(warn)
                 nLiniesLlegides+=1
                 nAssignaturesCreades+=compAssig
                 if canvia:
@@ -488,18 +510,21 @@ def sincronitza(xml, usuari):
                 fiPer=datetime.datetime.strptime(fiPer, '%Y%m%d').date()
             
             if iniPer and fiPer:
-                diafestiu = Festiu.objects.filter(data_inici_festiu = iniPer,
-                                                  data_fi_festiu = fiPer)
+                diafestiu = Festiu.objects.filter(data_inici_festiu = iniPer)
                 if diafestiu.count()==0:
                     diafestiu=Festiu()
-                    diafestiu.data_inici_festiu = iniPer
-                    diafestiu.data_fi_festiu = fiPer
-                    diafestiu.curs=None
-                    diafestiu.franja_horaria_inici=FranjaHoraria.objects.order_by('hora_inici','hora_fi').first()
-                    diafestiu.franja_horaria_fi=FranjaHoraria.objects.order_by('hora_inici','hora_fi').last()
-                    diafestiu.descripcio=desc
-                    diafestiu.save()
-                    warnings.append(u'Nou festiu: \'%s\'' % str(diafestiu))
+                    warnings.append(u'Nou festiu: \'%s\' %s - %s' % (desc, str(iniPer), str(fiPer)))
+                else:
+                    diafestiu=diafestiu[0]
+                    if fiPer!=diafestiu.data_fi_festiu:
+                        warnings.append(u'Canvi dates festiu: \'%s\' %s - %s' % (desc, str(iniPer), str(fiPer)))
+                diafestiu.data_inici_festiu = iniPer
+                diafestiu.data_fi_festiu = fiPer
+                diafestiu.curs=None
+                diafestiu.franja_horaria_inici=FranjaHoraria.objects.order_by('hora_inici','hora_fi').first()
+                diafestiu.franja_horaria_fi=FranjaHoraria.objects.order_by('hora_inici','hora_fi').last()
+                diafestiu.descripcio=desc
+                diafestiu.save()
 
     ambErrors = ' amb errors' if errors else ''
     ambAvisos = ' amb avisos' if not errors and warnings else ''
@@ -509,7 +534,7 @@ def sincronitza(xml, usuari):
     infos.append(u'%d línies llegides' % (nLiniesLlegides,))
     infos.append(u'%d horaris creats o modificats' % (nHorarisModificats))
     infos.append(u'%d aules creades' % (nAulesCreades))
-    infos.append(u'%d assignatures Creades' % (nAssignaturesCreades))
+    infos.append(u'%d assignatures creades' % (nAssignaturesCreades))
     infos.append(u'Recorda reprogramar classes segons el canvia horari')
 
     # invocar refer 'imparticions'
@@ -577,7 +602,9 @@ def creaHorari(mat, prof, grup, tipus, dia, hini, hfi, aula, KronowinToUntis, as
                 materia = Assignatura.objects.get(curs=horari.grup.curs, codi_assignatura=mat)#,
                                                 # tipus_assignatura__ambit_on_prendre_alumnes=tipus)
                 materia.nom_assignatura=mat
-                materia.tipus_assignatura=TipusDAssignatura.objects.filter(ambit_on_prendre_alumnes=tipus).first()
+                # Ja existeix, no canvia tipus. Si fa falta es fa manualment des d'admin
+                # TODO  S'hauria de inicialitzar tot al final de curs.
+                #materia.tipus_assignatura=TipusDAssignatura.objects.filter(ambit_on_prendre_alumnes=tipus).first()
                 materia.save()
             except ObjectDoesNotExist:
                 novamat=True
@@ -598,7 +625,9 @@ def creaHorari(mat, prof, grup, tipus, dia, hini, hfi, aula, KronowinToUntis, as
                 materia = Assignatura.objects.get(curs__isnull=True, codi_assignatura=mat)#,
                                                 #tipus_assignatura__ambit_on_prendre_alumnes=tipus)
                 materia.nom_assignatura=mat
-                materia.tipus_assignatura=TipusDAssignatura.objects.filter(ambit_on_prendre_alumnes=tipus).first()
+                # Ja existeix, no canvia tipus. Si fa falta es fa manualment des d'admin
+                # TODO  S'hauria de inicialitzar tot al final de curs.
+                #materia.tipus_assignatura=TipusDAssignatura.objects.filter(ambit_on_prendre_alumnes=tipus).first()
                 materia.save()
             except ObjectDoesNotExist:
                 novamat=True

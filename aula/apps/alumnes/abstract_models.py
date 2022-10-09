@@ -24,6 +24,11 @@ class AbstractNivell(models.Model):
     ordre_nivell =  models.IntegerField(null=True, blank=True,help_text=u"S\'utilitza per mostrar un nivell abans que un altre (Ex: ESO=0, CFSI=1000)")
     descripcio_nivell = models.CharField(max_length=240, blank=True)
     anotacions_nivell = models.TextField(blank=True)
+    matricula_oberta = models.BooleanField("Matrícula oberta", default=False)
+    limit_matricula = models.DateField("Límit matrícula", null=True, blank=True, help_text=u"Dia límit per fer confirmació de matrícula")
+    taxes = models.ForeignKey('sortides.TipusQuota', on_delete=models.PROTECT, blank=True, null=True, default=None)
+    preexclusiva = models.BooleanField("Matrícula exclusiva de Preinscripció", default=False)
+    
     class Meta:
         abstract = True        
         ordering = ['ordre_nivell']
@@ -50,6 +55,9 @@ class AbstractCurs(models.Model):
     nom_curs_complert = models.CharField(max_length=45, blank=True, unique=True, help_text=u"Dades que es mostraran (Ex: 1r ESO)")
     data_inici_curs = models.DateField("Comencen", null=True, blank=True, help_text=u"Dia que comencen les classes (cal informar aquest cap per poder fer control de presència)")
     data_fi_curs = models.DateField("Acaben", null=True, blank=True, help_text=u"Dia que finalitzen les classes (es poden posar dies festius a l\'apartat corresponent)")
+    confirmacio_oberta = models.BooleanField("Confirmació activada", default=False)
+    limit_confirmacio = models.DateField("Límit confirmació", null=True, blank=True, help_text=u"Dia límit per fer confirmació de matrícula")
+    
     class Meta:
         abstract = True        
         #order_with_respect_to = 'nivell'
@@ -131,10 +139,17 @@ class AbstractAlumne(models.Model):
         (0, 'Responsable 1'),
         (1, 'Responsable 2'),
     )
-        
+
     ralc = models.CharField(max_length=100, blank=True, db_index=True)
     grup = models.ForeignKey("alumnes.Grup", on_delete=models.CASCADE)
     nom = models.CharField("Nom",max_length=240)
+    nom_sentit = models.CharField(
+        "Nom Sentit",max_length=240,
+        blank=True,
+        help_text="És el nom amb el que l'alumne se sent identificat "
+                  "tot i que formalment encara els tràmits de canvi de"
+                  " nom no estiguin completats"
+    )
     cognoms = models.CharField("Cognoms",max_length=240)
     data_neixement = models.DateField("Data naixement",null=True)
     estat_sincronitzacio = models.CharField(choices=ESTAT_SINCRO_CHOICES ,max_length=3, blank=True)
@@ -194,6 +209,9 @@ class AbstractAlumne(models.Model):
     def __str__(self):
         return (u'És baixa: ' if self.esBaixa() else u'') +  self.cognoms + ', ' + self.nom 
 
+    def get_nom_sentit(self):
+        return (u'És baixa: ' if self.esBaixa() else u'') +  self.cognoms + ', ' + (self.nom_sentit or self.nom )
+
     def delete(self):
         self.data_baixa = datetime.today()
         self.save()
@@ -228,6 +246,9 @@ class AbstractAlumne(models.Model):
     
     def get_correus_relacio_familia(self):
         return  [ x for x in [ self.correu_relacio_familia_pare, self.correu_relacio_familia_mare] if x  ]
+
+    def get_correus_tots(self):
+        return  [ x for x in [ self.correu_relacio_familia_pare, self.correu_relacio_familia_mare, self.correu_tutors, self.rp1_correu, self.rp2_correu, self.correu] if x  ]
 
     def get_user_associat(self):       
         return self.user_associat if self.user_associat_id is not None else None
@@ -298,3 +319,19 @@ class AbstractAlumne(models.Model):
     def get_foto_or_default(self):
         foto = self.foto.url if self.foto else static('nofoto.png')
         return foto
+
+
+class AbstractDadesAddicionalsAlumne(models.Model):
+
+    alumne = models.ForeignKey('alumnes.Alumne', on_delete=models.CASCADE)
+    label = models.CharField(max_length=50, help_text=u"Nom del camp addicional")
+    value = models.CharField(max_length=500, blank=True, null=True, help_text="Contingut del camp addicional")
+
+    class Meta:
+        abstract = True
+        verbose_name = u"Dada addicional de l'alumne"
+        verbose_name_plural = u"Dades addicionals dels alumnes"
+        unique_together = ['alumne','label']
+
+    def __str__(self):
+        return self.alumne.cognoms + ', ' + self.alumne.nom + ' - ' + self.label + ': ' + self.value

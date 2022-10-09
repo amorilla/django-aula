@@ -29,7 +29,7 @@ def controlAssistencia_clean( instance ):
     #
     nMaxDies = settings.CUSTOM_PERIODE_MODIFICACIO_ASSISTENCIA
     if isUpdate and instance.impartir.dia_impartir < ( dt.date.today() - dt.timedelta( days = nMaxDies) ):
-        errors.setdefault(NON_FIELD_ERRORS, []).append( u'''Aquest controll d'assistència és massa antic per ser modificat (Té més de {0} dies)'''.format(nMaxDies) )
+        errors.setdefault(NON_FIELD_ERRORS, []).append( u'''Aquest control d'assistència és massa antic per ser modificat (Té més de {0} dies)'''.format(nMaxDies) )
         
     #todo: altres controls:
     socTutor = hasattr(instance, 'professor') and instance.professor and instance.professor in tutors
@@ -104,7 +104,9 @@ def controlAssistencia_clean( instance ):
     #Justificada: si el tutor l'havia justificat deixo al tutor com el que ha desat la falta:
     if justificadaDB and posat_pel_tutor:
         instance.professor = instance.instanceDB.professor
-    
+    # Si es tracta d'una rectificació al Justificador, deixa el professor anterior.
+    if not instance.swaped and instance.instanceDB and instance.instanceDB.swaped:
+        instance.professor = instance.instanceDB.professor_backup    
 
 def controlAssistencia_pre_delete( sender, instance, **kwargs):
     pass

@@ -29,6 +29,8 @@ CONSERGERIA_A_TUTOR = u'''Missatge relatiu a un teu alumne tutorat'''
 
 CONSERGERIA_A_CONSERGERIA = u'''Enviat avís a tutors de l'alumne {0} ({1}). El text de l'avís és: "{2}"'''
 
+AVIS_ABSENCIA = u"Avís d'absència de l'alumne {0}. Dates absència: {1} {2} fins {3} {4}. Motiu: {5}"
+
 ERROR_AL_PROGRAMA = u'''Avís d'error al programa: {0}'''
 
 ACUS_REBUT_ERROR_AL_PROGRAMA = u'''Avís a administradors enviat correctament. El text de l'avís és: "{0}"'''
@@ -44,6 +46,10 @@ CAL_TRAMITAR_EXPULSIO = u'''Cal tramitar expulsió: {0}'''
 ALUMNES_DONATS_DE_BAIXA = u'''El següents alumnes han estat donats de baixa.'''
 
 ALUMNES_CANVIATS_DE_GRUP = u'''El següents alumnes han estat canviats de grup.'''
+
+ALUMNES_ASSIGNAR_NOMSENTIT = "L'alumne {0} té nom sentit {1}"
+
+ALUMNES_ESBORRAR_NOMSENTIT = "L'alumne {0} té nom sentit {1}"
 
 ALUMNES_DONATS_DALTA = u'''El següents alumnes han estat donats d'alta.'''
 
@@ -77,6 +83,10 @@ IMPORTACIO_SAGA_FINALITZADA = u"Importació Saga finalitzada."
 
 IMPORTACIO_ESFERA_FINALITZADA = u"Importació Esfer@ finalitzada."
 
+IMPORTACIO_PREINSCRIPCIO_FINALITZADA = u"Importació de la preinscripció finalitzada."
+
+IMPORTACIO_DADES_ADDICIONALS_FINALITZADA = u"Importació dades addicionals finalitzada."
+
 ERROR_SIGNATURES_REPORT_PAGAMENT_ONLINE = u"Redsys: No hi ha coincidència entre firma rebuda {0}, i calculada {1}, en dades corresponents a report de transacció online"
 
 ERROR_FALTEN_DADES_REPORT_PAGAMENT_ONLINE = u"Redsys: Falta nombre d'ordre ({0}) o codi autorització ({1}) o firma ({2}) en report de transacció online"
@@ -93,6 +103,8 @@ ERROR_INITDB=u"Inicialització incompleta de la base de dades"
 
 PROFESSOR_RESERVA_MASSIVA=u"Se t'ha assignat el recurs \"{0}\" tots els {1} des del dia {2} fins al dia {3} a la franja \"{4}\""
 
+PAGAMENT_INCORRECTE=u"El pagament fet no correspon"
+
 MISSATGES = {'ADMINISTRACIO' : {'warning': {PASSAR_LLISTA_GRUP_NO_MEU,
                                 FI_PROCES_AFEGIR_ALUMNES,
                                 FI_PROCES_AFEGIR_ALUMNES_AMB_ERRORS,
@@ -103,6 +115,8 @@ MISSATGES = {'ADMINISTRACIO' : {'warning': {PASSAR_LLISTA_GRUP_NO_MEU,
                                 FI_PROCES_TREURE_ALUMNES_AMB_ERRORS,
                                 ALUMNES_DONATS_DE_BAIXA,
                                 ALUMNES_CANVIATS_DE_GRUP,
+                                ALUMNES_ASSIGNAR_NOMSENTIT,
+                                ALUMNES_ESBORRAR_NOMSENTIT,
                                 ALUMNES_DONATS_DALTA,
                                 FI_REPROGRAMACIO_CLASSES,
                                 RECORDA_REPROGRAMAR_CLASSES,
@@ -118,6 +132,7 @@ MISSATGES = {'ADMINISTRACIO' : {'warning': {PASSAR_LLISTA_GRUP_NO_MEU,
                                 ALUMNE_SENSE_EMAILS,
                                 FI_INITDB,
                                 ERROR_INITDB,
+                                IMPORTACIO_PREINSCRIPCIO_FINALITZADA,
                                 }},
              'DISCIPLINA': {'danger': {EXPULSIO_PER_ACUMULACIO_INCIDENCIES,
                                        EXPULSIO_PER_ACUMULACIO_INCIDENCIES_FORA_AULA,
@@ -125,6 +140,7 @@ MISSATGES = {'ADMINISTRACIO' : {'warning': {PASSAR_LLISTA_GRUP_NO_MEU,
                                        CAL_TRAMITAR_EXPULSIO,}},
              'MISSATGERIA': {'info': {CONSERGERIA_A_TUTOR,
                                       CONSERGERIA_A_CONSERGERIA,
+                                      AVIS_ABSENCIA,
                                       ACUS_REBUT_ENVIAT_A_PROFE_O_PAS,
                                       EMAIL_A_FAMILIES,
                                       PROFESSOR_RESERVA_MASSIVA}},

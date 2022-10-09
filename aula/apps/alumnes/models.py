@@ -1,6 +1,6 @@
 # This Python file uses the following encoding: utf-8
 from aula.apps.alumnes.abstract_models import AbstractNivell, AbstractCurs,\
-    AbstractGrup, AbstractAlumne
+    AbstractGrup, AbstractAlumne, AbstractDadesAddicionalsAlumne
 from aula.utils.tools import unicode
 
 class Nivell(AbstractNivell):
@@ -13,6 +13,9 @@ class Grup(AbstractGrup):
     pass
     
 class Alumne(AbstractAlumne):
+    pass
+
+class DadesAddicionalsAlumne(AbstractDadesAddicionalsAlumne):
     pass
 
 from django.db import models
@@ -29,6 +32,13 @@ class AlumneGrupNom(Alumne):
     def __str__(self):
         return (u'És baixa: ' if self.esBaixa() else u'') + unicode( self.grup ) + ' - ' + self.cognoms + ', ' + self.nom         
 
+class AlumneNomSentit(Alumne):
+    class Meta:
+        proxy = True
+
+    def __str__(self):
+        return (u'És baixa: ' if self.esBaixa() else u'') +  self.cognoms + ', ' + (self.nom_sentit or self.nom)
+        
 class AlumneGrup(Alumne):
 
     class Meta:
@@ -37,6 +47,14 @@ class AlumneGrup(Alumne):
     def __str__(self):
         return (u'És baixa: ' if self.esBaixa() else u'') + unicode( self.grup ) + ' - ' + self.cognoms + ', ' + self.nom         
 
+
+class AlumneNomSentitGrup(Alumne):
+
+    class Meta:
+        proxy = True
+
+    def __str__(self):
+        return (u'És baixa: ' if self.esBaixa() else u'') + unicode( self.grup ) + ' - ' + self.cognoms + ', ' + (self.nom_sentit or self.nom)
 
 
 # ----------------------------- B U S I N E S S       R U L E S ------------------------------------ #

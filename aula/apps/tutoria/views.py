@@ -34,7 +34,7 @@ from datetime import timedelta
 from aula.apps.tutoria.models import Actuacio, Tutor, SeguimentTutorialPreguntes,\
     SeguimentTutorial, SeguimentTutorialRespostes, ResumAnualAlumne,\
     CartaAbsentisme
-from aula.apps.alumnes.models import Alumne, Grup, AlumneGrupNom
+from aula.apps.alumnes.models import Alumne, Grup, AlumneGrupNom, AlumneGrup
 from django.forms.models import modelform_factory, modelformset_factory
 from django import forms
 from django.db.models import Min, Max, Q
@@ -68,6 +68,7 @@ from aula.apps.tutoria.table2_models import Table2_Actuacions
 
 from django.contrib import messages
 from django.conf import settings
+from aula.apps.presenciaSetmanal.views import ProfeNoPot
 
 @login_required
 @group_required(['professors'] )
@@ -667,7 +668,10 @@ def informeSetmanalMKTable(request, pk, year, month, day, inclouControls = True,
             dades.marc_horari[dia] = { 'desde':forquilla['desde'],'finsa':forquilla['finsa']}
             dades.dia_hores[dia] = llista()
             for hora in FranjaHoraria.objects.filter( hora_inici__gte = forquilla['desde'],
-                                                      hora_inici__lte = forquilla['finsa'] ).order_by('hora_inici'):
+                                                      hora_inici__lte = forquilla['finsa'],
+                                                    # S'han de diferenciar les hores segons el dia
+                                                      horari__dia_de_la_setmana__n_dia_ca=delta ).distinct()\
+                                                      .order_by('hora_inici'):
                 dades.dia_hores[dia].append(hora)            
         
     dades.quadre = tools.diccionari()
@@ -677,27 +681,27 @@ def informeSetmanalMKTable(request, pk, year, month, day, inclouControls = True,
         dades.quadre[unicode(alumne)] = []
 
         for dia, hores in dades.dia_hores.itemsEnOrdre():
-            
-            hora_inici = FranjaHoraria.objects.get( hora_inici = dades.marc_horari[dia]['desde'] )
-            hora_fi    = FranjaHoraria.objects.get( hora_inici = dades.marc_horari[dia]['finsa'] )
+            # guardem les hores, no les franjes
+            hora_inici = FranjaHoraria.objects.filter( hora_inici = dades.marc_horari[dia]['desde'] ).first().hora_inici
+            hora_fi    = FranjaHoraria.objects.filter( hora_inici = dades.marc_horari[dia]['finsa'] ).last().hora_inici
 
             q_controls = Q( impartir__dia_impartir = dia ) & \
-                         Q( impartir__horari__hora__gte = hora_inici) & \
-                         Q( impartir__horari__hora__lte = hora_fi) & \
+                         Q( impartir__horari__hora__hora_inici__gte = hora_inici) & \
+                         Q( impartir__horari__hora__hora_inici__lte = hora_fi) & \
                          Q( alumne = alumne )
 
             controls = [ c for c in ControlAssistencia.objects.filter( q_controls ) ]
 
             q_incidencia = Q(dia_incidencia = dia) & \
-                            Q(franja_incidencia__gte = hora_inici) & \
-                            Q(franja_incidencia__lte = hora_fi) & \
+                            Q(franja_incidencia__hora_inici__gte = hora_inici) & \
+                            Q(franja_incidencia__hora_inici__lte = hora_fi) & \
                             Q(alumne = alumne)
 
             incidencies = [ i for i in  Incidencia.objects.filter( q_incidencia ) ]                                   
 
             q_expulsio = Q(dia_expulsio = dia) & \
-                         Q(franja_expulsio__gte = hora_inici) & \
-                         Q(franja_expulsio__lte = hora_fi) & \
+                         Q(franja_expulsio__hora_inici__gte = hora_inici) & \
+                         Q(franja_expulsio__hora_inici__lte = hora_fi) & \
                          Q(alumne = alumne) & \
                          ~Q(estat = 'ES') 
 
@@ -750,7 +754,7 @@ def informeSetmanalMKTable(request, pk, year, month, day, inclouControls = True,
                     else:
                         cella.color = 'white'
                 
-                if hora == hora_inici:
+                if hora.hora_inici == hora_inici:
                     cella.primera_hora = True
                 else:
                     cella.primera_hora = False
@@ -811,7 +815,7 @@ def informeSetmanal(request):
     (user, l4) = credentials
     professor = User2Professor(user)
         
-    head='Informe setmana'
+    head='Informe setmanal'
     
     grups = Grup.objects.filter( tutor__professor = professor )
 
@@ -869,51 +873,63 @@ def justificaNext(request, pk):
     professor = User2Professor(user)
     
     #--seg----
-    control = ControlAssistencia.objects.get( pk = int(pk) )
-    esTutor = professor in  control.alumne.tutorsDeLAlumne() 
-    tePermis = l4 or esTutor
-    if not tePermis:
-        raise Http404()
-        pass
-
-    justificada = EstatControlAssistencia.objects.get( codi_estat = 'J' )
+    try:
+        control = ControlAssistencia.objects.get( pk = int(pk) )
+    except ObjectDoesNotExist as e:
+        control = None
+        resposta = {
+            'ok' :  False,
+            'codi': ' ',
+            'missatge': '',
+            'errors':  ['Alumne esborrat de la llista'],
+            'swaped' : (None)
+        }
+        
+    if control:
+        esTutor = professor in  control.alumne.tutorsDeLAlumne() 
+        tePermis = l4 or esTutor
+        if not tePermis:
+            raise Http404()
+            pass
     
-    ok = True
-    errors = []
-    jaEstaJustifiada = control.estat and control.estat == justificada
-    if not jaEstaJustifiada or control.swaped:
-        if control.swaped:
-            control.estat, control.estat_backup = control.estat_backup, None
-            control.professor, control.professor_backup = control.professor_backup, None
-        else:
-            control.estat_backup, control.estat = control.estat, justificada
-            control.professor_backup, control.professor = control.professor, professor
-
-        try:
-            control.swaped = not control.swaped
-            control.credentials = credentials
-            control.save()
-
-            #LOGGING
-            Accio.objects.create( 
-                    tipus = 'JF',
-                    usuari = user,
-                    l4 = l4,
-                    impersonated_from = request.user if request.user != user else None,
-                    text = u"""Justificades faltes de l'alumne {0} del dia {1}. """.format( control.alumne, control.impartir.dia_impartir )
-                )                
-        except ValidationError as e:
-            ok=False
-            import itertools
-            errors = list( itertools.chain( *e.message_dict.values() )  )        
-
-    resposta = {
-        'ok' :  ok,
-        'codi': control.estat.codi_estat if control.estat else ' ',
-        'missatge': u'{0}:{1}  Prof.: {2}'.format( control.estat, control.impartir.horari.assignatura,  control.professor ),
-        'errors':  errors,
-        'swaped' : (control.swaped)
-    }
+        justificada = EstatControlAssistencia.objects.get( codi_estat = 'J' )
+        
+        ok = True
+        errors = []
+        jaEstaJustifiada = control.estat and control.estat == justificada
+        if not jaEstaJustifiada or control.swaped:
+            if control.swaped:
+                control.estat, control.estat_backup = control.estat_backup, None
+                control.professor, control.professor_backup = control.professor_backup, None
+            else:
+                control.estat_backup, control.estat = control.estat, justificada
+                control.professor_backup, control.professor = control.professor, professor
+    
+            try:
+                control.swaped = not control.swaped
+                control.credentials = credentials
+                control.save()
+    
+                #LOGGING
+                Accio.objects.create( 
+                        tipus = 'JF',
+                        usuari = user,
+                        l4 = l4,
+                        impersonated_from = request.user if request.user != user else None,
+                        text = u"""Justificades faltes de l'alumne {0} del dia {1}. """.format( control.alumne, control.impartir.dia_impartir )
+                    )                
+            except (ProfeNoPot, ValidationError) as e:
+                ok=False
+                import itertools
+                errors = list( itertools.chain( *e.message_dict.values() )  )        
+    
+        resposta = {
+            'ok' :  ok,
+            'codi': control.estat.codi_estat if control.estat else ' ',
+            'missatge': control.descripcio,
+            'errors':  errors,
+            'swaped' : (control.swaped)
+        }
     
     return HttpResponse( simplejson.dumps(resposta, ensure_ascii=False ) ,content_type= 'application/json')
 
@@ -927,54 +943,67 @@ def faltaNext(request, pk):
     professor = User2Professor(user)
     
     #--seg----
-    control = ControlAssistencia.objects.get( pk = int(pk) )
-    esTutor = professor in  control.alumne.tutorsDeLAlumne() 
-    tePermis = l4 or esTutor
-    if not tePermis:
-        raise Http404()
-        pass
-
-    justificada = EstatControlAssistencia.objects.get( codi_estat = 'J' )
-    falta = EstatControlAssistencia.objects.get( codi_estat = 'F' )
+    try:
+        control = ControlAssistencia.objects.get( pk = int(pk) )
+    except ObjectDoesNotExist as e:
+        control = None
+        resposta = {
+            'ok' :  False,
+            'codi': ' ',
+            'missatge': '',
+            'errors':  ['Alumne esborrat de la llista'],
+            'swaped' : (None)
+        }
+        
+    if control:
+        esTutor = professor in  control.alumne.tutorsDeLAlumne() 
+        tePermis = l4 or esTutor
+        if not tePermis:
+            raise Http404()
+            pass
     
-    ok = True
-    errors = []
-    jaEstaFalta = control.estat and control.estat == falta
-    if not jaEstaFalta or control.swaped:
-        if control.swaped:
-            control.estat, control.estat_backup = control.estat_backup, None
-            control.professor, control.professor_backup = control.professor_backup, None
-        else:
-            control.estat_backup, control.estat = control.estat, falta
-            control.professor_backup, control.professor = control.professor, professor
-
-        try:
-            control.swaped = not control.swaped
-            control.credentials = credentials
-            control.save()
-
-            #LOGGING
-            Accio.objects.create( 
-                    tipus = 'JF',
-                    usuari = user,
-                    l4 = l4,
-                    impersonated_from = request.user if request.user != user else None,
-                    text = u"""Correcció de presència de l'alumne {0} del dia {1}. """.format( control.alumne, control.impartir.dia_impartir )
-                )                
-        except ValidationError as e:
-            ok=False
-            import itertools
-            errors = list( itertools.chain( *e.message_dict.values() )  )        
-
-    resposta = {
-        'ok' :  ok,
-        'codi': control.estat.codi_estat if control.estat else ' ',
-        'missatge': u'{0}:{1}  Prof.: {2}'.format( control.estat, control.impartir.horari.assignatura,  control.professor ),
-        'errors':  errors,
-        'swaped' : (control.swaped)
-    }
+        justificada = EstatControlAssistencia.objects.get( codi_estat = 'J' )
+        falta = EstatControlAssistencia.objects.get( codi_estat = 'F' )
+        
+        ok = True
+        errors = []
+        jaEstaFalta = control.estat and control.estat == falta
+        if not jaEstaFalta or control.swaped:
+            if control.swaped:
+                control.estat, control.estat_backup = control.estat_backup, None
+                control.professor, control.professor_backup = control.professor_backup, None
+            else:
+                control.estat_backup, control.estat = control.estat, falta
+                control.professor_backup, control.professor = control.professor, professor
+    
+            try:
+                control.swaped = not control.swaped
+                control.credentials = credentials
+                control.save()
+    
+                #LOGGING
+                Accio.objects.create( 
+                        tipus = 'JF',
+                        usuari = user,
+                        l4 = l4,
+                        impersonated_from = request.user if request.user != user else None,
+                        text = u"""Correcció de presència de l'alumne {0} del dia {1}. """.format( control.alumne, control.impartir.dia_impartir )
+                    )                
+            except (ProfeNoPot, ValidationError) as e:
+                ok=False
+                import itertools
+                errors = list( itertools.chain( *e.message_dict.values() )  )        
+    
+        resposta = {
+            'ok' :  ok,
+            'codi': control.estat.codi_estat if control.estat else ' ',
+            'missatge': control.descripcio,
+            'errors':  errors,
+            'swaped' : (control.swaped)
+        }
     
     return HttpResponse( simplejson.dumps(resposta, ensure_ascii=False ) ,content_type= 'application/json')
+
 
 
 
@@ -1027,7 +1056,7 @@ def justificaFaltesPre(request):
 
     q_grups_tutorats = Q( grup__in =  [ t.grup for t in professor.tutor_set.all() ] )
     q_alumnes_tutorats = Q( pk__in = [ti.alumne.pk for ti in professor.tutorindividualitzat_set.all() ]  )
-    query = Alumne.objects.filter( q_grups_tutorats | q_alumnes_tutorats )
+    query = AlumneGrup.objects.filter( q_grups_tutorats | q_alumnes_tutorats )
     
     if request.method == "POST":
 
@@ -2201,7 +2230,8 @@ def seguimentTutorialPreguntes(request):
     missatge =  u"""Atenció! Per mantenir un històric de respostes 
                     és important no modificar el redactat de les preguntes.
                     Un petit canvi en el redactat de la pregunta es cosidera
-                    una pregunta diferent."""
+                    una pregunta diferent.
+                    En les preguntes no obertes, les diferents opcions es separen mitjançant '|' """
         
     return render(
                 request,
