@@ -152,6 +152,7 @@ def Confirma(request, nany):
                         item.quota=quotaSegüentCurs(settings.CUSTOM_TIPUS_QUOTA_MATRICULA, nany, user.alumne)
                         item.save()
                         #gestionaPag(item, 0)
+                        print("Quota: "+str(item.quota)+" Conf: "+item.confirma_matricula)
                         if item.confirma_matricula=='C' and item.quota:
                             creaPagament(item)
                             url=format_html("<a href='{}'>{}</a>",
