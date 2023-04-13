@@ -150,6 +150,7 @@ def Confirma(request, nany):
                         item.confirma_matricula=form.cleaned_data['opcions']
                         item.acceptacio_en=django.utils.timezone.now()
                         item.save()
+                        gestionaPag(item, 0)
                         if item.confirma_matricula=='C' and item.quota:
                             creaPagament(item)
                             url=format_html("<a href='{}'>{}</a>",
