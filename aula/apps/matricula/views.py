@@ -151,7 +151,6 @@ def Confirma(request, nany):
                         item.acceptacio_en=django.utils.timezone.now()
                         item.quota=quotaSegüentCurs(settings.CUSTOM_TIPUS_QUOTA_MATRICULA, nany, user.alumne)
                         item.save()
-                        gestionaPag(item, 0)
                         if item.confirma_matricula=='C' and item.quota:
                             creaPagament(item)
                             url=format_html("<a href='{}'>{}</a>",
