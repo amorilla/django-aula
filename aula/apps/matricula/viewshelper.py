@@ -516,6 +516,8 @@ def gestionaPag(matricula, importTaxes):
         # existeix pagament de quota de matrícula
         if (pag[0].quota!=quotamat and not pag.filter(pagament_realitzat=True)):
             # esborra antiga si no s'ha pagat, crea nova
+            enviaMissatge("Canvi de quota. Matrícula:{0} {1} {2}. Quota anterior {3}. Quota actual {4}.".format(
+                str(matricula.alumne), str(matricula.curs), matricula.any, str(pag[0].quota), str(quotamat)))
             pag.delete()
             creaPagament(matricula)
         else:
