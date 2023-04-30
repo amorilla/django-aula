@@ -248,7 +248,7 @@ def sincronitza(f, user = None):
             nou=model_to_dict(a)
             ant=model_to_dict(alumneDadesAnteriors)
             camps=('nom', 'cognoms', 'data_neixement', 'correu_tutors', 'correu_relacio_familia_pare', 'correu_relacio_familia_mare', 
-            'centre_de_procedencia', 'localitat', 'municipi', 'cp', 'telefons', 'tutors', 'adreca', 'correu', 'rp1_nom', 'rp1_telefon', 
+            'centre_de_procedencia', 'localitat', 'municipi', 'cp', 'telefons', 'tutors', 'adreca', 'rp1_nom', 'rp1_telefon', 
             'rp1_mobil', 'rp1_correu', 'rp2_nom', 'rp2_telefon', 'rp2_mobil', 'rp2_correu', 'altres_telefons')
             ok=actualitzaRegistre(ant, nou, camps, manteDades.valor_parametre=='True')
             ok['grup']=a.grup
