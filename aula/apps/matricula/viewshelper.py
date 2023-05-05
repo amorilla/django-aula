@@ -533,6 +533,8 @@ def gestionaPag(matricula, importTaxes):
         creaPagament(matricula)
     
     # Quota taxes
+    if not quotatax: return
+    
     pag=QuotaPagament.objects.filter(alumne=matricula.alumne, quota__any=matricula.any, 
                                      quota__tipus=taxes)
     if pag:
