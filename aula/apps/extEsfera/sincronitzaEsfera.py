@@ -223,8 +223,6 @@ def sincronitza(f, user = None):
                 else:
                     AlumnesCanviatsDeGrup.append(a)
 
-            a.user_associat = alumneDadesAnteriors.user_associat
-            
             # amorilla@xtec.cat
             manteDades, _ = ParametreSaga.objects.get_or_create( nom_parametre = 'mantenirDades' )
             
@@ -238,8 +236,11 @@ def sincronitza(f, user = None):
             ok=actualitzaRegistre(ant, nou, camps, manteDades.valor_parametre=='True')
             ok['grup']=a.grup
             ok['estat_sincronitzacio']=a.estat_sincronitzacio
-            ok['user_associat']=a.user_associat
+            if 'user_associat' in ok: del ok['user_associat']
+            if 'usuaris_app_associats' in ok: del ok['usuaris_app_associats']
             a=Alumne(**ok)
+            a.user_associat = alumneDadesAnteriors.user_associat
+            a.usuaris_app_associats.set(alumneDadesAnteriors.usuaris_app_associats.all())
             
             #el recuperem, havia estat baixa:
             if alumneDadesAnteriors.data_baixa:
