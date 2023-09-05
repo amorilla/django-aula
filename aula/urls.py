@@ -6,6 +6,13 @@ from aula.utils.views import keepalive,menu,logout_page
 from aula.apps.alumnes.views import mostraGrupPromocionar,nouAlumnePromocionar,llistaGrupsPromocionar
 from django.contrib.auth.views import PasswordChangeView
 from django.views.static import serve
+from rest_framework_simplejwt.views import (
+    TokenObtainPairView,
+    TokenRefreshView,
+    TokenVerifyView,
+)
+from django.views.generic.base import RedirectView
+from django.conf import settings
 
 admin.autodiscover()
 admin.site.enable_nav_sidebar = False
@@ -16,6 +23,9 @@ site_media_site_css = os.path.join(os.path.dirname(__file__), 'site-css' )
 site_media_web_demo = os.path.join(os.path.dirname(__file__), '../demo/static-web/demo' )
 
 urlpatterns = [
+    re_path(r'^api-token-auth/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
+    re_path(r'^api-token-refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    re_path(r'^api-token-verify/', TokenVerifyView.as_view(), name='token_verify'),
     re_path(r'^keepalive$', keepalive, name="blanc__blanc__keepalive"),
     path("select2/", include("django_select2.urls")),
     re_path(r'^menu/$', menu),
@@ -47,7 +57,10 @@ urlpatterns = [
     re_path(r'^extUntis/', include('aula.apps.extUntis.urls')),
     re_path(r'^matricula/', include('aula.apps.matricula.urls', namespace='matricula')),
     re_path(r'^extPreinscripcio/', include('aula.apps.extPreinscripcio.urls')),
+    re_path(r'^api/token/', include('aula.mblapp.urls')),
+    re_path(r'^api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     # Uncomment the next line to enable the admin:
+    re_path(r'^admin/login/', RedirectView.as_view(url=settings.LOGIN_URL, permanent=True, query_string=True)),
     path('admin/', admin.site.urls),
     # Login i logout automàtics
     #(r'^login/$', 'django.contrib.auth.views.login'),
