@@ -83,7 +83,6 @@ def sincronitza(f, user = None):
                    if cell.value in colnames} # Començar a la fila 6, les anteriors són brossa
     nivells = set()
     for row in rows[6:max_row - 1]:  # la darrera fila també és brossa
-        info_nAlumnesLlegits += 1
         a = Alumne()
         a.ralc = ''
         a.telefons = ''
@@ -92,7 +91,8 @@ def sincronitza(f, user = None):
                 cell.value=cell.value.strip()
             if index in col_indexs:
                 if col_indexs[index].endswith(u"Identificador de l’alumne/a"):
-                    a.ralc=unicode(cell.value)
+                    a.ralc=''.join(filter(str.isdigit, unicode(cell.value)))
+                    if not bool(a.ralc): break # Salta línies sense dades
                     trobatRalc = True
                 if col_indexs[index].endswith(u"Primer Cognom"):
                     a.cognoms = unicode(cell.value)
@@ -111,9 +111,16 @@ def sincronitza(f, user = None):
                 if col_indexs[index].endswith(u"Correu electrònic"):
                     a.correu = unicode(cell.value) if cell.value else ""
                 if col_indexs[index].endswith(u"Data naixement"):
-                    dia = time.strptime(unicode(cell.value), '%d/%m/%Y')
-                    a.data_neixement = time.strftime('%Y-%m-%d', dia)
-                    trobatDataNeixement = True
+                    try:
+                        data = unicode(cell.value).split(" ")[0]
+                        if "/" in data: dia = time.strptime(data, '%d/%m/%Y')
+                        else: dia = time.strptime(data, '%Y-%m-%d')
+                        a.data_neixement = time.strftime('%Y-%m-%d', dia)
+                        trobatDataNeixement = True
+                    except Exception as e:
+                        a.data_neixement = None
+                        errors.append( "Data de naixement incorrecte '{0}' de l'alumne {1} {2} ({3}).".format(str(cell.value), 
+                                                            a.nom, a.cognoms, a.ralc) )
 #             if columnName.endswith( u"_CENTRE PROCEDÈNCIA"):
 #                 a.centre_de_procedencia = unicode(value,'iso-8859-1')
                 if col_indexs[index].endswith(u"Localitat de residència"):
@@ -166,6 +173,9 @@ def sincronitza(f, user = None):
                 if col_indexs[index].endswith(u"Porta"):
                     a.adreca += " " +   unicode(cell.value) if cell.value else ""
 
+        if not bool(a.ralc): continue # Salta línies sense dades
+        info_nAlumnesLlegits += 1
+
         if not bool(unGrup) or not bool(unGrup.grup_esfera) or unGrup.grup_esfera=='None':
             errors_nAlumnesSenseGrup=errors_nAlumnesSenseGrup+1
             continue
@@ -213,8 +223,6 @@ def sincronitza(f, user = None):
                 else:
                     AlumnesCanviatsDeGrup.append(a)
 
-            a.user_associat = alumneDadesAnteriors.user_associat
-            
             # amorilla@xtec.cat
             manteDades, _ = ParametreSaga.objects.get_or_create( nom_parametre = 'mantenirDades' )
             
@@ -228,8 +236,11 @@ def sincronitza(f, user = None):
             ok=actualitzaRegistre(ant, nou, camps, manteDades.valor_parametre=='True')
             ok['grup']=a.grup
             ok['estat_sincronitzacio']=a.estat_sincronitzacio
-            ok['user_associat']=a.user_associat
+            if 'user_associat' in ok: del ok['user_associat']
+            if 'usuaris_app_associats' in ok: del ok['usuaris_app_associats']
             a=Alumne(**ok)
+            a.user_associat = alumneDadesAnteriors.user_associat
+            a.usuaris_app_associats.set(alumneDadesAnteriors.usuaris_app_associats.all())
             
             #el recuperem, havia estat baixa:
             if alumneDadesAnteriors.data_baixa:
