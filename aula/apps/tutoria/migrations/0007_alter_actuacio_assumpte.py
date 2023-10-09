@@ -13,6 +13,6 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='actuacio',
             name='assumpte',
-            field=models.CharField(choices=[('T', 'Tutoria individualitzada'), ('C', '(PSI) Conflicte comportament'), ('V', '(PSI) Valoració'), ('S', '(PSI) Seguiment'), ('O', '(PSI) Orientació acadèmica'), ('E', '(PSI) Suport educatiu'), ('G', '(PSI) Gestió de les emocions'), ('I', '(PSI) Gestió social'), ('P', '(PSI) Pla individualitzat'), ('A', 'Actuació puntual'), ('F', 'Entrevista Família')], help_text='Assumpte', max_length=1),
+            field=models.CharField(choices=[('T', 'Tutoria individualitzada'), ('C', '(PSI) Conflicte comportament'), ('V', '(PSI) Valoració'), ('S', '(PSI) Seguiment'), ('O', '(PSI) Orientació acadèmica'), ('E', '(PSI) Suport educatiu'), ('G', '(PSI) Gestió de les emocions'), ('I', '(PSI) Gestió social'), ('P', '(PSI) Pla individualitzat'), ('A', 'Actuació puntual'), ('F', 'Entrevista Família')], help_text='Assumpte', max_length=200),
         ),
     ]
