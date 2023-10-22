@@ -422,9 +422,14 @@ def canviDePasswd( request ):
             if userOK is not None:              
                 user.set_password( passwdNEW )
                 user.save()
-
-                url_next = '/' 
-                return HttpResponseRedirect( url_next )        
+                resultat={'errors': [], 'infos': ["Molt bé! Ara has d'entrar amb la nova contrasenya"], 'warnings': [], }
+                return render(
+                            request,
+                            'resultat.html',
+                                {'msgs': resultat ,
+                                 'head': 'Canvi de Contrasenya',
+                                }
+                            )
             else:
                 form._errors.setdefault(NON_FIELD_ERRORS, []).append( u'Comprova que la paraula de pas actual proporcionada sigui la correcta.' )
 
@@ -811,7 +816,7 @@ def activaUsuariQR(request, pk):
     qr.es_el_token_actiu=True
     qr.save()
     alumne=qr.alumne_referenciat
-    return HttpResponseRedirect(reverse('tutoria__relacio_families__gestionaQRs', args=(alumne.pk,)))
+    return HttpResponseRedirect(reverse('tutoria__relacio_families_app__gestionaQRs', args=(alumne.pk,)))
 
 @login_required
 @group_required(['professors'])
@@ -827,7 +832,7 @@ def desactivaUsuariQR(request, pk):
     qr.es_el_token_actiu=False
     qr.save()
     alumne=qr.alumne_referenciat
-    return HttpResponseRedirect(reverse('tutoria__relacio_families__gestionaQRs', args=(alumne.pk,)))
+    return HttpResponseRedirect(reverse('tutoria__relacio_families_app__gestionaQRs', args=(alumne.pk,)))
 
 
 @login_required
@@ -846,4 +851,4 @@ def eliminaUsuariQR(request, pk):
     qr.save()
     alumne=qr.alumne_referenciat
     qr.delete()
-    return HttpResponseRedirect(reverse('tutoria__relacio_families__gestionaQRs', args=(alumne.pk,)))
+    return HttpResponseRedirect(reverse('tutoria__relacio_families_app__gestionaQRs', args=(alumne.pk,)))
