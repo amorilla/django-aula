@@ -237,7 +237,8 @@ class AbstractAlumne(models.Model):
         return Professor.objects.filter(tutor__grup=self.grup).distinct()
 
     def tutorsDeLAlumne_display(self):
-        return u", ".join( [str(tutor) for tutor in self.tutorsDeLAlumne() ])
+        #return u", ".join( [str(tutor) for tutor in self.tutorsDeLAlumne() ])
+        return u", ".join( [(str(tutor)+"(Tut-Ind)" if tutor in self.tutorsIndividualitzatsDeLAlumne() else str(tutor)) for tutor in self.tutorsDeLAlumne() ])
 
     def force_delete(self):
         super(AbstractAlumne,self).delete()
