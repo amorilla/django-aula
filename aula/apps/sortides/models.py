@@ -31,13 +31,31 @@ class TPV(models.Model):
 @python_2_unicode_compatible
 class Sortida(models.Model):
 
-    TIPUS_ACTIVITAT_CHOICES = (
-                    (  'E',u'Excursió - sortida'),
-                    (  'X',u'Xerrada'),
-                    (  'G',u'Pagament'),
-                    (  'P',u'Parlament Verd'),
-                    (  'A',u'Altres (especificar-ho al títol)'),
-                   )
+    TIPUS_ACTIVITAT_CHOICES = [
+        ('A',u'Activitat'),
+        ('P',u'Pagament')
+    ]
+
+    SUBTIPUS_ACTIVITAT = {
+        'A':
+               [
+                   ('S', u'Sortida'),
+                   ('X', u'Xerrada'),
+                   ('T', u'Taller'),
+                   ('A', u'Altres'),
+               ],
+        'P':
+               [
+                   ('D', u'Dossier'),
+                   ('M', u'Material'),
+                   ('A', u'Matrícula'),
+                   ('P', u'Pagament parcial'),
+               ],
+    }
+    SUBTIPUS_ACTIVITAT_CHOICES = []
+    for clau in SUBTIPUS_ACTIVITAT:
+        for value in SUBTIPUS_ACTIVITAT[clau]:
+            SUBTIPUS_ACTIVITAT_CHOICES.append((clau + value[0], value[1]))
 
     CONSELL_ESCOLAR_CHOICES = (
                     (  'P',u'Pendent'),
@@ -57,9 +75,9 @@ class Sortida(models.Model):
 
     ESTAT_CHOICES = (
                      ('E', u'Esborrany',),
-                     ('P', u'Proposada',),
-                     ('R', u'Revisada pel Coordinador',),
-                     ('G', u"Gestionada pel Cap d'estudis",),
+                     ('P', u'Proposat/da',),
+                     ('R', u'Revisat/da pel Coordinador',),
+                     ('G', u"Gestionat/da pel Cap d'estudis",),
                      )
 
     TIPUS_PAGAMENT_CHOICES = [
@@ -83,9 +101,11 @@ class Sortida(models.Model):
 
     estat_sincronitzacio = models.CharField(max_length=1, default = NO_SINCRONITZADA, choices=ESTAT_SYNC_CHOICES, editable = False, help_text=u"Per passar els alumnes a 'no han de ser a l'aula' ")
 
-    tipus = models.CharField(max_length=1, default = 'E', choices=TIPUS_ACTIVITAT_CHOICES,help_text=u"Tipus d'activitat")
+    tipus = models.CharField(max_length=1, default = 'A', choices=TIPUS_ACTIVITAT_CHOICES,help_text=u"Tipus d'activitat")
 
-    titol_de_la_sortida = models.CharField(max_length=40,help_text=u"Escriu un títol breu que serveixi per identificar aquesta activitat.Ex: exemples: Visita al Museu Dalí, Ruta al barri gòtic, Xerrada sobre drogues ")
+    subtipus = models.CharField(max_length=2, default='AS', choices=SUBTIPUS_ACTIVITAT_CHOICES, help_text=u"Subtipus d'activitat")
+
+    titol = models.CharField(max_length=40,help_text=u"Escriu un títol breu que serveixi per identificar aquesta activitat.Ex: exemples: Visita al Museu Dalí, Ruta al barri gòtic, Xerrada sobre drogues ")
 
     ambit = models.CharField(u"Àmbit", max_length=20,help_text=u"Quins alumnes hi van? Ex: 1r i 2n ESO. Ex: 1r ESO A.")
 
@@ -134,13 +154,13 @@ class Sortida(models.Model):
 
     mitja_de_transport = models.CharField(max_length=2, choices=TIPUS_TRANSPORT_CHOICES,help_text=u"Tria el mitjà de transport")
 
-    empresa_de_transport = models.CharField(max_length=250,help_text=u"Indica el nom de l'empresa de transports i número de contracte/pressupost.")
+    empresa_de_transport = models.CharField(max_length=250, blank=True, default="", help_text=u"Indica el nom de l'empresa de transports i número de contracte/pressupost.")
 
-    pagament_a_empresa_de_transport = models.CharField(max_length=100,help_text=u"Indica la quantitat que ha de pagar l'institut pel lloguer del bus, o compra de bitllets. Si no ha de pagar res indica-ho, escriu 'res'.")
+    pagament_a_empresa_de_transport = models.CharField(max_length=100, blank=True, default="", help_text=u"Indica la quantitat que ha de pagar l'institut pel lloguer del bus, o compra de bitllets. Si no ha de pagar res indica-ho, escriu 'res'.")
 
-    pagament_a_altres_empreses = models.TextField(help_text=u"Indica la quantitat, l'empresa que ha de rebre els diners, el sistema de pagament, el número de contracte i el termini. Si no s'ha de pagar res indica-ho, escriu 'res'.")
+    pagament_a_altres_empreses = models.TextField( blank=True, default="", help_text=u"Indica la quantitat, l'empresa que ha de rebre els diners, el sistema de pagament, el número de contracte i el termini. Si no s'ha de pagar res indica-ho, escriu 'res'.")
 
-    feina_per_als_alumnes_aula = models.TextField(help_text=u"Descriu o comenta on els professors trobaran la feina que han de fer els alumnes que es quedin a l'aula. Si no queden alumnes a l'aula indica-ho.")
+    feina_per_als_alumnes_aula = models.TextField( blank=True, default="", help_text=u"Descriu o comenta on els professors trobaran la feina que han de fer els alumnes que es quedin a l'aula. Si no queden alumnes a l'aula indica-ho.")
 
     comentaris_interns = models.TextField(blank=True, help_text=u"Espai per anotar allò que sigui rellevant de cares a l'activitat. Si no hi ha comentaris rellevants indica-ho.")
 
@@ -179,7 +199,7 @@ class Sortida(models.Model):
         clean_sortida( self )
 
     def __str__(self):
-        return self.titol_de_la_sortida
+        return self.titol
 
 
     @staticmethod
