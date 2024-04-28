@@ -355,7 +355,7 @@ def calcula_menu( user , path, sessioImpersonada ):
 
         arbreSortides = (
             # --Activitats/pagaments--------------------------------------------------------------------------
-            ('sortides', 'Activitats/Pagaments', 'sortides__meves__list', di or pr, n_avis_tot + n_avis_activitats_meves> 0,
+            ('sortides', 'Activitats/Pagaments' if settings.CUSTOM_SORTIDES_PAGAMENT_ACTIU else 'Activitats', 'sortides__meves__list', di or pr, n_avis_tot + n_avis_activitats_meves> 0,
              (
                  ('Activitats', "sortides__meves__list_by_tipus,A", di or pr, None,
                    (
@@ -366,7 +366,7 @@ def calcula_menu( user , path, sessioImpersonada ):
                                     (n_avis_activitats_meves, 'info',) if n_avis_activitats_meves > 0 else None),
                    ),
                    ),
-                 ('Pagaments', "sortides__meves__list_by_tipus,P", di or pr, None,
+                 ('Pagaments', "sortides__meves__list_by_tipus,P", di or pr if settings.CUSTOM_SORTIDES_PAGAMENT_ACTIU else None, None,
                   (
                       (u"Històric", "sortides__all__list,P", di or so, None),
                       (u"Gestió", "sortides__gestio__list_by_tipus,P", di or so,

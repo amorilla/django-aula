@@ -186,7 +186,7 @@ def sortidesMevesList( request, tipus="A" ):
                    .filter( q_professor_proposa | q_professors_responsables | q_professors_acompanyants)
                    .distinct()
                   )
-    if tipus:
+    if tipus and settings.CUSTOM_SORTIDES_PAGAMENT_ACTIU:
         sortides = sortides.filter(tipus=tipus)
     table = Table2_Sortides( list( sortides ), origen="Meves" )
     if tipus=="P":
@@ -217,7 +217,7 @@ def sortidesAllList( request, tipus=None ):
                      .objects
                      .distinct()                     
                 )
-    if tipus:
+    if tipus and settings.CUSTOM_SORTIDES_PAGAMENT_ACTIU:
         sortides=sortides.filter(tipus=tipus)
     table = Table2_Sortides( data=sortides, origen="All" )
     if tipus=="P":
@@ -265,7 +265,7 @@ def sortidesGestioList( request, tipus=None ):
                    .filter( estat__in = filtre)
                    .distinct()
                   )
-    if tipus:
+    if tipus and settings.CUSTOM_SORTIDES_PAGAMENT_ACTIU:
         sortides = sortides.filter(tipus=tipus)
 
     # si sóc secretari i es pot pagar online, només les que tinguin tipus de pagament 'ON' (ONline)
