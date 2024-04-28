@@ -27,7 +27,7 @@ from aula.apps.horaris.models import FranjaHoraria
 from django.shortcuts import render, get_object_or_404
 from django.template.context import RequestContext, Context
 from aula.apps.sortides.rpt_sortidesList import sortidesListRpt
-from aula.apps.sortides.models import Sortida, SortidaPagament, Pagament, QuotaPagament, Quota
+from aula.apps.sortides.models import Sortida, SortidaPagament, Pagament, QuotaPagament, Quota, TPV
 from django.forms.models import modelform_factory
 from django.http import HttpResponseRedirect
 from django import forms
@@ -395,10 +395,8 @@ def sortidaEdit(request, pk=None, clonar=False, origen=False, tipus="A"):
                                             },
                                         labels={
                                             "subtipus": "Tipus",
-                                            "programa_de_la_sortida": "Descripció del pagament:",
+                                            "programa_de_la_sortida": "Descripció de l'activitat:" if tipus!="P" else "Descripció del pagament:",
                                             "professors_responsables": "Professorat que organitza:"
-
-
                                             },
                                         )
     if tipus == "P":
@@ -494,7 +492,8 @@ def sortidaEdit(request, pk=None, clonar=False, origen=False, tipus="A"):
             if tipus=='P':
                 instance.calendari_desde=instance.termini_pagament
                 instance.calendari_finsa=instance.termini_pagament
-            
+                instance.alumnes_a_l_aula_amb_professor_titular = True
+
             form.save()
 
             if origen == "Meves":
@@ -606,7 +605,7 @@ def sortidaEdit(request, pk=None, clonar=False, origen=False, tipus="A"):
     
 @login_required
 @group_required(['professors'])   
-def alumnesConvocats( request, pk , origen ):
+def alumnesConvocats( request, pk , origen, tipus=None ):
 
     credentials = tools.getImpersonateUser(request) 
     (user, _ ) = credentials
@@ -721,7 +720,7 @@ def alumnesConvocats( request, pk , origen ):
     
 @login_required
 @group_required(['professors'])   
-def alumnesFallen( request, pk , origen ):
+def alumnesFallen( request, pk , origen, tipus=None ):
 
     credentials = tools.getImpersonateUser(request) 
     (user, _ ) = credentials
@@ -804,7 +803,7 @@ def alumnesFallen( request, pk , origen ):
     
 @login_required
 @group_required(['professors'])   
-def alumnesJustificats( request, pk , origen ):
+def alumnesJustificats( request, pk , origen, tipus=None ):
 
     credentials = tools.getImpersonateUser(request) 
     (user, _ ) = credentials
@@ -884,7 +883,7 @@ def alumnesJustificats( request, pk , origen ):
     
 @login_required
 @group_required(['professors'])   
-def professorsAcompanyants( request, pk , origen ):
+def professorsAcompanyants( request, pk , origen, tipus=None ):
 
     credentials = tools.getImpersonateUser(request) 
     (user, _ ) = credentials
@@ -954,7 +953,7 @@ def professorsAcompanyants( request, pk , origen ):
                         importancia = 'VI'
                         msg.envia_a_usuari(nou, importancia) 
                                     
-                nexturl =  r'/sortides/sortides{origen}'.format( origen=origen )                
+                nexturl =  r'/sortides/sortides{origen}/{tipus}'.format( origen=origen, tipus=tipus )
                 return HttpResponseRedirect( nexturl )
             except ValidationError as e:
                 form._errors.setdefault(NON_FIELD_ERRORS, []).extend(  e.messages )
@@ -1664,7 +1663,7 @@ def pagoEfectiu(request, pk):
 
 @login_required()
 @group_required(['professors'])
-def detallPagament(request, pk):
+def detallPagament(request, pk, tipus=None):
 
     credentials = tools.getImpersonateUser(request)
     (user, _) = credentials
@@ -1677,7 +1676,7 @@ def detallPagament(request, pk):
     if not potEntrar:
         raise Http404
 
-    head = 'Sortida: {0}  ({1} €)'.format(sortida.titol, str(sortida.preu_per_alumne))
+    head = '{0}: {1}  ({2} €)'.format(dict(Sortida.TIPUS_ACTIVITAT_CHOICES)[sortida.tipus], sortida.titol, str(sortida.preu_per_alumne))
 
 
     report = []
@@ -1952,8 +1951,9 @@ def quotesCurs( request, curs, tipus, nany, auto ):
             if not quotacurs:
                 # No troba una quota adequada, comprova si existeixen altres quotes del mateix tipus
                 quotacurs=Quota.objects.filter(any=nany, tipus=tipus)
-                if quotacurs.count()!=1:
-                    # Si troba varies no selecciona cap, si només troba una aleshores la fa servir per defecte
+                # Interesa trobar una única sense curs específic
+                if quotacurs.count()!=1 or quotacurs[0].curs!=None:
+                    # Si troba varies o només una d'un altre curs, no la selecciona
                     quotacurs=None
             
             if quotacurs:
