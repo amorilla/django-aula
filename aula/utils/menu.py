@@ -66,6 +66,7 @@ def calcula_menu( user , path, sessioImpersonada ):
 
     try:
         nom_path = resolve( path ).url_name
+        tipus_path = path[-2] if path[-3]=='/' and path[-1]=='/' else None
     except:
         return menu
     
@@ -179,11 +180,11 @@ def calcula_menu( user , path, sessioImpersonada ):
                       ("Cerca Alumne", 'gestio__usuari__cerca', co or pl, None, None),
                       ("Cerca Professor", 'gestio__professor__cerca', co or pl, None, None),  
                       ("iCal", 'gestio__calendari__integra', pl, None, None),  
-                      ("Matrícules", 'matricula:gestio__blanc__matricula', di if settings.CUSTOM_MODUL_MATRICULA_ACTIU else None, None, 
+                      ("Matrícules", 'matricula:gestio__matricula__blanc', di if settings.CUSTOM_MODUL_MATRICULA_ACTIU else None, None, 
                           ( 
-                            ("Verifica", 'matricula:gestio__llistat__matricula', di if settings.CUSTOM_MODUL_MATRICULA_ACTIU else None, None),
-                            ("Descàrrega resum", 'matricula:gestio__resum__matricula', di if settings.CUSTOM_MODUL_MATRICULA_ACTIU else None, None),
-                            ("Activa", 'matricula:gestio__activa__matricula', ad if settings.CUSTOM_MODUL_MATRICULA_ACTIU else None, None),
+                            ("Verifica", 'matricula:gestio__matricula__llistat', di if settings.CUSTOM_MODUL_MATRICULA_ACTIU else None, None),
+                            ("Descàrrega resum", 'matricula:gestio__matricula__resum', di if settings.CUSTOM_MODUL_MATRICULA_ACTIU else None, None),
+                            ("Activa", 'matricula:gestio__matricula__activa', ad if settings.CUSTOM_MODUL_MATRICULA_ACTIU else None, None),
                           )
                       ),  
                       ("Quotes", 'gestio__quotes__blanc', (di or tp) if settings.CUSTOM_QUOTES_ACTIVES else None, None,
@@ -354,7 +355,7 @@ def calcula_menu( user , path, sessioImpersonada ):
 
         arbreSortides = (
             # --Activitats/pagaments--------------------------------------------------------------------------
-            ('sortides', 'Activitats/Pagaments', 'sortides__meves__list', di or pr, n_avis_tot + n_avis_activitats_meves> 0,
+            ('sortides', 'Activitats/Pagaments' if settings.CUSTOM_SORTIDES_PAGAMENT_ACTIU else 'Activitats', 'sortides__meves__list', di or pr, n_avis_tot + n_avis_activitats_meves> 0,
              (
                  ('Activitats', "sortides__meves__list_by_tipus,A", di or pr, None,
                    (
@@ -365,7 +366,7 @@ def calcula_menu( user , path, sessioImpersonada ):
                                     (n_avis_activitats_meves, 'info',) if n_avis_activitats_meves > 0 else None),
                    ),
                    ),
-                 ('Pagaments', "sortides__meves__list_by_tipus,P", di or pr, None,
+                 ('Pagaments', "sortides__meves__list_by_tipus,P", di or pr if settings.CUSTOM_SORTIDES_PAGAMENT_ACTIU else None, None,
                   (
                       (u"Històric", "sortides__all__list,P", di or so, None),
                       (u"Gestió", "sortides__gestio__list_by_tipus,P", di or so,
@@ -405,6 +406,7 @@ def calcula_menu( user , path, sessioImpersonada ):
                 if len(subitem_url_splited)>1:
                     tipus = subitem_url_splited[1]
                     subitem.url = (reverse(url, kwargs={'tipus':tipus}))
+                    actiu = tipus_path and tipus==tipus_path or not bool(tipus_path) and tipus==arbreSortides[0][5][0][1][-1]
                 else:
                     subitem.url = (reverse(url))
                 subitem.active = 'active' if actiu else ''
@@ -542,9 +544,10 @@ tutoria__relacio_families__dades_relacio_families
 tutoria__relacio_families__envia_benvinguda
 tutoria__seguiment_tutorial__formulari
 
-matricula:gestio__llistat__matricula
+matricula:gestio__matricula__llistat
+matricula:gestio__matricula__resum
+matricula:gestio__matricula__activa
 matricula:varis__condicions__matricula
-matricula:gestio__activa__matricula
 
 gestio__quotes__assigna
 gestio__quotes__descarrega
