@@ -501,8 +501,8 @@ def imapcontrolDSN(dies):
     if mail is None: return False
     ultimFetch=getUltimControl()
     id_list, id_last=getMailsList(mail, ultimFetch, dies)
-    if id_list is None:
-        setUltimControl(id_last)
+    if not bool(id_list):
+        if id_last>ultimFetch: setUltimControl(id_last)
         return False
     i=0
     while i<len(id_list):
@@ -541,6 +541,7 @@ def getMessages(service, ultimFetch, dies):
     '''
     
     from datetime import date
+    from operator import itemgetter
     today = date.today()
     last = today - timedelta(days=dies)
     # Dates have to formatted in YYYY/MM/DD format for gmail
@@ -555,11 +556,15 @@ def getMessages(service, ultimFetch, dies):
         if 'messages' in result:
             messages.extend(result['messages'])
     lista=[]
-    #Canvia l'ordre de la llista i selecciona els adequats, quedarà de més antic a més modern
-    for m in messages[::-1]:
+    for m in messages:
         historyId = service.users().messages().get(userId='me', id=m.get('id')).execute()['historyId']
-        if ultimFetch is None or int(historyId) > ultimFetch: lista.append(m)
-    return lista, service.users().getProfile(userId='me').execute()['historyId']
+        if ultimFetch is None or int(historyId) > ultimFetch:
+            #Selecciona els nous
+            m['historyId']=historyId
+            lista.append(m)
+    #Ordena la llista, quedarà de més antic a més modern
+    lista = sorted(lista, key=itemgetter('historyId'))
+    return lista, int(service.users().getProfile(userId='me').execute()['historyId'])
     
 def gmailcontrolDSN(dies):
     '''
@@ -578,8 +583,8 @@ def gmailcontrolDSN(dies):
     if mail.open() is None: return False
     ultimFetch = getUltimControl()
     id_list, id_last = getMessages(mail.connection, ultimFetch, dies)
-    if id_list is None:
-        setUltimControl(id_last)
+    if not bool(id_list):
+        if id_last>ultimFetch: setUltimControl(id_last)
         return False
     i=0
     for msg in id_list:
