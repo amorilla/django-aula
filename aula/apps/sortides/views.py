@@ -2144,26 +2144,26 @@ def acumulatsActivitats(tpv, nany=None):
     totfet=SortidaPagament.objects.filter(pagament_realitzat=True, sortida__in=llistaSortides,
                                         #alumne__isnull=False,
                                         data_hora_pagament__year=nany)\
-                    .values_list('sortida__id','sortida__titol','data_hora_pagament__month')\
+                    .values_list('sortida__id','sortida__subtipus','sortida__titol','data_hora_pagament__month')\
                     .annotate(total=Sum('sortida__preu_per_alumne'))
     
     totpendent=SortidaPagament.objects.filter(pagament_realitzat=False, sortida__in=llistaSortides,
                     alumne__isnull=False)\
-                    .values_list('sortida__id','sortida__titol')\
+                    .values_list('sortida__id','sortida__subtipus','sortida__titol')\
                     .annotate(total=Sum('sortida__preu_per_alumne'))
     
     calcul={}
     
     for p in list(totfet):
-        _, t, m, tot = p
-        n='activitat: '+str(t)
+        _, subtipus, t, m, tot = p
+        n=dict(Sortida.SUBTIPUS_ACTIVITAT_CHOICES)[subtipus]+": "+str(t)
         if not n in calcul:
             calcul[n]={}
         calcul[n][m]=tot
     
     for p in list(totpendent):
-        _, t, tot = p
-        n='activitat: '+str(t)
+        _, subtipus, t, tot = p
+        n=dict(Sortida.SUBTIPUS_ACTIVITAT_CHOICES)[subtipus]+": "+str(t)
         if not n in calcul:
             calcul[n]={}
         calcul[n]['pendent']=tot
@@ -2274,7 +2274,7 @@ def fullcalculQuotes(tpv, nany=None):
         fila=fila+1
     for p in pags:
         if bool(p.sortida.preu_per_alumne) and p.sortida.preu_per_alumne>0:
-            worksheet.write_string(fila, 0, 'activitat: '+p.sortida.titol )
+            worksheet.write_string(fila, 0, dict(Sortida.SUBTIPUS_ACTIVITAT_CHOICES)[p.sortida.subtipus]+': '+p.sortida.titol )
             worksheet.write_string(fila, 1, str(p.alumne) )
             worksheet.write_number(fila, 2, p.sortida.preu_per_alumne )
             if p.sortida.termini_pagament: worksheet.write_datetime(fila, 3, p.sortida.termini_pagament, date_format )
