@@ -96,7 +96,7 @@ def calcula_menu( user , path, sessioImpersonada ):
                       ("Assistència", 'tutoria__assistencia__list_entre_dates', tu, None, None ),                                      
                       ("Informe", 'tutoria__alumne__informe_setmanal', tu, None, None ),                                      
                       ("Portal", 'tutoria__relacio_families__dades_relacio_families', tu, None, None ),
-                      ("Mòbil App", 'tutoria__relacio_families_app__qrs', tu, None, None),
+                      #("Mòbil App", 'tutoria__relacio_families_app__qrs', tu, None, None),
                       ("Seguiment", 'tutoria__seguiment_tutorial__formulari', tu, None, None ),
                     )
     if settings.CUSTOM_TUTORS_INFORME:
@@ -260,8 +260,8 @@ def calcula_menu( user , path, sessioImpersonada ):
                   (
                       ("Sincronitza", 'administracio__sincronitza__blanc', di, None, 
                         (
-                          ("Alumnes Esfera", 'administracio__sincronitza__esfera', di , None  ),
-                          ("Alumnes SAGA", 'administracio__sincronitza__saga', di, None),
+                          ("Alumnes ESO/BAT", 'administracio__sincronitza__esfera', di , None  ),
+                          ("Alumnes Cicles", 'administracio__sincronitza__saga', di, None),
                           ("Dades addicionals alumnat", 'administracio__sincronitza__dades_addicionals', di, None),
                           ("Preinscripció", 'administracio__sincronitza__preinscripcio', di , None  ),
                           ("HorarisKronowin", 'administracio__sincronitza__kronowin', di , None  ),
