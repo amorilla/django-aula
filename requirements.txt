@@ -32,3 +32,4 @@ django-filter
 qrcode
 djangorestframework-simplejwt
 djau-gsuite-email
+# prova sincronització
