@@ -9,7 +9,7 @@ from aula.apps.missatgeria.models import Missatge
 from aula.apps.usuaris.models import Professor
 from aula.apps.extEsfera.models import ParametreEsfera
 from aula.apps.extSaga.models import ParametreSaga
-from aula.apps.extSaga.sincronitzaSaga import actualitzaRegistre
+from aula.apps.extSaga.sincronitzaSaga import actualitzaRegistre, openfitxer
 from openpyxl import load_workbook
 
 from django.db.models import Q
@@ -21,8 +21,10 @@ import time
 from aula.apps.extEsfera.models import Grup2Aula
 from aula.settings import CUSTOM_DADES_ADDICIONALS_ALUMNE
 
-from aula.utils.tools import unicode
+from django.conf import settings
 
+from aula.utils.tools import unicode
+from django.core.mail import EmailMessage
 
 def sincronitza(f, user = None):
 
@@ -82,6 +84,9 @@ def sincronitza(f, user = None):
     col_indexs = {n: cell.value for n, cell in enumerate(rows[5])
                    if cell.value in colnames} # Començar a la fila 6, les anteriors són brossa
     cursos = set()
+    
+    fitxer, csvfile = openfitxer()
+    
     for row in rows[6:max_row - 1]:  # la darrera fila també és brossa
         a = Alumne()
         a.ralc = ''
@@ -230,10 +235,10 @@ def sincronitza(f, user = None):
             from aula.apps.usuaris.models import AlumneUser
             nou=model_to_dict(a)
             ant=model_to_dict(alumneDadesAnteriors)
-            camps=('nom', 'cognoms', 'data_neixement', 'correu_tutors', 'correu_relacio_familia_pare', 'correu_relacio_familia_mare', 
-            'centre_de_procedencia', 'localitat', 'municipi', 'cp', 'telefons', 'tutors', 'adreca', 'rp1_nom', 'rp1_telefon', 
+            camps=('nom', 'cognoms', 'data_neixement', 'correu',
+            'xxxx', 'localitat', 'municipi', 'cp', 'adreca', 'rp1_nom', 'rp1_telefon',
             'rp1_mobil', 'rp1_correu', 'rp2_nom', 'rp2_telefon', 'rp2_mobil', 'rp2_correu', 'altres_telefons')
-            ok=actualitzaRegistre(ant, nou, camps, manteDades.valor_parametre=='True')
+            ok=actualitzaRegistre(ant, nou, camps, manteDades.valor_parametre=='True', alumneDadesAnteriors, fitxer)
             ok['grup']=a.grup
             ok['estat_sincronitzacio']=a.estat_sincronitzacio
             if 'user_associat' in ok: del ok['user_associat']
@@ -252,6 +257,11 @@ def sincronitza(f, user = None):
 
         a.save()
         cursos.add(a.grup.curs)
+                
+    email = EmailMessage("Càrrega Esfer@", "Adjunto fitxer", settings.DEFAULT_FROM_EMAIL, ['antonio.morillas@iesthosicodina.cat'])
+    email.attach('canvis_esfera.csv', csvfile.getvalue(), 'text/csv')
+    email.send()
+
     #
     # Baixes:
     #
