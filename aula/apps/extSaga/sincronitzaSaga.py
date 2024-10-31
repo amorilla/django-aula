@@ -20,6 +20,16 @@ from aula.apps.extSaga.models import Grup2Aula
 from django.conf import settings
 
 from aula.utils.tools import unicode
+from django.core.mail import EmailMessage
+
+def openfitxer():
+    from io import StringIO
+    csvfile = StringIO()
+    writer = csv.writer(csvfile)
+    writer.writerow(['ralc', 'grup', 'nom', 'cognoms', 'data_neixement', 'correu',
+            'centre_de_procedencia', 'localitat', 'municipi', 'cp', 'adreca', 'rp1_nom', 'rp1_telefon',
+            'rp1_mobil', 'rp1_correu', 'rp2_nom', 'rp2_telefon', 'rp2_mobil', 'rp2_correu', 'altres_telefons'])
+    return writer, csvfile
 
 def autoRalc(ident):
     '''
@@ -35,12 +45,29 @@ def autoRalc(ident):
         return ralc
     return ident
 
-def actualitzaRegistre(ant, nou, camps, manteDades=True):
+def actualitzaRegistre(ant, nou, camps, manteDades, alumne, writer):
+    alumne_row=[alumne.ralc, alumne.grup.descripcio_grup]
+    diff=False
+    obligatoris=['nom', 'cognoms', 'data_neixement']
     for f in camps:
+        if f not in ant or f not in nou: continue
+        if f=='data_neixement' and bool(ant[f]):
+            ant[f]=ant[f].strftime("%Y-%m-%d")
+        if ant[f]!=nou[f]:
+            alumne_row.append('{0} -> {1}'.format(ant[f], nou[f]))
+            diff=True
+        else:
+            if f=='nom' or f=='cognoms':
+                alumne_row.append(ant[f])
+            else:
+                alumne_row.append('')
         if manteDades and not bool(ant[f]) and bool(nou[f]):
             ant[f]=nou[f]
         if not manteDades and bool(nou[f]):
             ant[f]=nou[f]
+        if f in obligatoris:
+            ant[f]=nou[f]
+    if diff: writer.writerow( alumne_row ) 
     return ant
 
 def sincronitza(f, user = None):
@@ -85,6 +112,9 @@ def sincronitza(f, user = None):
 
     f.seek(0)
     cursos = set()
+    
+    fitxer, csvfile = openfitxer()
+    
     for row in reader:
         info_nAlumnesLlegits+=1
         a=Alumne()
@@ -245,10 +275,10 @@ def sincronitza(f, user = None):
             from aula.apps.usuaris.models import AlumneUser
             nou=model_to_dict(a)
             ant=model_to_dict(alumneDadesAnteriors)
-            camps=('nom', 'cognoms', 'data_neixement', 'correu_tutors', 'correu_relacio_familia_pare', 'correu_relacio_familia_mare', 
-            'centre_de_procedencia', 'localitat', 'municipi', 'cp', 'telefons', 'tutors', 'adreca', 'rp1_nom', 'rp1_telefon', 
+            camps=('nom', 'cognoms', 'data_neixement', 'correu',
+            'centre_de_procedencia', 'localitat', 'municipi', 'cp', 'adreca', 'rp1_nom', 'rp1_telefon',
             'rp1_mobil', 'rp1_correu', 'rp2_nom', 'rp2_telefon', 'rp2_mobil', 'rp2_correu', 'altres_telefons')
-            ok=actualitzaRegistre(ant, nou, camps, manteDades.valor_parametre=='True')
+            ok=actualitzaRegistre(ant, nou, camps, manteDades.valor_parametre=='True', alumneDadesAnteriors, fitxer)
             ok['grup']=a.grup
             ok['estat_sincronitzacio']=a.estat_sincronitzacio
             if 'user_associat' in ok: del ok['user_associat']
@@ -267,6 +297,11 @@ def sincronitza(f, user = None):
 
         a.save()
         cursos.add(a.grup.curs)
+    
+    email = EmailMessage("Càrrega Saga", "Adjunto fitxer", settings.DEFAULT_FROM_EMAIL, ['antonio.morillas@iesthosicodina.cat'])
+    email.attach('canvis_saga.csv', csvfile.getvalue(), 'text/csv')
+    email.send()
+
     #
     # Baixes:
     #
