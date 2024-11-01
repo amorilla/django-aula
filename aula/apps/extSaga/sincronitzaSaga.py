@@ -21,6 +21,7 @@ from django.conf import settings
 
 from aula.utils.tools import unicode
 from django.core.mail import EmailMessage
+from django.forms.models import model_to_dict
 
 def openfitxer():
     from io import StringIO
@@ -46,15 +47,33 @@ def autoRalc(ident):
     return ident
 
 def actualitzaRegistre(ant, nou, camps, manteDades, alumne, writer):
+    from aula.apps.matricula.models import Matricula
+    
     alumne_row=[alumne.ralc, alumne.grup.descripcio_grup]
     diff=False
-    obligatoris=['nom', 'cognoms', 'data_neixement']
+    obligatoris=['nom', 'cognoms', 'data_neixement', 'centre_de_procedencia', 'municipi', 'rp1_mobil', 'rp2_mobil', 'altres_telefons']
     for f in camps:
-        if f not in ant or f not in nou: continue
+        if f not in ant or f not in nou:
+            alumne_row.append('')
+            continue
         if f=='data_neixement' and bool(ant[f]):
             ant[f]=ant[f].strftime("%Y-%m-%d")
         if ant[f]!=nou[f]:
-            alumne_row.append('{0} -> {1}'.format(ant[f], nou[f]))
+            mat=Matricula.objects.filter(alumne=alumne).order_by('any')
+            original='*'
+            if mat.exists():
+                mat=mat.last()
+                dades=model_to_dict(mat)
+                if f=='data_neixement':
+                    key='data_naixement'
+                elif f=='correu':
+                    key='alumne_correu'
+                else:
+                    key=f
+                if key in dades:
+                    original=dades[key]
+                if original==ant[f]: original='='
+            alumne_row.append('({2}){0} -> {1}'.format(ant[f], nou[f], original))
             diff=True
         else:
             if f=='nom' or f=='cognoms':
