@@ -46,6 +46,15 @@ def autoRalc(ident):
         return ralc
     return ident
 
+def cleannom(nom):
+    import unicodedata
+    
+    if "," in nom:
+        cognoms, nom = nom.split(",")
+        nom = nom+" "+cognoms
+    nom = unicodedata.normalize('NFKD',nom).encode('ascii','ignore').decode('UTF-8')
+    return nom
+
 def actualitzaRegistre(ant, nou, camps, manteDades, alumne, writer):
     from aula.apps.matricula.models import Matricula
     
@@ -58,6 +67,9 @@ def actualitzaRegistre(ant, nou, camps, manteDades, alumne, writer):
             continue
         if f=='data_neixement' and bool(ant[f]):
             ant[f]=ant[f].strftime("%Y-%m-%d")
+        if (f=='rp1_nom' or f=='rp2_nom') and bool(nou[f]):
+            nou[f]=cleannom(nou[f])
+            ant[f]=cleannom(ant[f])
         if ant[f]!=nou[f]:
             mat=Matricula.objects.filter(alumne=alumne).order_by('any')
             original='*'
