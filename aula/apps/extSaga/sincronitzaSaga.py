@@ -51,7 +51,7 @@ def cleannom(nom):
     
     if "," in nom:
         cognoms, nom = nom.split(",")
-        nom = nom+" "+cognoms
+        nom = nom.strip()+" "+cognoms.strip()
     nom = unicodedata.normalize('NFKD',nom).encode('ascii','ignore').decode('UTF-8')
     return nom
 
