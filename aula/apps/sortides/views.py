@@ -2828,7 +2828,7 @@ def acumulatsQuotesGen(tpv, nany=None):
 
 
 def acumulatsActivitats(tpv, nany=None):
-    """
+    '''
     tpv que correspon als pagaments a seleccionar, només s'admet tpv 'centre' o None
     nany que correspon a la sortida, si None utilitza any actual
     Selecciona pagaments d'activitats/sortides, els agrupa per activitat/sortida.
@@ -2837,58 +2837,48 @@ def acumulatsActivitats(tpv, nany=None):
     {{'activitat': {'pendent':nnnnn, 1:nnnnn, 2:nnnnn, ... 12:nnnnn},
      {'activitat': {'pendent':nnnnn, 1:nnnnn, 2:nnnnn, ... 12:nnnnn},
      ... }
-    """
-
+    '''
+    
     from django.db.models import Sum
-
+    
     # Només es permet afegir les activitats/sortides si tpv és el de defecte
-    if tpv and tpv.nom != "centre":
+    if tpv and tpv.nom!='centre':
         return {}
-
+    
     if not nany:
-        nany = django.utils.timezone.now().year
-
-    llistaSortides = Sortida.objects.filter(
-        preu_per_alumne__isnull=False, notificasortida__alumne__isnull=False
-    ).distinct()
-
-    totfet = (
-        SortidaPagament.objects.filter(
-            pagament_realitzat=True,
-            sortida__in=llistaSortides,
-            # alumne__isnull=False,
-            data_hora_pagament__year=nany,
-        )
-        .values_list("sortida__id", "sortida__titol", "data_hora_pagament__month")
-        .annotate(total=Sum("sortida__preu_per_alumne"))
-    )
-
-    totpendent = (
-        SortidaPagament.objects.filter(
-            pagament_realitzat=False, sortida__in=llistaSortides, alumne__isnull=False
-        )
-        .values_list("sortida__id", "sortida__titol")
-        .annotate(total=Sum("sortida__preu_per_alumne"))
-    )
-
-    calcul = {}
-
+        nany=django.utils.timezone.now().year
+        
+    llistaSortides=Sortida.objects.filter(preu_per_alumne__isnull=False,
+                                        notificasortida__alumne__isnull=False).distinct()
+    
+    totfet=SortidaPagament.objects.filter(pagament_realitzat=True, sortida__in=llistaSortides,
+                                        #alumne__isnull=False,
+                                        data_hora_pagament__year=nany)\
+                    .values_list('sortida__id','sortida__subtipus','sortida__titol','data_hora_pagament__month')\
+                    .annotate(total=Sum('sortida__preu_per_alumne'))
+    
+    totpendent=SortidaPagament.objects.filter(pagament_realitzat=False, sortida__in=llistaSortides,
+                    alumne__isnull=False)\
+                    .values_list('sortida__id','sortida__subtipus','sortida__titol')\
+                    .annotate(total=Sum('sortida__preu_per_alumne'))
+    
+    calcul={}
+    
     for p in list(totfet):
-        _, t, m, tot = p
-        n = "activitat: " + str(t)
+        _, subtipus, t, m, tot = p
+        n=dict(Sortida.SUBTIPUS_ACTIVITAT_CHOICES)[subtipus]+": "+str(t)
         if not n in calcul:
-            calcul[n] = {}
-        calcul[n][m] = tot
-
+            calcul[n]={}
+        calcul[n][m]=tot
+    
     for p in list(totpendent):
-        _, t, tot = p
-        n = "activitat: " + str(t)
+        _, subtipus, t, tot = p
+        n=dict(Sortida.SUBTIPUS_ACTIVITAT_CHOICES)[subtipus]+": "+str(t)
         if not n in calcul:
-            calcul[n] = {}
-        calcul[n]["pendent"] = tot
-
+            calcul[n]={}
+        calcul[n]['pendent']=tot
+    
     return calcul
-
 
 def fullcalculQuotes(tpv, nany=None):
     """
