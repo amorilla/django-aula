@@ -186,7 +186,7 @@ def getMailsList(mail, num, dies):
 
     if mail:
         # Prepara el command corresponent
-        if num:
+        if num>0:
             #  rang mails  'num:*'  Ex:  2000:*   1:*
             cmd=str(num+1)+':*'
         else:
@@ -204,14 +204,14 @@ def getMailsList(mail, num, dies):
             id_list = mail_ids.split()
             if id_list and len(id_list)>0:
                 ultim = int(id_list[len(id_list) - 1].decode("utf-8")) #  search retorna bytes
-                if num and ultim>num:
+                if num>=0 and ultim>num:
                     # Comprova que n'hi han nous emails
                     return id_list, ultim
             return None, ultim
         except Exception as e:
             print ("Error getMailsList:", str(e))
-            return None, None
-    return None, None
+            return None, 0
+    return None, 0
 
 def informaDSN(destinataris,usuari,emailRetornat,motiu,data,url):
     '''
@@ -442,7 +442,7 @@ def getUltimControl():
     if control.exists():
         ultimFetch=int(control[0].text.split(";")[1])
     else:
-        ultimFetch=None
+        ultimFetch=0
     return ultimFetch
 
 def checkDSN(msg):
@@ -470,7 +470,11 @@ def checkDSN(msg):
                 ad=dsn.get('Arrival-Date')
                 if ad: data=datemailTodatetime(ad)
                 dc=dsn.get('diagnostic-code')
-                if dc: diagnostic=dc.split(';')[1]
+                try:
+                    if dc and type(dc) is str: diagnostic=dc.split(';')[1]
+                    else: diagnostic=str(dc)
+                except:
+                    diagnostic = 'Unknown error'
         informa(emailRetornat, status, action, data, diagnostic, text)  
         
 def controlDSN(dies=1):
@@ -502,7 +506,7 @@ def imapcontrolDSN(dies):
     ultimFetch=getUltimControl()
     id_list, id_last=getMailsList(mail, ultimFetch, dies)
     if not bool(id_list):
-        if id_last>ultimFetch: setUltimControl(id_last)
+        if id_last>=ultimFetch: setUltimControl(id_last)
         return False
     i=0
     while i<len(id_list):

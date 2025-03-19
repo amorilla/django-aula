@@ -57,6 +57,7 @@ from django.utils.html import escapejs
 import django.utils.timezone
 from aula.apps.matricula.viewshelper import inforgpd
 from aula.apps.missatgeria.models import Missatge
+from django.utils import formats
 
 #@login_required
 #@group_required(['professors'])
@@ -1315,26 +1316,13 @@ def elMeuInforme( request, pk = None ):
     
         camp = tools.classebuida()
         camp.enllac = None
-        camp.contingut = u'{0}'.format( alumne.data_neixement )        
+        camp.contingut = formats.date_format(alumne.data_neixement, "SHORT_DATE_FORMAT") 
         filera.append(camp)
     
         taula.fileres.append( filera )
     
-            #----telefons------------------------------------------
-        filera = []
-        camp = tools.classebuida()
-        camp.enllac = None
-        camp.contingut = u'Telèfon'        
-        filera.append(camp)
     
-        camp = tools.classebuida()
-        camp.enllac = None
-        camp.contingut = u'{0}'.format( alumne.altres_telefons )
-        filera.append(camp)
-    
-        taula.fileres.append( filera )
-    
-            #----Pares------------------------------------------
+        #----Pares------------------------------------------
         filera = []
         camp = tools.classebuida()
         camp.enllac = None
@@ -1344,12 +1332,8 @@ def elMeuInforme( request, pk = None ):
         camp = tools.classebuida()
         camp.enllac = None
 
-        camp.multipleContingut = [(u'{0} ({1} , {2})'.format(alumne.rp1_nom,
-                                                             alumne.rp1_telefon,
-                                                             alumne.rp1_mobil), None),
-                                  (u'{0} ({1} , {2})'.format(alumne.rp2_nom,
-                                                             alumne.rp2_telefon,
-                                                             alumne.rp2_mobil),None),
+        camp.multipleContingut = [(alumne.rp1_nom, None),
+                                  (alumne.rp2_nom,None),
                                   ]
         filera.append(camp)
     
@@ -1550,21 +1534,28 @@ def elMeuInforme( request, pk = None ):
 
             # ----------------------------------------------
             if act.tipus_de_pagament == 'ON':
+                alumnat_tret_de_lactivitat = act.alumnes_que_no_vindran.all().union(
+                    act.alumnes_justificacio.all())
+                alumne_tret_de_lactivitat = alumne in alumnat_tret_de_lactivitat
+                camp = tools.classebuida()
+                camp.nexturl = reverse_lazy('relacio_families__informe__el_meu_informe')
                 #pagament corresponent a una sortida i un alumne
-                pagament_sortida_alumne = get_object_or_404(SortidaPagament, alumne=alumne, sortida=act)
-                # Pagaments pendents o ja fets. Si sortida caducada no mostra pagament pendent.
-                if (act.termini_pagament and act.termini_pagament >= datetime.now()) or not bool(act.termini_pagament) or pagament_sortida_alumne.pagamentFet:
-                    camp = tools.classebuida()
+                if not alumne_tret_de_lactivitat:
+                    pagament_sortida_alumne = get_object_or_404(SortidaPagament, alumne=alumne, sortida=act)
                     camp.id = pagament_sortida_alumne.id
-                    camp.nexturl = reverse_lazy('relacio_families__informe__el_meu_informe')
-                    if pagament_sortida_alumne.pagamentFet:
+                    # Pagaments pendents o ja fets. Si sortida caducada no mostra pagament pendent.
+                    if (act.termini_pagament and act.termini_pagament >= datetime.now()) or not bool(act.termini_pagament) or pagament_sortida_alumne.pagamentFet:
+                        if pagament_sortida_alumne.pagamentFet:
+                            camp.negreta = True
+                            camp.contingut = "Pagat"
+                        else:
+                            if settings.CUSTOM_SORTIDES_PAGAMENT_ONLINE:
+                                camp.buto = u'sortides__sortides__pago_on_line'
+                                camp.contingut = "Pagar Online"
+                else:
                         camp.negreta = True
-                        camp.contingut = "Pagat"
-                    else:
-                        if settings.CUSTOM_SORTIDES_PAGAMENT_ONLINE:
-                            camp.buto = u'sortides__sortides__pago_on_line'
-                            camp.contingut = "Pagar Online"
-                    filera.append(camp)
+                        camp.contingut = "Baixa de l'activitat/pagament"
+                filera.append(camp)
 
             #--
             taula.fileres.append( filera )
