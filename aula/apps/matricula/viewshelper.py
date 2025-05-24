@@ -581,7 +581,7 @@ def alumne2Mat(alumne, nany=None, p=None):
             mat.localitat=p.localitat if p.localitat else p.municipi
             mat.cp=p.cp
             mat.rp1_nom=p.nomtut1+" "+p.cognomstut1 if p.nomtut1 and p.cognomstut1 else ''
-            mat.rp1_telefon=p.telefon
+            mat.rp1_telefon=p.telefon[:15]
             mat.rp1_correu=p.correu
             mat.rp2_nom=p.nomtut2+" "+p.cognomstut2 if p.nomtut2 and p.cognomstut2 else ''
             mat.preinscripcio=p
@@ -597,10 +597,10 @@ def alumne2Mat(alumne, nany=None, p=None):
             mat.localitat=alumne.localitat if alumne.localitat else alumne.municipi
             mat.cp=alumne.cp
             mat.rp1_nom=alumne.rp1_nom
-            mat.rp1_telefon=alumne.rp1_mobil if alumne.rp1_mobil else alumne.rp1_telefon
+            mat.rp1_telefon=(alumne.rp1_mobil if alumne.rp1_mobil else alumne.rp1_telefon)[:15]
             mat.rp1_correu=alumne.correu_relacio_familia_pare if alumne.primer_responsable==0 else alumne.correu_relacio_familia_mare
             mat.rp2_nom=alumne.rp2_nom
-            mat.rp2_telefon=alumne.rp2_mobil if alumne.rp2_mobil else alumne.rp2_telefon
+            mat.rp2_telefon=(alumne.rp2_mobil if alumne.rp2_mobil else alumne.rp2_telefon)[:15]
             mat.rp2_correu=alumne.correu_relacio_familia_mare if alumne.primer_responsable==0 else alumne.correu_relacio_familia_pare
             mat.curs=alumne.grup.curs  # Curs actual
     return mat
