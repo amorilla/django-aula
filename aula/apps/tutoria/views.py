@@ -70,7 +70,7 @@ from django.contrib import messages
 from django.conf import settings
 from aula.apps.presenciaSetmanal.views import ProfeNoPot
 from ..missatgeria.missatges_a_usuaris import ALUMNE_GENERAR_CARTA, tipusMissatge
-
+from aula.apps.usuaris.tools import ultimaNotificacio
 
 @login_required
 @group_required(['professors'] )
@@ -416,8 +416,7 @@ def novaActuacio(request):
                 request,
                 'formset.html',
                     {'formset': formset,
-                     'head': 'Actuació' ,
-                     'titol_formulari': u"Alta d'una nova actuació",
+                    'titol_formulari': u"Alta d'una nova actuació",
                     },
                 )
 
@@ -487,7 +486,6 @@ def editaActuacio(request, pk):
                 'formset.html',
                     {'formset': formset,
                      'infoForm': infoForm,
-                     'head': 'Actuació' ,
                      'titol_formulari': u"Edició d'una actuació",
                     },
                 )
@@ -1434,6 +1432,8 @@ def detallTutoriaAlumne( request, pk , detall = 'all'):
 
         taula.fileres = []
 
+        resp1, resp2 = alumne.get_responsables(compatible=True)
+        
             # ----nom------------------------------------------
         filera = []
         camp = tools.classebuida()
@@ -1443,7 +1443,7 @@ def detallTutoriaAlumne( request, pk , detall = 'all'):
 
         camp = tools.classebuida()
         camp.enllac = None
-        camp.contingut = u'{0}'.format(alumne.rp1_nom) if alumne.primer_responsable == 0 else u'{0}'.format(alumne.rp2_nom)
+        camp.contingut = u'{0}'.format(resp1.get_nom()) if resp1 else ''
         filera.append(camp)
 
         taula.fileres.append(filera)
@@ -1457,10 +1457,7 @@ def detallTutoriaAlumne( request, pk , detall = 'all'):
 
         camp = tools.classebuida()
         camp.enllac = None
-        telefons = ', '.join(
-            filter(None, [alumne.rp1_telefon, alumne.rp1_mobil])) if alumne.primer_responsable == 0 else '/ '.join(
-            filter(None, [alumne.rp2_telefon, alumne.rp2_mobil]))
-        camp.contingut = u'{0}'.format(telefons)
+        camp.contingut = u'{0}'.format(resp1.get_telefon()) if resp1 else ''
         filera.append(camp)
 
         taula.fileres.append(filera)
@@ -1474,7 +1471,7 @@ def detallTutoriaAlumne( request, pk , detall = 'all'):
 
         camp = tools.classebuida()
         camp.enllac = None
-        camp.contingut = u'{0}'.format(alumne.rp1_correu) if alumne.primer_responsable == 0 else u'{0}'.format(alumne.rp2_correu)
+        camp.contingut = u'{0}'.format(resp1.get_correu_importat()) if resp1 else ''
         filera.append(camp)
 
         taula.fileres.append(filera)
@@ -1512,7 +1509,7 @@ def detallTutoriaAlumne( request, pk , detall = 'all'):
 
         camp = tools.classebuida()
         camp.enllac = None
-        camp.contingut = u'{0}'.format(alumne.rp2_nom) if alumne.primer_responsable == 0 else u'{0}'.format(alumne.rp1_nom)
+        camp.contingut = u'{0}'.format(resp2.get_nom()) if resp2 else ''
         filera.append(camp)
 
         taula.fileres.append(filera)
@@ -1526,10 +1523,7 @@ def detallTutoriaAlumne( request, pk , detall = 'all'):
 
         camp = tools.classebuida()
         camp.enllac = None
-        telefons = ', '.join(
-            filter(None, [alumne.rp2_telefon, alumne.rp2_mobil])) if alumne.primer_responsable == 0 else '/ '.join(
-            filter(None, [alumne.rp1_telefon, alumne.rp1_mobil]))
-        camp.contingut = u'{0}'.format(telefons)
+        camp.contingut = u'{0}'.format(resp2.get_telefon()) if resp2 else ''
         filera.append(camp)
 
         taula.fileres.append(filera)
@@ -1543,7 +1537,7 @@ def detallTutoriaAlumne( request, pk , detall = 'all'):
 
         camp = tools.classebuida()
         camp.enllac = None
-        camp.contingut = u'{0}'.format(alumne.rp2_correu) if alumne.primer_responsable == 0 else u'{0}'.format(alumne.rp1_correu)
+        camp.contingut = u'{0}'.format(resp2.get_correu_importat()) if resp2 else ''
         filera.append(camp)
 
         taula.fileres.append(filera)
@@ -1582,7 +1576,7 @@ def detallTutoriaAlumne( request, pk , detall = 'all'):
 
         camp = tools.classebuida()
         camp.enllac = None
-        camp.contingut = u'{0}'.format(alumne.altres_telefons)
+        camp.contingut = alumne.get_telefons()
         filera.append(camp)
 
         taula.fileres.append(filera)
@@ -1880,7 +1874,7 @@ def detallTutoriaAlumne( request, pk , detall = 'all'):
 
         capcelera = tools.classebuida()
         capcelera.amplade = 15
-        capcelera.contingut = u'Següiment tutorial'
+        capcelera.contingut = u'Seguiment tutorial'
         capcelera.enllac = ""
         taula.capceleres.append(capcelera)
 
@@ -2090,7 +2084,7 @@ def informeCompletFaltesIncidencies(request):
                 connexio_darrers_dies = LoginUsuari.objects.filter( exitos = True, usuari__pk = user_associat.pk, moment__gte =  fa_15_dies ).exists()
 
                 darrera_connexio = LoginUsuari.objects.filter( exitos = True, usuari__pk = user_associat.pk ).order_by('-moment')[:1]
-                darrera_notificacio = alumne.relacio_familia_darrera_notificacio
+                darrera_notificacio = ultimaNotificacio(None, alumne)
                 te_correus_associats = bool( alumne.get_correus_relacio_familia() )
 
                 opcio = 's'
@@ -2152,7 +2146,7 @@ def informeCompletFaltesIncidencies(request):
                 connexio_darrers_dies = LoginUsuari.objects.filter( exitos = True, usuari__pk = user_associat.pk, moment__gte =  fa_15_dies ).exists()
 
                 darrera_connexio = LoginUsuari.objects.filter( exitos = True, usuari__pk = user_associat.pk ).order_by('-moment')[:1]
-                darrera_notificacio = alumne.relacio_familia_darrera_notificacio
+                darrera_notificacio = ultimaNotificacio(None, alumne)
                 te_correus_associats = bool( alumne.get_correus_relacio_familia() )
 
                 opcio = 's'
