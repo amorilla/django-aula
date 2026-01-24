@@ -1,7 +1,8 @@
 # docker-compose.dev.yml
+
 services:
   db:
-    image: postgres:postgres:17.7-alpine
+    image: postgres:16
     container_name: dev_db
     ports:
       - "5432:5432"
@@ -19,7 +20,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    image: django-aula:dev
+    image: antoniomorillas/django-aula:latest
     container_name: dev_web
     restart: unless-stopped
     depends_on:
@@ -28,18 +29,19 @@ services:
       - .env
     volumes:
       # Muntar tot el projecte per veure els canvis immediatament
-      - ./:/app
+      - .:/app
       # Evita que el directori de dependències del contenidor tapi el teu
       - /app/.venv
     command: >
       bash -c "
       wait-for-it db:5432 --timeout=30 --strict &&
       echo '🔹 Verificant migracions...' &&
-      python manage.py makemigrations --check --dry-run || python manage.py makemigrations &&
       python manage.py migrate --noinput &&
-      echo '✅ Migracions aplicades. Iniciant servidor...' &&
-      python manage.py runserver 0.0.0.0:8000
+      echo '✅ Migracions aplicades. Iniciant servidor...'
       "
+      
+      # pendent python manage.py runserver 0.0.0.0:8000
+
     ports:
       - "8000:8000"
     environment:

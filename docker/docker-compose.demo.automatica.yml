@@ -1,7 +1,8 @@
 # docker/docker-compose.demo.automatica.yml
+
 services:
   db:
-    image: postgres:17.7-alpine
+    image: postgres:16
     container_name: demo_db
     ports:
       - "5432:5432"
@@ -13,11 +14,11 @@ services:
       POSTGRES_DB: ${DB_NAME}
     volumes:
       - pg_data:/var/lib/postgresql/data
-      - ./dades-demo-sql:/docker-entrypoint-initdb.d
+      # - ./dades-demo-sql:/docker-entrypoint-initdb.d
     restart: always
 
   web:
-    image: django_aula:latest
+    image: antoniomorillas/django-aula:latest
     container_name: demo_web
 #    build:
 #      context: .
@@ -31,7 +32,25 @@ services:
     restart: always
     ports:
       - "8000:8000"
-    command: bash -c "wait-for-it db:5432 --timeout=30 --strict && python manage.py runserver 0.0.0.0:8000"
+    command: >
+      bash -c "
+      wait-for-it db:5432 --timeout=30 --strict &&
+      python manage.py migrate &&
+      ./scripts/fixtures.sh &&
+      python manage.py collectstatic --noinput &&
+      python manage.py loaddemodata &&
+      echo '🚀 DJANGO INICIAT ...' &&
+      exec python manage.py runserver 0.0.0.0:8000
+      "
+
+#  apache:
+#    image: httpd:2.4
+#    container_name: demo_apache
+#    ports:
+#      - "80:80"
+#    depends_on:
+#      - web
+#    restart: always
 
 volumes:
   pg_data:

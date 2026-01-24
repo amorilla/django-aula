@@ -71,7 +71,12 @@ echo
 echo "🔧 Comprovant que 'make' estigui instal·lat..."
 if ! command -v make &> /dev/null; then
     echo "   Instal·lant 'make'..."
-    sudo apt-get update -y >/dev/null 2>&1 && sudo apt-get install -y make
+    sudo apt-get update -y >/dev/null 2>&1
+    sudo apt-get install -y make
+    if ! command -v make &> /dev/null; then
+        echo "   ERROR a la instal·lació de 'make'"
+        exit 1
+    fi
 else
     echo "   ✅ 'make' ja està disponible."
 fi
@@ -163,6 +168,14 @@ docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
 echo "--------------------------------------------"
 echo
 echo 
+
+echo "Premi qualsevol tecla per continuar i mostrar el progrés de la preparació de la demo."
+read -p "CTRL-C per deixar de mostrar la informació." -n1 -s
+
+docker logs -f web
+
+echo
+echo 
 echo "ℹ️ Informació addicional"
 echo
 echo "Instruccions disponibles amb la comanda **make** per la Demo:"
@@ -170,9 +183,8 @@ echo "   1. Si no està en marxa, executi: make serve"
 echo "   2. Per veure els logs:           make logs"
 echo "   3. Per detenir la Demo:          make stop"
 echo "   4. Per eliminar els contenidors: make down i després -> docker system prune -a"
-
+echo
 echo
 echo "🌐 Si ha definit IP o dominis a DEMO_ALLOWED_HOSTS, provi ara d'accedir-hi al navegador!"
 echo "   (p. ex. http://demo.elteudomini.cat:8000 o http://IP:8000)"
 echo
-

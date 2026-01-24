@@ -1,4 +1,5 @@
 #!/bin/bash
+
 # Script d'instal·lació automàtica de Docker CE i Docker Compose a sistemes Debian/Ubuntu.
 
 # -------------------------------------------------------------
@@ -33,13 +34,14 @@ apt-get install -y apt-transport-https ca-certificates curl gnupg lsb-release
 
 echo -e "\n"
 echo "-> Afegint repositori oficial de Docker..."
+DIST=$(cat /etc/*-release | grep -e ^ID=.*$ | cut -c 4-)
 install -m 0755 -d /etc/apt/keyrings
-curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+curl -fsSL https://download.docker.com/linux/${DIST}/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
 chmod a+r /etc/apt/keyrings/docker.gpg
 
 # Afegim el repositori, ajustant la versió de codi de Debian/Ubuntu.
 echo \
-  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/debian \
+  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/${DIST} \
   $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
 
 # -------------------------------------------------------------

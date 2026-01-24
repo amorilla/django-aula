@@ -7,16 +7,21 @@ WORKDIR /app
 COPY . /app
 
 # Instal·lació de dependències del sistema
-RUN apt update && apt install --no-install-recommends --no-install-suggests -y \
-    bash \
-    curl \
+RUN apt-get update && apt-get install -y git wait-for-it \
     libgl1 \
     libglib2.0-0 \
-    libpq-dev \
-    zlib1g-dev && \
-    curl -sSL https://raw.githubusercontent.com/vishnubob/wait-for-it/master/wait-for-it.sh -o /usr/local/bin/wait-for-it && \
-    chmod +x /usr/local/bin/wait-for-it && \
+    libsm6 \
+    libxext6 \
+    libxrender1 \
+    libxcb1 && \
     apt clean && rm -rf /var/lib/apt/lists/*
 
 # Instal·lació de dependències Python
 RUN pip install --upgrade pip && pip install -r requirements.txt
+
+# Collectstatic (opcional)
+RUN python manage.py collectstatic --noinput || true
+
+EXPOSE 8000
+
+CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
