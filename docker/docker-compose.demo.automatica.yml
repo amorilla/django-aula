@@ -18,11 +18,13 @@ services:
     restart: always
 
   web:
-    image: antoniomorillas/django-aula:latest
+    image: django_aula:latest
     container_name: demo_web
-#    build:
-#      context: .
-#      dockerfile: Dockerfile
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - ./:/app
     depends_on:
       - db
     env_file:
