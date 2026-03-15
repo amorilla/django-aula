@@ -29,7 +29,6 @@ class DocAttach(models.Model):
     fitxer = PrivateFileField(
         "Fitxer adjunt",
         upload_to="email/",
-        max_file_size=settings.FILE_UPLOAD_MAX_MEMORY_SIZE,
     )
     email = models.ForeignKey(EmailPendent, on_delete=models.CASCADE, blank=True)
 
